@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { FitnessProvider, useFitness } from './context/FitnessContext';
+import { AuthScreen } from './components/auth/AuthScreen';
 import { Header } from './components/Header';
 import { Navigation, TabType } from './components/Navigation';
 import { TodayView } from './components/today/TodayView';
@@ -13,16 +15,18 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { HealthSyncModal } from './components/sync/HealthSyncModal';
 import { InstallPwaModal } from './components/pwa/InstallPwaModal';
 import { checkUrlForHealthSync } from './services/healthSync';
-import { Play, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Play, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { MealType } from './types';
 
 function AppContent() {
+  const { currentUser, loading } = useAuth();
   const { state, resolveReview, importHealthBatch } = useFitness();
   const [activeTab, setActiveTab] = useState<TabType>('today');
 
   // Modals
   const [showAddFoodModal, setShowAddFoodModal] = useState(false);
   const [addFoodInitialMeal, setAddFoodInitialMeal] = useState<MealType>('breakfast');
+  const [addFoodTargetDate, setAddFoodTargetDate] = useState<string | undefined>(undefined);
   const [showWeighInModal, setShowWeighInModal] = useState(false);
   const [showWeeklyReviewModal, setShowWeeklyReviewModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -46,14 +50,35 @@ function AppContent() {
     }
   }, [importHealthBatch]);
 
-  const handleOpenAddFood = (mealType?: MealType) => {
+  // Loading state while checking Firebase authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[var(--color-surface-sunken)] flex flex-col items-center justify-center gap-3 text-[var(--color-text)]">
+        <div className="h-12 w-12 rounded-2xl bg-[#E07A5F]/20 text-[#E07A5F] flex items-center justify-center font-black text-xl border border-[#E07A5F]/30 animate-pulse">
+          K
+        </div>
+        <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+          <Loader2 className="w-4 h-4 animate-spin text-[#E07A5F]" />
+          <span>Connecting to Kinetic Cloud...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Not signed in: show sign-in / create account screen
+  if (!currentUser) {
+    return <AuthScreen />;
+  }
+
+  const handleOpenAddFood = (mealType?: MealType, targetDate?: string) => {
     setAddFoodInitialMeal(mealType || 'breakfast');
+    setAddFoodTargetDate(targetDate);
     setShowAddFoodModal(true);
   };
 
   return (
     <div
-      className={`min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans antialiased selection:bg-[#E07A5F] selection:text-white transition-colors duration-200 ${
+      className={`min-h-screen bg-[var(--color-surface-sunken)] text-[var(--color-text)] flex flex-col font-sans antialiased selection:bg-[#E07A5F] selection:text-[var(--color-text)] transition-colors duration-200 ${
         isLight ? 'theme-light' : 'theme-dark'
       }`}
     >
@@ -66,14 +91,14 @@ function AppContent() {
 
       {/* Health Sync Auto Toast */}
       {healthSyncToast && (
-        <div className="fixed top-14 left-4 right-4 z-40 max-w-md mx-auto p-3.5 rounded-2xl bg-[#EEF5EE] dark:bg-[#1E2E22] border border-[#CDE3CD] dark:border-[#2C4933] text-[#245330] dark:text-[#9DD2A7] shadow-lg flex items-center gap-2.5 text-xs animate-fade-in">
+        <div className="fixed top-[calc(max(env(safe-area-inset-top,0px),16px)+56px)] left-4 right-4 z-40 max-w-md mx-auto p-3.5 rounded-2xl bg-[#EEF5EE] dark:bg-[#1E2E22] border border-[#CDE3CD] dark:border-[#2C4933] text-[#245330] dark:text-[#9DD2A7] shadow-lg flex items-center gap-2.5 text-xs animate-fade-in">
           <CheckCircle2 className="w-4 h-4 text-[#3B7A4C] dark:text-[#81B29A] shrink-0" />
           <span className="font-medium">{healthSyncToast}</span>
         </div>
       )}
 
       {/* Main Viewport Container (iOS mobile-first frame) */}
-      <main className="flex-1 pb-28 px-4 pt-3.5 max-w-md mx-auto w-full overflow-x-hidden">
+      <main className="flex-1 pb-32 px-4 pt-3.5 max-w-md mx-auto w-full overflow-x-hidden">
         {activeTab === 'today' && (
           <TodayView
             onOpenFoodModal={() => handleOpenAddFood('breakfast')}
@@ -84,7 +109,7 @@ function AppContent() {
         )}
 
         {activeTab === 'food' && (
-          <FoodView onOpenAddModal={(mealType) => handleOpenAddFood(mealType)} />
+          <FoodView onOpenAddModal={(mealType, targetDate) => handleOpenAddFood(mealType, targetDate)} />
         )}
 
         {activeTab === 'train' && <TrainView />}
@@ -105,14 +130,14 @@ function AppContent() {
           className="fixed bottom-20 left-4 right-4 max-w-md mx-auto bg-[#2E201B] border border-[#E07A5F]/50 backdrop-blur-md rounded-2xl p-3 flex items-center justify-between shadow-xl cursor-pointer z-20 animate-pulse active:scale-[0.98] transition-all"
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#E07A5F] text-white flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-full bg-[#E07A5F] text-[var(--color-text)] flex items-center justify-center font-bold">
               <Play className="w-4 h-4 fill-current ml-0.5" />
             </div>
             <div>
               <div className="text-[10px] font-bold text-[#E07A5F] uppercase tracking-wider">
                 Workout in Progress
               </div>
-              <div className="text-xs font-bold text-white">{state.activeWorkout?.name}</div>
+              <div className="text-xs font-bold text-[var(--color-text)]">{state.activeWorkout?.name}</div>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-[#E07A5F]" />
@@ -131,6 +156,7 @@ function AppContent() {
       {showAddFoodModal && (
         <AddFoodModal
           initialMealType={addFoodInitialMeal}
+          targetDate={addFoodTargetDate}
           onClose={() => setShowAddFoodModal(false)}
         />
       )}
@@ -181,8 +207,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <FitnessProvider>
-      <AppContent />
-    </FitnessProvider>
+    <AuthProvider>
+      <FitnessProvider>
+        <AppContent />
+      </FitnessProvider>
+    </AuthProvider>
   );
 }

@@ -192,7 +192,7 @@ export function TodayView({
                 </p>
                 <button
                   onClick={() => onNavigateTab('train')}
-                  className="min-h-[48px] mt-4 w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-2xl text-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-all"
+                  className="min-h-[48px] mt-4 w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text)] font-semibold rounded-2xl text-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-all"
                 >
                   <Play className="w-4 h-4 fill-current" />
                   <span>Resume workout</span>
@@ -204,7 +204,7 @@ export function TodayView({
                   startWorkout(scheduledTemplate?.id || scheduledDay?.templateId);
                   onNavigateTab('train');
                 }}
-                className="min-h-[48px] mt-4 w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-2xl text-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-all"
+                className="min-h-[48px] mt-4 w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text)] font-semibold rounded-2xl text-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-all"
               >
                 <Play className="w-4 h-4 fill-current" />
                 <span>Start workout</span>

@@ -472,3 +472,17 @@ export function getPreferredTheme(): 'dark' | 'light' {
   }
   return 'dark';
 }
+
+/**
+ * Returns local date strings for Monday..Sunday of the week containing the given date.
+ */
+export function getWeekDates(anchor: Date = new Date()): string[] {
+  const day = anchor.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const monday = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() + mondayOffset);
+  const result: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    result.push(getLocalDateString(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i)));
+  }
+  return result;
+}

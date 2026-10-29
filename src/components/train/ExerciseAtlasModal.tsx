@@ -29,19 +29,19 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-md w-full p-6 space-y-4 max-h-[92vh] flex flex-col shadow-2xl">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl max-w-md w-full p-6 space-y-4 max-h-[92vh] flex flex-col shadow-2xl">
         <div className="flex justify-between items-center">
           <div>
-            <div className="flex items-center gap-1.5 text-teal-400 text-xs font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 text-[var(--color-accent)] text-xs font-bold uppercase tracking-wider">
               <Dumbbell className="w-3.5 h-3.5" />
               <span>Targeted Muscle Atlas</span>
             </div>
-            <h3 className="text-base font-bold text-white mt-0.5">Exercise & Muscle Library</h3>
+            <h3 className="text-base font-bold text-[var(--color-text)] mt-0.5">Exercise & Muscle Library</h3>
           </div>
           <button
             onClick={onClose}
             aria-label="Close atlas"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-white"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -49,13 +49,13 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
 
         {/* Search */}
         <div className="relative">
-          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-3.5" />
+          <Search className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3 top-3.5" />
           <input
             type="text"
             placeholder="Search exercise or muscle..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="min-h-[44px] w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-teal-500"
+            className="min-h-[44px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl pl-9 pr-3 py-2 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
           />
         </div>
 
@@ -67,8 +67,8 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
               onClick={() => setSelectedMuscle(m)}
               className={`min-h-[32px] px-3 py-1 rounded-xl text-[10px] font-bold capitalize whitespace-nowrap transition-all border ${
                 selectedMuscle === m
-                  ? 'bg-teal-500/20 border-teal-500 text-teal-300'
-                  : 'bg-zinc-950 border-zinc-800 text-zinc-400'
+                  ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-accent)]'
+                  : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)]'
               }`}
             >
               {m}
@@ -81,18 +81,18 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
           {filtered.map((ex) => (
             <div
               key={ex.id}
-              className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 space-y-2.5"
+              className="bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-2xl p-4 space-y-2.5"
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <h4 className="text-sm font-bold text-white">{ex.name}</h4>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                  <h4 className="text-sm font-bold text-[var(--color-text)]">{ex.name}</h4>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-subtle)]">
                     {ex.muscleGroup} • {ex.equipment}
                   </span>
                 </div>
 
                 {ex.personalRecord && (
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-teal-500/10 border border-teal-500/30 text-[10px] text-teal-300 font-semibold">
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[var(--color-accent)] border border-[var(--color-accent)] text-[10px] text-[var(--color-accent)] font-semibold">
                     <Award className="w-3 h-3" />
                     <span>
                       {ex.personalRecord.weightKg} kg × {ex.personalRecord.reps}
@@ -104,13 +104,13 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
               {/* Muscle targeting breakdown */}
               <div className="space-y-1.5 pt-1 border-t border-zinc-900">
                 <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
                     Primary:
                   </span>
                   {ex.primaryMuscles.map((m) => (
                     <span
                       key={m}
-                      className="px-2 py-0.5 rounded-md bg-teal-500/15 border border-teal-500/30 text-teal-300 text-[11px] font-bold"
+                      className="px-2 py-0.5 rounded-md bg-[var(--color-accent)] border border-[var(--color-accent)] text-[var(--color-accent)] text-[11px] font-bold"
                     >
                       {m}
                     </span>
@@ -119,13 +119,13 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
 
                 {ex.secondaryMuscles && ex.secondaryMuscles.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-subtle)]">
                       Secondary:
                     </span>
                     {ex.secondaryMuscles.map((m) => (
                       <span
                         key={m}
-                        className="px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400 text-[11px]"
+                        className="px-2 py-0.5 rounded-md bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] text-[11px]"
                       >
                         {m}
                       </span>
