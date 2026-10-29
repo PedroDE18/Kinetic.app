@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function for document ID validation
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 64;
+    }
+
+    // Feedback issues & bugs reported by user for future AI engineer turns
+    match /feedback_issues/{issueId} {
+      allow read: if isValidId(issueId);
+      allow create: if isValidId(issueId)
+        && request.resource.data.keys().hasAll(['id', 'type', 'description', 'status', 'createdAt'])
+        && request.resource.data.description is string
+        && request.resource.data.description.size() > 0
+        && request.resource.data.description.size() <= 3000
+        && request.resource.data.type in ['bug', 'fix', 'suggestion', 'feature']
+        && request.resource.data.status in ['open', 'in_progress', 'resolved'];
+      allow update: if isValidId(issueId)
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 3000;
+      allow delete: if false;
+    }
+
+    // App backups for cloud state synchronization
+    match /app_backups/{backupId} {
+      allow read: if isValidId(backupId);
+      allow create, update: if isValidId(backupId)
+        && request.resource.data.keys().hasAll(['id', 'updatedAt', 'payloadJson'])
+        && request.resource.data.payloadJson is string
+        && request.resource.data.payloadJson.size() <= 500000;
+      allow delete: if false;
+    }
+  }
+}

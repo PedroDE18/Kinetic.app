@@ -1,0 +1,6 @@
+{
+  "name": "Kinetic - Adaptive Nutrition & Strength",
+  "description": "Mobile-first personal fitness tracking app inspired by MacroFactor and Caliber with adaptive TDEE, nutrition diary, and workout logging.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

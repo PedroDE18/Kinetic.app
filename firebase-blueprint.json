@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "FeedbackIssue": {
+      "title": "FeedbackIssue",
+      "description": "User reported bug, fix, or improvement for developer turns",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["bug", "fix", "suggestion", "feature"]
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 3000
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["open", "in_progress", "resolved"]
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "deviceInfo": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "appVersion": {
+          "type": "string",
+          "maxLength": 20
+        }
+      },
+      "required": ["id", "type", "description", "status", "createdAt"]
+    },
+    "AppBackup": {
+      "title": "AppBackup",
+      "description": "Cloud snapshot of local user state",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "payloadJson": {
+          "type": "string",
+          "maxLength": 500000
+        }
+      },
+      "required": ["id", "updatedAt", "payloadJson"]
+    }
+  },
+  "firestore": {
+    "/feedback_issues/{issueId}": {
+      "schema": "FeedbackIssue",
+      "description": "Collection of user feedback, bugs, and suggested fixes"
+    },
+    "/app_backups/{backupId}": {
+      "schema": "AppBackup",
+      "description": "Collection of cloud backups for application state"
+    }
+  }
+}

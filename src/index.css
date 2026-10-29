@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 16px);
+  }
+
+  body {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    overscroll-behavior-y: none;
+  }
+
+  input, textarea, select {
+    user-select: auto;
+    -webkit-user-select: auto;
+  }
+}
+
+/* Light theme overrides */
+.theme-light {
+  background-color: #f4f4f5 !important;
+  color: #09090b !important;
+}
+
+.theme-light header,
+.theme-light nav {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: #e4e4e7 !important;
+}
+
+.theme-light .bg-zinc-900,
+.theme-light .bg-zinc-900\/90,
+.theme-light .bg-zinc-900\/60 {
+  background-color: #ffffff !important;
+  border-color: #e4e4e7 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.theme-light .bg-zinc-950,
+.theme-light .bg-zinc-950\/70,
+.theme-light .bg-zinc-950\/60 {
+  background-color: #f4f4f5 !important;
+  border-color: #e4e4e7 !important;
+}
+
+.theme-light .text-white,
+.theme-light .text-zinc-100 {
+  color: #09090b !important;
+}
+
+.theme-light .text-zinc-200,
+.theme-light .text-zinc-300 {
+  color: #27272a !important;
+}
+
+.theme-light .text-zinc-400 {
+  color: #71717a !important;
+}
+
+.theme-light .border-zinc-800,
+.theme-light .border-zinc-800\/80,
+.theme-light .border-zinc-800\/60 {
+  border-color: #e4e4e7 !important;
+}
+
+/* Hide scrollbar for clean native app look */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
