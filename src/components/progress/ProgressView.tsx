@@ -377,12 +377,12 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
             {/* Individual Routine View or Multi-Routine Comparison */}
             {selectedRoutine !== 'all' && activeRoutineData && (
               <div className="space-y-3">
-                <div className="bg-[var(--color-surface-sunken)] p-4 rounded-2xl border border-[var(--color-border)] flex justify-between items-center">
-                  <div>
+                <div className="bg-[var(--color-surface-sunken)] p-4 rounded-2xl border border-[var(--color-border)] flex justify-between items-center gap-3">
+                  <div className="min-w-0">
                     <span className="text-[10px] font-bold text-[var(--color-accent)] uppercase tracking-wider block">
                       Routine Focus
                     </span>
-                    <h4 className="text-sm font-bold text-[var(--color-text)]">{selectedRoutine}</h4>
+                    <h4 className="text-sm font-bold text-[var(--color-text)] truncate">{selectedRoutine}</h4>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold block">
@@ -433,15 +433,15 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
                       onClick={() => setSelectedRoutine(name)}
                       className="bg-[var(--color-surface-sunken)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-3.5 flex items-center justify-between transition-all cursor-pointer"
                     >
-                      <div>
-                        <div className="text-xs font-bold text-[var(--color-text)]">{name}</div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-[var(--color-text)] truncate">{name}</div>
                         <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
                           {history.length} sessions logged
                           {latest ? ` • Last: ${latest.date}` : ''}
                         </div>
                       </div>
 
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <div className="text-xs font-black text-[var(--color-accent)]">
                           {latest ? `${latest.volumeKg.toLocaleString()} kg` : '--'}
                         </div>
