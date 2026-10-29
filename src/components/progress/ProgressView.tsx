@@ -172,9 +172,9 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
               </div>
 
               <div className="text-right">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[var(--color-accent)] text-[var(--color-accent)] border border-[var(--color-accent)]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]" />
-                  {Math.round(tdeeData.confidenceScore * 100)}% Confidence
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[var(--color-accent-soft)] text-[var(--color-accent)] border border-[var(--color-accent)]/30">
+                  <Sparkles className="w-3 h-3" />
+                  Estimate · {Math.round(tdeeData.confidenceScore * 100)}% confidence
                 </span>
               </div>
             </div>

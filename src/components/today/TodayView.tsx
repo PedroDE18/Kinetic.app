@@ -81,6 +81,7 @@ export function TodayView({
 
   // Today's scheduled routine
   const scheduledDay = useMemo(() => getScheduledDayForDate(todayStr), [getScheduledDayForDate, todayStr]);
+  const recentDates = useMemo(() => getRecentDateStrings(5), []);
   const isTrainingDay = scheduledDay?.type === 'training';
   const scheduledTemplate = useMemo(
     () => templates.find((t: any) => t.id === scheduledDay?.templateId) || templates[0],
@@ -330,6 +331,32 @@ export function TodayView({
             >
               +250ml
             </button>
+          </div>
+        </div>
+
+        {/* 5-day hydration mini bar */}
+        <div className="pt-2.5">
+          <div className="flex items-end justify-between gap-1.5 h-9" aria-hidden="true">
+            {recentDates.slice().reverse().map((date) => {
+              const ml = state.hydrationLogs?.[date] ?? 0;
+              const pct = Math.min(1, ml / Math.max(1, profile.targets.waterMl));
+              const isToday = date === todayStr;
+              return (
+                <div key={date} className="flex-1 flex flex-col items-center gap-1 justify-end h-full">
+                  <div className="w-full bg-[var(--color-surface-raised)] rounded-md h-3 overflow-hidden self-stretch mt-auto">
+                    <div
+                      className={isToday ? 'h-full rounded-md' : 'h-full rounded-md opacity-60'}
+                      style={{ width: `${Math.max(pct * 100, 4)}%`, backgroundColor: 'var(--color-info)' }}
+                    />
+                  </div>
+                  <span
+                    className={`text-[9px] ${isToday ? 'font-semibold text-[var(--color-text-muted)]' : 'text-[var(--color-text-subtle)]'}`}
+                  >
+                    {date.slice(8)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
