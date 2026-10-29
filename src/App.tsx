@@ -107,7 +107,7 @@ function AppContent() {
           className="fixed bottom-20 left-4 right-4 max-w-md mx-auto bg-[var(--color-surface-raised)] border border-[var(--color-accent)]/50 backdrop-blur-md rounded-2xl p-3 flex items-center justify-between shadow-xl cursor-pointer z-20 active:scale-[0.98] transition-all"
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-full bg-[var(--color-accent)] text-[var(--color-on-accent)] flex items-center justify-center font-bold">
               <Play className="w-4 h-4 fill-current ml-0.5" />
             </div>
             <div>
