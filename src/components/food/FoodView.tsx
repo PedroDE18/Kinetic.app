@@ -9,6 +9,8 @@ import {
   Calendar,
   Flame,
   Clock,
+  Heart,
+  X,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { LoggedFood, MealType } from '../../types';
@@ -19,7 +21,7 @@ interface FoodViewProps {
 }
 
 export function FoodView({ onOpenAddModal }: FoodViewProps) {
-  const { state, removeLoggedFood, duplicateLoggedFood, updateLoggedFood } = useFitness();
+  const { state, removeLoggedFood, duplicateLoggedFood, updateLoggedFood, toggleFoodFavorite } = useFitness();
   const { loggedFoods, profile } = state;
 
   const todayStr = useMemo(() => getLocalDateString(), []);
@@ -36,6 +38,21 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
   const [editingItem, setEditingItem] = useState<LoggedFood | null>(null);
   const [editServingCount, setEditServingCount] = useState<number>(1);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [detailItem, setDetailItem] = useState<LoggedFood | null>(null);
+
+  // The library definition underneath a logged entry, for favorite control
+  const detailLibraryFood = useMemo(() => {
+    if (!detailItem) return null;
+    return state.foodLibrary.find((f) => f.id === detailItem.foodId) || null;
+  }, [detailItem, state.foodLibrary]);
+
+  const mealTitle = (mt: LoggedFood['mealType']): string =>
+    ({
+      breakfast: 'Breakfast',
+      lunch: 'Lunch',
+      dinner: 'Dinner',
+      snack: 'Snacks',
+    })[mt] || mt;
 
   // Aggregated totals for the selected date
   const totalNutrition = useMemo(() => {
@@ -255,52 +272,160 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
                 </div>
               ) : (
                 <div className="divide-y divide-[var(--color-border)] border-t border-[var(--color-border)] pt-1">
-                  {items.map((item) => (
-                    <div key={item.id} className="py-3 flex items-center justify-between">
-                      <div className="flex-1 pr-2">
-                        <div className="text-sm font-medium text-[var(--color-text)]">{item.name}</div>
-                        <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
-                          {item.servingCount}× {item.servingSize} {item.servingUnit} • {item.protein}
-                          g P • {item.carbs}g C • {item.fat}g F
+                  {items.map((item) => {
+                    const libFood = state.foodLibrary.find((f) => f.id === item.foodId);
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setDetailItem(item)}
+                        className="w-full py-3 flex items-center justify-between gap-2 text-left rounded-xl hover:bg-[var(--color-surface-raised)] transition-colors focus-visible:outline-[var(--color-accent)]"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-[var(--color-text)] truncate">{item.name}</div>
+                          <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
+                            {item.servingCount}× {item.servingSize} {item.servingUnit} • P{' '}
+                            {item.protein.toFixed(0)}g C {item.carbs.toFixed(0)}g F {item.fat.toFixed(0)}g
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-[var(--color-text)] tabular-nums">{item.calories} kcal</span>
-
-                        {/* Item Action Buttons */}
-                        <div className="flex items-center">
-                          <button
-                            onClick={() => duplicateLoggedFood(item.id)}
-                            aria-label="Duplicate entry"
-                            className="min-h-[38px] min-w-[36px] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleStartEdit(item)}
-                            aria-label="Edit serving size"
-                            className="min-h-[38px] min-w-[36px] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirmId(item.id)}
-                            aria-label="Delete entry"
-                            className="min-h-[38px] min-w-[36px] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-danger)]"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {libFood?.isFavorite && (
+                            <Heart className="w-3.5 h-3.5 fill-[var(--color-accent)] text-[var(--color-accent)]" />
+                          )}
+                          <span className="text-xs font-semibold text-[var(--color-text)] tabular-nums">
+                            {item.calories} kcal
+                          </span>
+                          <ChevronRight className="w-4 h-4 text-[var(--color-text-subtle)]" />
                         </div>
-                      </div>
-                    </div>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </section>
           );
         })}
       </div>
+
+      {/* Item Detail Sheet — nutrition breakdown & actions */}
+      {detailItem && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center animate-in fade-in"
+          onClick={() => setDetailItem(null)}
+          role="presentation"
+        >
+          <div
+            className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-4 shadow-2xl mb-0 sm:mb-6"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h4 className="k-display text-lg text-[var(--color-text)] truncate">{detailItem.name}</h4>
+                <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
+                  {mealTitle(detailItem.mealType)} •{' '}
+                  {new Date(detailItem.loggedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} •{' '}
+                  {detailItem.servingCount}× {detailItem.servingSize} {detailItem.servingUnit}
+                </div>
+              </div>
+              <button
+                onClick={() => setDetailItem(null)}
+                aria-label="Close details"
+                className="min-h-[44px] min-w-[44px] -mt-1.5 -mr-1.5 flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Nutrition for this entry */}
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="bg-[var(--color-surface-sunken)] rounded-xl p-2">
+                <div className="text-[10px] font-semibold text-[var(--color-accent)] uppercase">kcal</div>
+                <div className="text-sm font-semibold text-[var(--color-text)] tabular-nums">{detailItem.calories}</div>
+              </div>
+              <div className="bg-[var(--color-surface-sunken)] rounded-xl p-2">
+                <div className="text-[10px] font-semibold text-[var(--color-success)] uppercase">protein</div>
+                <div className="text-sm font-semibold text-[var(--color-text)] tabular-nums">
+                  {detailItem.protein.toFixed(1)}
+                </div>
+              </div>
+              <div className="bg-[var(--color-surface-sunken)] rounded-xl p-2">
+                <div className="text-[10px] font-semibold text-[var(--color-warning)] uppercase">carbs</div>
+                <div className="text-sm font-semibold text-[var(--color-text)] tabular-nums">
+                  {detailItem.carbs.toFixed(1)}
+                </div>
+              </div>
+              <div className="bg-[var(--color-surface-sunken)] rounded-xl p-2">
+                <div className="text-[10px] font-semibold text-[var(--color-danger)] uppercase">fat</div>
+                <div className="text-sm font-semibold text-[var(--color-text)] tabular-nums">
+                  {detailItem.fat.toFixed(1)}
+                </div>
+              </div>
+            </div>
+
+            {detailItem.fiber ? (
+              <div className="text-[11px] text-[var(--color-text-muted)]">
+                Fiber: {detailItem.fiber.toFixed(1)} g
+              </div>
+            ) : null}
+
+            {detailLibraryFood && (
+              <button
+                type="button"
+                onClick={() => toggleFoodFavorite(detailLibraryFood.id)}
+                className="min-h-[44px] w-full py-2.5 bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.99] transition-transform"
+              >
+                <Heart
+                  className={`w-4 h-4 ${
+                    detailLibraryFood.isFavorite
+                      ? 'fill-[var(--color-accent)] text-[var(--color-accent)]'
+                      : 'text-[var(--color-text-muted)]'
+                  }`}
+                />
+                <span>
+                  {(detailLibraryFood.isFavorite ? 'Remove from' : 'Save to')} favorites
+                </span>
+              </button>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  handleStartEdit(detailItem);
+                  setDetailItem(null);
+                }}
+                className="min-h-[44px] py-2.5 bg-[var(--color-surface-raised)] text-[var(--color-text)] text-xs font-semibold rounded-xl border border-[var(--color-border)] flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+                <span>Edit serving</span>
+              </button>
+              <button
+                onClick={() => {
+                  duplicateLoggedFood(detailItem.id);
+                  setDetailItem(null);
+                }}
+                className="min-h-[44px] py-2.5 bg-[var(--color-surface-raised)] text-[var(--color-text)] text-xs font-semibold rounded-xl border border-[var(--color-border)] flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>Duplicate</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                setDetailItem(null);
+                setDeleteConfirmId(detailItem.id);
+              }}
+              className="min-h-[44px] w-full py-2.5 bg-[var(--color-danger-soft)] border border-[var(--color-danger)]/40 text-[var(--color-danger)] text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Remove entry</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Edit Serving Dialog */}
       {editingItem && (
