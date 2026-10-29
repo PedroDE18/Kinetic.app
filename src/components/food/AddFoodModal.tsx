@@ -414,12 +414,20 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                     <div className="flex items-center justify-between">
                       <h4 className="text-base font-bold text-[var(--color-text)]">{selectedFood.name}</h4>
                       <button
+                        type="button"
                         onClick={() => toggleFoodFavorite(selectedFood.id)}
-                        className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)] p-1"
+                        aria-label={
+                          selectedFood.isFavorite
+                            ? `Remove ${selectedFood.name} from favorites`
+                            : `Save ${selectedFood.name} to favorites`
+                        }
+                        aria-pressed={!!selectedFood.isFavorite}
+                        title={selectedFood.isFavorite ? 'Remove from favorites' : 'Save to favorites'}
+                        className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] p-1 active:scale-90 transition-all"
                       >
                         <Heart
                           className={`w-5 h-5 ${
-                            selectedFood.isFavorite ? 'fill-rose-500 text-rose-500' : ''
+                            selectedFood.isFavorite ? 'fill-[var(--color-accent)] text-[var(--color-accent)]' : ''
                           }`}
                         />
                       </button>
@@ -569,38 +577,59 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
 
                   {/* Food Results List */}
                   {filteredFoods.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-[var(--color-text-subtle)]">
-                      No foods found matching "{searchQuery}".
+                    <div className="py-8 text-center text-xs text-[var(--color-text-subtle)] border border-dashed border-[var(--color-border)] rounded-2xl px-4">
+                      {selectedCategory === 'Favorites' && !searchQuery ? (
+                        <>
+                          No favorites yet. Tap the heart on any food to keep it one tap away —
+                          or describe a meal below and it will be saved for you.
+                        </>
+                      ) : (
+                        <>No foods found matching "{searchQuery}".</>
+                      )}
                     </div>
                   ) : (
                     <div className="divide-y divide-[var(--color-border)]">
                       {filteredFoods.map((item) => (
-                        <button
+                        <div
                           key={item.id}
-                          onClick={() => {
-                            setSelectedFood(item);
-                            setServingMultiplier(1);
-                          }}
-                          className="min-h-[48px] w-full py-2.5 px-2 flex items-center justify-between text-left hover:bg-[var(--color-surface-raised)]/40 rounded-xl transition-colors group"
+                          className="flex items-stretch py-2.5 px-2 -mx-0.5 rounded-xl hover:bg-[var(--color-surface-raised)]/40 transition-colors group"
                         >
-                          <div>
-                            <div className="text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)]">
-                              {item.name}
+                          <button
+                            onClick={() => {
+                              setSelectedFood(item);
+                              setServingMultiplier(1);
+                            }}
+                            className="flex-1 min-w-0 min-h-[48px] flex items-center justify-between gap-2 text-left"
+                          >
+                            <div className="min-w-0">
+                              <div className="text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] truncate">
+                                {item.name}
+                              </div>
+                              <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
+                                {item.servingSize} {item.servingUnit} • {item.calories} kcal • P:{' '}
+                                {item.protein}g C: {item.carbs}g F: {item.fat}g
+                              </div>
                             </div>
-                            <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-                              {item.servingSize} {item.servingUnit} • {item.calories} kcal • P:{' '}
-                              {item.protein}g C: {item.carbs}g F: {item.fat}g
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {item.isFavorite && (
-                              <Heart className="w-3.5 h-3.5 fill-rose-500/80 text-rose-500" />
-                            )}
-                            <div className="w-7 h-7 rounded-lg bg-[var(--color-surface-raised)] text-[var(--color-accent)] flex items-center justify-center group-hover:bg-[var(--color-accent)] group-hover:text-[var(--color-on-accent)] transition-colors">
+                            <div className="w-7 h-7 rounded-lg bg-[var(--color-surface-raised)] text-[var(--color-accent)] flex items-center justify-center shrink-0 group-hover:bg-[var(--color-accent)] group-hover:text-[var(--color-on-accent)] transition-colors">
                               <Plus className="w-4 h-4" />
                             </div>
-                          </div>
-                        </button>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleFoodFavorite(item.id)}
+                            aria-label={item.isFavorite ? `Remove ${item.name} from favorites` : `Save ${item.name} to favorites`}
+                            aria-pressed={!!item.isFavorite}
+                            className="min-h-[44px] min-w-[40px] flex items-center justify-center rounded-xl hover:bg-[var(--color-accent-soft)] active:scale-90 transition-all"
+                          >
+                            <Heart
+                              className={`w-4 h-4 transition-colors ${
+                                item.isFavorite
+                                  ? 'fill-[var(--color-accent)] text-[var(--color-accent)]'
+                                  : 'text-[var(--color-text-subtle)]'
+                              }`}
+                            />
+                          </button>
+                        </div>
                       ))}
                     </div>
                   )}
