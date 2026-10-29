@@ -11,6 +11,9 @@
     user-select: none;
     -webkit-user-select: none;
     overscroll-behavior-y: none;
+    background-color: #161413;
+    color: #F7F2EC;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 
   input, textarea, select {
@@ -19,51 +22,184 @@
   }
 }
 
-/* Light theme overrides */
+/* ==========================================================
+   COZY DESIGN SYSTEM
+   Inspired by warm organic editorial palettes (dusty rose,
+   calm denim, butter yellow, sage, terracotta, espresso ink)
+   ========================================================== */
+
+/* Cozy Pastels - Light Mode */
+.cozy-pink {
+  background-color: #FDE8E4 !important;
+  border-color: #F4C7BE !important;
+  color: #8A3127 !important;
+}
+.cozy-blue {
+  background-color: #E1ECF4 !important;
+  border-color: #BCD4E6 !important;
+  color: #1D4C6E !important;
+}
+.cozy-yellow {
+  background-color: #FEF4D6 !important;
+  border-color: #F1DE9F !important;
+  color: #7A5B0B !important;
+}
+.cozy-green {
+  background-color: #E5EDE4 !important;
+  border-color: #C4D9C2 !important;
+  color: #2A5835 !important;
+}
+.cozy-orange {
+  background-color: #FCE7DB !important;
+  border-color: #F5CEBC !important;
+  color: #8E3E1E !important;
+}
+
+/* Cozy Pastels - Dark Mode */
+.theme-dark .cozy-pink,
+:not(.theme-light) .cozy-pink {
+  background-color: #2E1E1C !important;
+  border-color: #4B2924 !important;
+  color: #F4A599 !important;
+}
+.theme-dark .cozy-blue,
+:not(.theme-light) .cozy-blue {
+  background-color: #1B2732 !important;
+  border-color: #2B4052 !important;
+  color: #9EC7E6 !important;
+}
+.theme-dark .cozy-yellow,
+:not(.theme-light) .cozy-yellow {
+  background-color: #2B2516 !important;
+  border-color: #493B1F !important;
+  color: #ECD28C !important;
+}
+.theme-dark .cozy-green,
+:not(.theme-light) .cozy-green {
+  background-color: #1C2A1E !important;
+  border-color: #2D4632 !important;
+  color: #9FD1A8 !important;
+}
+.theme-dark .cozy-orange,
+:not(.theme-light) .cozy-orange {
+  background-color: #2F201A !important;
+  border-color: #4F2E23 !important;
+  color: #F6AA94 !important;
+}
+
+/* Light Theme Overrides (Warm Cozy Cream) */
 .theme-light {
-  background-color: #f4f4f5 !important;
-  color: #09090b !important;
+  background-color: #FAF7F2 !important;
+  color: #28221D !important;
 }
 
 .theme-light header,
 .theme-light nav {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  border-color: #e4e4e7 !important;
+  background-color: rgba(255, 253, 249, 0.92) !important;
+  border-color: #EBE3D7 !important;
+  box-shadow: 0 1px 6px rgba(40, 30, 20, 0.03);
+}
+
+.theme-light .bg-zinc-950,
+.theme-light .bg-zinc-950\/70,
+.theme-light .bg-zinc-950\/60,
+.theme-light .bg-zinc-950\/85 {
+  background-color: #FAF7F2 !important;
+  border-color: #EBE3D7 !important;
 }
 
 .theme-light .bg-zinc-900,
 .theme-light .bg-zinc-900\/90,
 .theme-light .bg-zinc-900\/60 {
-  background-color: #ffffff !important;
-  border-color: #e4e4e7 !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  background-color: #FFFDF9 !important;
+  border-color: #EBE3D7 !important;
+  box-shadow: 0 2px 8px rgba(40, 30, 20, 0.04);
 }
 
-.theme-light .bg-zinc-950,
-.theme-light .bg-zinc-950\/70,
-.theme-light .bg-zinc-950\/60 {
-  background-color: #f4f4f5 !important;
-  border-color: #e4e4e7 !important;
+.theme-light .bg-zinc-800,
+.theme-light .bg-zinc-800\/80,
+.theme-light .bg-zinc-800\/60,
+.theme-light .bg-zinc-800\/50 {
+  background-color: #F4EFE6 !important;
+  border-color: #EBE3D7 !important;
 }
 
 .theme-light .text-white,
 .theme-light .text-zinc-100 {
-  color: #09090b !important;
+  color: #28221D !important;
 }
 
 .theme-light .text-zinc-200,
 .theme-light .text-zinc-300 {
-  color: #27272a !important;
+  color: #473D35 !important;
 }
 
 .theme-light .text-zinc-400 {
-  color: #71717a !important;
+  color: #8A7B6E !important;
+}
+
+.theme-light .text-zinc-500 {
+  color: #A89B8F !important;
 }
 
 .theme-light .border-zinc-800,
 .theme-light .border-zinc-800\/80,
-.theme-light .border-zinc-800\/60 {
-  border-color: #e4e4e7 !important;
+.theme-light .border-zinc-800\/60,
+.theme-light .border-zinc-700 {
+  border-color: #EBE3D7 !important;
+}
+
+/* Warm terracotta accents in place of cold cyan */
+.theme-light .text-teal-400,
+.theme-light .text-teal-300 {
+  color: #C85A32 !important;
+}
+
+.theme-light .bg-teal-500\/20,
+.theme-light .bg-teal-500\/10,
+.theme-light .bg-teal-950\/40 {
+  background-color: #FCE8E4 !important;
+  border-color: #F4C7BE !important;
+}
+
+.theme-light .bg-teal-500 {
+  background-color: #E07A5F !important;
+}
+
+/* Dark Mode Cozy Warm Tones */
+:not(.theme-light) {
+  background-color: #161413;
+  color: #F7F2EC;
+}
+
+:not(.theme-light) .bg-zinc-950 {
+  background-color: #161413 !important;
+}
+
+:not(.theme-light) .bg-zinc-900 {
+  background-color: #211D1A !important;
+  border-color: #342D27 !important;
+}
+
+:not(.theme-light) .bg-zinc-800 {
+  background-color: #2C2622 !important;
+  border-color: #3C332C !important;
+}
+
+:not(.theme-light) .border-zinc-800 {
+  border-color: #342D27 !important;
+}
+
+:not(.theme-light) .text-teal-400 {
+  color: #E07A5F !important;
+}
+
+:not(.theme-light) .bg-teal-500 {
+  background-color: #E07A5F !important;
+}
+
+:not(.theme-light) .bg-teal-500\/20 {
+  background-color: rgba(224, 122, 95, 0.18) !important;
 }
 
 /* Hide scrollbar for clean native app look */
@@ -73,4 +209,18 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Friendly smooth tap transitions */
+button, a {
+  transition: transform 0.1s ease, background-color 0.15s ease, opacity 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

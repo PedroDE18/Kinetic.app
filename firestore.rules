@@ -8,7 +8,7 @@ service cloud.firestore {
 
     // Feedback issues & bugs reported by user for future AI engineer turns
     match /feedback_issues/{issueId} {
-      allow read: if isValidId(issueId);
+      allow read: if true;
       allow create: if isValidId(issueId)
         && request.resource.data.keys().hasAll(['id', 'type', 'description', 'status', 'createdAt'])
         && request.resource.data.description is string
@@ -24,7 +24,7 @@ service cloud.firestore {
 
     // App backups for cloud state synchronization
     match /app_backups/{backupId} {
-      allow read: if isValidId(backupId);
+      allow read: if true;
       allow create, update: if isValidId(backupId)
         && request.resource.data.keys().hasAll(['id', 'updatedAt', 'payloadJson'])
         && request.resource.data.payloadJson is string

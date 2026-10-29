@@ -57,6 +57,11 @@ export interface FitnessContextType {
   deleteWorkoutTemplate: (id: string) => void;
   addCardioSession: (session: CardioSession) => void;
   removeCardioSession: (id: string) => void;
+  importHealthBatch: (batch: {
+    cardio?: CardioSession[];
+    workouts?: CompletedWorkout[];
+    weights?: WeightRecord[];
+  }) => { addedCardio: number; addedWorkouts: number; addedWeights: number };
   resolveReview: (reviewId: string, decision: 'accepted' | 'rejected') => void;
   resetAllData: () => void;
   exportAllJson: () => void;
@@ -324,6 +329,47 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const importHealthBatch = (batch: {
+    cardio?: CardioSession[];
+    workouts?: CompletedWorkout[];
+    weights?: WeightRecord[];
+  }) => {
+    let addedCardio = 0;
+    let addedWorkouts = 0;
+    let addedWeights = 0;
+
+    setState((prev) => {
+      // De-duplicate cardio by ID and timestamp/name
+      const existingCardioIds = new Set(prev.cardioSessions.map((c) => c.id));
+      const newCardio = (batch.cardio || []).filter((c) => !existingCardioIds.has(c.id));
+      addedCardio = newCardio.length;
+
+      // De-duplicate workouts
+      const existingWorkoutIds = new Set(prev.completedWorkouts.map((w) => w.id));
+      const newWorkouts = (batch.workouts || []).filter((w) => !existingWorkoutIds.has(w.id));
+      addedWorkouts = newWorkouts.length;
+
+      // Merge weights by date (overwrite or keep latest)
+      const weightMap = new Map(prev.weights.map((w) => [w.date, w]));
+      (batch.weights || []).forEach((w) => {
+        weightMap.set(w.date, w);
+        addedWeights++;
+      });
+      const sortedWeights = Array.from(weightMap.values()).sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+
+      return {
+        ...prev,
+        cardioSessions: [...newCardio, ...prev.cardioSessions],
+        completedWorkouts: [...newWorkouts, ...prev.completedWorkouts],
+        weights: sortedWeights,
+      };
+    });
+
+    return { addedCardio, addedWorkouts, addedWeights };
+  };
+
   const resolveReview = (reviewId: string, decision: 'accepted' | 'rejected') => {
     setState((prev) => {
       const review = prev.reviews.find((r) => r.id === reviewId);
@@ -444,6 +490,7 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
         deleteWorkoutTemplate,
         addCardioSession,
         removeCardioSession,
+        importHealthBatch,
         resolveReview,
         resetAllData,
         exportAllJson,

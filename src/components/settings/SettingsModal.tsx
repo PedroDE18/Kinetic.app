@@ -15,6 +15,8 @@ import {
   AlertCircle,
   Loader2,
   Clock,
+  Watch,
+  Smartphone,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { FitnessGoal, UnitSystem } from '../../types';
@@ -28,9 +30,11 @@ import {
 
 interface SettingsModalProps {
   onClose: () => void;
+  onOpenHealthSync?: () => void;
+  onOpenInstallPwa?: () => void;
 }
 
-export function SettingsModal({ onClose }: SettingsModalProps) {
+export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: SettingsModalProps) {
   useBodyScrollLock(true);
   const { state, updateProfile, resetAllData, exportAllJson, exportCsv } = useFitness();
   const { profile } = state;
@@ -361,6 +365,55 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
             >
               <FileDown className="w-3 h-3 text-teal-400" />
               <span>Workouts</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* HEALTH & WEARABLE INTEGRATION (APPLE HEALTH & GARMIN)   */}
+        {/* ======================================================== */}
+        <div className="pt-4 border-t border-zinc-800 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+              <Watch className="w-4 h-4 text-[#E07A5F]" />
+              <span>Apple Health & Garmin Sync</span>
+            </div>
+            <span className="text-[10px] text-teal-400 font-semibold bg-teal-500/10 px-2 py-0.5 rounded-full border border-teal-500/30">
+              Active
+            </span>
+          </div>
+
+          <p className="text-[11px] text-zinc-400 leading-relaxed">
+            Directly ingest workouts, cardio, and weigh-ins from Apple Health (XML/Shortcuts) and Garmin Connect (.TCX/.GPX/.CSV).
+          </p>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => onOpenHealthSync?.()}
+              className="min-h-[44px] py-2.5 px-3 bg-[#FAF3EA] dark:bg-[#2C241E] hover:border-[#E07A5F] border border-[#EBE1D3] dark:border-[#42362C] text-[#28221D] dark:text-[#F7F2EC] rounded-2xl flex items-center gap-2 text-xs font-semibold text-left transition-all active:scale-95"
+            >
+              <div className="w-7 h-7 rounded-xl bg-[#E07A5F]/15 text-[#E07A5F] flex items-center justify-center shrink-0">
+                <Watch className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="font-bold text-xs">Sync Devices</p>
+                <p className="text-[10px] text-[#8A7B6E] dark:text-[#A8988B]">Apple & Garmin</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onOpenInstallPwa?.()}
+              className="min-h-[44px] py-2.5 px-3 bg-[#FAF3EA] dark:bg-[#2C241E] hover:border-[#E07A5F] border border-[#EBE1D3] dark:border-[#42362C] text-[#28221D] dark:text-[#F7F2EC] rounded-2xl flex items-center gap-2 text-xs font-semibold text-left transition-all active:scale-95"
+            >
+              <div className="w-7 h-7 rounded-xl bg-[#2D6C96]/15 text-[#2D6C96] flex items-center justify-center shrink-0">
+                <Smartphone className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="font-bold text-xs">Install PWA</p>
+                <p className="text-[10px] text-[#8A7B6E] dark:text-[#A8988B]">iPhone Home Screen</p>
+              </div>
             </button>
           </div>
         </div>

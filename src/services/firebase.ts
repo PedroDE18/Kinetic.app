@@ -46,10 +46,9 @@ export async function submitFeedbackIssue(
   const issueId = `issue-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
   const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
 
-  const issue: FeedbackIssue = {
+  const cleanIssue: Record<string, any> = {
     id: issueId,
     type: data.type,
-    title: data.title?.trim() || undefined,
     description: data.description.trim(),
     severity: data.severity || 'medium',
     status: 'open',
@@ -57,11 +56,14 @@ export async function submitFeedbackIssue(
     deviceInfo: userAgent.slice(0, 200),
     appVersion: '3.1.0',
   };
+  if (data.title?.trim()) {
+    cleanIssue.title = data.title.trim();
+  }
 
   try {
     const issueRef = doc(db, 'feedback_issues', issueId);
-    await setDoc(issueRef, issue);
-    return issue;
+    await setDoc(issueRef, cleanIssue);
+    return cleanIssue as FeedbackIssue;
   } catch (err) {
     console.error('Failed to write issue to Firestore:', err);
     throw err;

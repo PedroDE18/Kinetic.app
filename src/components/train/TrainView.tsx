@@ -17,6 +17,7 @@ import {
   Gauge,
   Sparkles,
   BookOpen,
+  Watch,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { ActiveWorkoutSession, CompletedWorkout, WorkoutTemplate, ExerciseSet } from '../../types';
@@ -24,6 +25,7 @@ import { WorkoutSummaryModal } from './WorkoutSummaryModal';
 import { ProgramBuilderModal } from './ProgramBuilderModal';
 import { CardioLoggerModal } from './CardioLoggerModal';
 import { ExerciseAtlasModal } from './ExerciseAtlasModal';
+import { HealthSyncModal } from '../sync/HealthSyncModal';
 import { formatPace, calculateCardioStats, formatDistance } from '../../utils/engine';
 
 export function TrainView() {
@@ -45,6 +47,7 @@ export function TrainView() {
   const [showProgramBuilder, setShowProgramBuilder] = useState(false);
   const [showCardioLogger, setShowCardioLogger] = useState(false);
   const [showAtlas, setShowAtlas] = useState(false);
+  const [showHealthSync, setShowHealthSync] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | undefined>(undefined);
 
   // Live Elapsed Workout Timer
@@ -452,11 +455,20 @@ export function TrainView() {
             {/* Quick Actions */}
             <div className="flex items-center gap-1.5">
               <button
+                onClick={() => setShowHealthSync(true)}
+                title="Sync Apple Health & Garmin"
+                className="min-h-[40px] px-2.5 py-2 bg-[#FAF3EA] dark:bg-[#25201C] hover:border-[#E07A5F] border border-[#EBE1D3] dark:border-[#38302A] text-[#28221D] dark:text-[#F7F2EC] font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs"
+              >
+                <Watch className="w-3.5 h-3.5 text-[#E07A5F]" />
+                <span className="hidden sm:inline">Sync Watch</span>
+              </button>
+
+              <button
                 onClick={() => setShowAtlas(true)}
                 className="min-h-[40px] flex-1 sm:flex-none px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all"
               >
                 <BookOpen className="w-3.5 h-3.5 text-teal-400" />
-                <span>Muscle Atlas</span>
+                <span>Atlas</span>
               </button>
 
               {trainingTab === 'strength' ? (
@@ -825,6 +837,14 @@ export function TrainView() {
         <WorkoutSummaryModal
           workout={completedSummary}
           onClose={() => setCompletedSummary(null)}
+        />
+      )}
+
+      {/* Health & Wearable Sync Modal */}
+      {showHealthSync && (
+        <HealthSyncModal
+          isOpen={showHealthSync}
+          onClose={() => setShowHealthSync(false)}
         />
       )}
     </div>

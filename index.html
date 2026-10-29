@@ -10,14 +10,30 @@
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     
-    <!-- iOS PWA Meta Tags -->
+    <!-- iOS PWA Meta Tags & Icons -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Kinetic" />
-    <meta name="theme-color" content="#09090b" />
-    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#FAF7F2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+
+    <!-- GitHub Pages Single Page App routing support -->
+    <script type="text/javascript">
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
   </head>
-  <body class="bg-zinc-950 text-zinc-100 antialiased selection:bg-teal-500 selection:text-black">
+  <body class="bg-[#FAF7F2] text-[#28221D] antialiased selection:bg-[#E07A5F] selection:text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
