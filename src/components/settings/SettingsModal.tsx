@@ -17,14 +17,16 @@ import {
   Clock,
   Watch,
   Smartphone,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
+import { useAuth } from '../../context/AuthContext';
 import { FitnessGoal, UnitSystem } from '../../types';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
 import {
   submitFeedbackIssue,
   fetchFeedbackIssues,
-  syncBackupToFirebase,
   FeedbackIssue,
 } from '../../services/firebase';
 
@@ -36,7 +38,8 @@ interface SettingsModalProps {
 
 export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: SettingsModalProps) {
   useBodyScrollLock(true);
-  const { state, updateProfile, resetAllData, exportAllJson, exportCsv } = useFitness();
+  const { currentUser, signOut } = useAuth();
+  const { state, updateProfile, resetAllData, exportAllJson, exportCsv, importAllJson, forceSyncCloud, syncStatus } = useFitness();
   const { profile } = state;
 
   const [name, setName] = useState(profile.name);
@@ -51,6 +54,7 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
 
   // Firebase Bug & Fix Tracker state
   const [feedbackType, setFeedbackType] = useState<'bug' | 'fix' | 'suggestion' | 'feature'>('bug');
@@ -139,18 +143,41 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
     }
   };
 
-  // Cloud Sync Handler
+  // Cloud Sync Handler (per-user sync to Firestore)
   const handleCloudSync = async () => {
     setIsSyncingCloud(true);
     try {
-      const snapshot = JSON.stringify(state, null, 2);
-      const ok = await syncBackupToFirebase(snapshot);
+      const ok = await forceSyncCloud();
       if (ok) {
         setCloudSyncSuccess(true);
         setTimeout(() => setCloudSyncSuccess(false), 2500);
       }
     } finally {
       setIsSyncingCloud(false);
+    }
+  };
+
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const res = importAllJson(text);
+    if (res.ok) {
+      setImportStatus('Imported successfully');
+    } else {
+      setImportStatus(`Import failed: ${res.error}`);
+    }
+    setTimeout(() => setImportStatus(null), 3000);
+    e.target.value = '';
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      onClose();
+    } catch (err) {
+      console.error('Sign out error:', err);
     }
   };
 
@@ -170,6 +197,32 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Authenticated User Account Card */}
+        {currentUser && (
+          <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800/80 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div className="h-8 w-8 rounded-full bg-[#E07A5F]/20 text-[#E07A5F] flex items-center justify-center shrink-0 border border-[#E07A5F]/30">
+                <UserIcon className="w-4 h-4" />
+              </div>
+              <div className="overflow-hidden">
+                <div className="text-xs font-semibold text-zinc-200 truncate">
+                  {currentUser.displayName || profile.name || 'Kinetic Athlete'}
+                </div>
+                <div className="text-[11px] text-zinc-500 truncate">{currentUser.email}</div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              title="Sign Out"
+              className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-red-400 text-[11px] font-medium flex items-center gap-1.5 border border-zinc-800 transition-colors shrink-0"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        )}
 
         <form onSubmit={handleSaveProfile} className="space-y-4">
           {/* User Name */}
@@ -321,6 +374,11 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
           </p>
 
           <div className="grid grid-cols-2 gap-2 pt-1">
+            <label className="min-h-[44px] py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer">
+              <FileDown className="w-3.5 h-3.5 text-teal-400 rotate-180" />
+              <span>Import Backup (JSON)</span>
+              <input type="file" accept="application/json,.json" className="hidden" onChange={handleImportFile} />
+            </label>
             <button
               onClick={exportAllJson}
               className="min-h-[44px] py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all"

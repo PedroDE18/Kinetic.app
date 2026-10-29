@@ -12,6 +12,19 @@ export default defineConfig(() => {
         '@': path.resolve(import.meta.dirname, '.'),
       },
     },
+    build: {
+      chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          manualChunks(id: string) {
+            if (id.includes('node_modules/firebase')) return 'firebase';
+            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'vendor';
+            if (id.includes('node_modules/motion')) return 'motion';
+            if (id.includes('node_modules/lucide-react')) return 'icons';
+          },
+        },
+      },
+    },
     server: {
       host: '0.0.0.0',
       port: 3000,

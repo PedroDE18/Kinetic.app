@@ -1,9 +1,125 @@
 @import "tailwindcss";
 
+/* ==========================================================
+   KINETIC DESIGN SYSTEM
+   Editorial, restrained, personal. Warm palette. Light + dark.
+   ========================================================== */
+
 @layer base {
   :root {
+    /* --- Color tokens (dark by default) --- */
+    --color-bg: #161413;
+    --color-bg-elevated: #211D1A;
+    --color-surface: #211D1A;
+    --color-surface-raised: #2C2622;
+    --color-surface-sunken: #12100F;
+    --color-border: #342D27;
+    --color-border-subtle: #2A2420;
+    --color-text: #F7F2EC;
+    --color-text-muted: #B9AFA3;
+    --color-text-subtle: #8A7B6E;
+    --color-accent: #E07A5F;
+    --color-accent-hover: #D0694E;
+    --color-accent-soft: rgba(224, 122, 95, 0.14);
+    --color-success: #81B29A;
+    --color-success-soft: rgba(129, 178, 154, 0.14);
+    --color-warning: #E6A838;
+    --color-warning-soft: rgba(230, 168, 56, 0.14);
+    --color-danger: #E06B6B;
+    --color-danger-soft: rgba(224, 107, 107, 0.14);
+    --color-info: #7FAFCB;
+
+    /* --- Typography --- */
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: "SF Mono", ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    --text-4xl: 2.25rem;
+
+    --leading-tight: 1.15;
+    --leading-snug: 1.3;
+    --leading-normal: 1.5;
+    --tracking-tight: -0.02em;
+    --tracking-normal: 0;
+    --tracking-wide: 0.06em;
+    --tracking-wider: 0.1em;
+
+    /* --- Spacing scale --- */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+
+    /* --- Radii --- */
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --radius-2xl: 1.5rem;
+    --radius-3xl: 1.75rem;
+    --radius-full: 9999px;
+
+    /* --- Shadows --- */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.18);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.22);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.28);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.36);
+
+    /* --- Motion --- */
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration-fast: 120ms;
+    --duration-base: 200ms;
+    --duration-slow: 320ms;
+
+    /* --- Safe areas --- */
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 16px);
+  }
+
+  /* Light theme overrides */
+  .theme-light {
+    --color-bg: #FAF7F2;
+    --color-bg-elevated: #FFFDF9;
+    --color-surface: #FFFDF9;
+    --color-surface-raised: #F4EFE6;
+    --color-surface-sunken: #F0EAE0;
+    --color-border: #EBE3D7;
+    --color-border-subtle: #F0E9DD;
+    --color-text: #28221D;
+    --color-text-muted: #6B5D52;
+    --color-text-subtle: #8A7B6E;
+    --color-accent: #C85A32;
+    --color-accent-hover: #B04E2A;
+    --color-accent-soft: rgba(200, 90, 50, 0.10);
+    --color-success: #3B7A4C;
+    --color-success-soft: rgba(59, 122, 76, 0.10);
+    --color-warning: #A87A0B;
+    --color-warning-soft: rgba(168, 122, 11, 0.10);
+    --color-danger: #B23A3A;
+    --color-danger-soft: rgba(178, 58, 58, 0.10);
+    --color-info: #2D6C96;
+
+    --shadow-xs: 0 1px 2px rgba(40, 30, 20, 0.04);
+    --shadow-sm: 0 2px 8px rgba(40, 30, 20, 0.06);
+    --shadow-md: 0 8px 24px rgba(40, 30, 20, 0.08);
+    --shadow-lg: 0 16px 48px rgba(40, 30, 20, 0.10);
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 
   body {
@@ -11,24 +127,274 @@
     user-select: none;
     -webkit-user-select: none;
     overscroll-behavior-y: none;
-    background-color: #161413;
-    color: #F7F2EC;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    transition: background-color var(--duration-base) var(--ease-standard),
+      color var(--duration-base) var(--ease-standard);
   }
 
   input, textarea, select {
     user-select: auto;
     -webkit-user-select: auto;
   }
+
+  /* Focus ring */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Tailwind v4 theme bridge */
+@theme inline {
+  --color-kinetic-bg: var(--color-bg);
+  --color-kinetic-surface: var(--color-surface);
+  --color-kinetic-raised: var(--color-surface-raised);
+  --color-kinetic-border: var(--color-border);
+  --color-kinetic-text: var(--color-text);
+  --color-kinetic-muted: var(--color-text-muted);
+  --color-kinetic-subtle: var(--color-text-subtle);
+  --color-kinetic-accent: var(--color-accent);
+  --color-kinetic-accent-hover: var(--color-accent-hover);
+  --color-kinetic-success: var(--color-success);
+  --color-kinetic-warning: var(--color-warning);
+  --color-kinetic-danger: var(--color-danger);
 }
 
 /* ==========================================================
-   COZY DESIGN SYSTEM
-   Inspired by warm organic editorial palettes (dusty rose,
-   calm denim, butter yellow, sage, terracotta, espresso ink)
+   COMPONENT PRIMITIVES
    ========================================================== */
 
-/* Cozy Pastels - Light Mode */
+.k-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-xs);
+}
+
+.k-card-raised {
+  background-color: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+}
+
+.k-divider {
+  height: 1px;
+  background-color: var(--color-border);
+  border: none;
+}
+
+.k-section-title {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.k-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+.k-numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.notch-header-padding {
+  padding-top: calc(max(env(safe-area-inset-top, 0px), 16px) + 8px);
+}
+
+.nav-safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ==========================================================
+   THEME BRIDGE FOR EXISTING TAILWIND CLASSES
+   Maps legacy zinc/teal utilities to tokens per theme.
+   ========================================================== */
+
+/* Dark (default) */
+body {
+  background-color: var(--color-bg);
+}
+
+/* Light theme overrides for legacy classes */
+.theme-light {
+  background-color: var(--color-bg) !important;
+  color: var(--color-text) !important;
+}
+
+.theme-light header,
+.theme-light nav {
+  background-color: color-mix(in srgb, var(--color-surface) 92%, transparent) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: var(--shadow-xs);
+}
+
+/* Map zinc backgrounds */
+.theme-light .bg-zinc-950,
+.theme-light .bg-zinc-950\/70,
+.theme-light .bg-zinc-950\/60,
+.theme-light .bg-zinc-950\/85,
+.theme-light .bg-zinc-950\/80 {
+  background-color: var(--color-bg) !important;
+}
+
+.theme-light .bg-zinc-900,
+.theme-light .bg-zinc-900\/90,
+.theme-light .bg-zinc-900\/60,
+.theme-light .bg-zinc-900\/80 {
+  background-color: var(--color-surface) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: var(--shadow-xs);
+}
+
+.theme-light .bg-zinc-800,
+.theme-light .bg-zinc-800\/80,
+.theme-light .bg-zinc-800\/60,
+.theme-light .bg-zinc-800\/50 {
+  background-color: var(--color-surface-raised) !important;
+  border-color: var(--color-border) !important;
+}
+
+.theme-light .text-white,
+.theme-light .text-zinc-100 {
+  color: var(--color-text) !important;
+}
+
+.theme-light .text-zinc-200,
+.theme-light .text-zinc-300 {
+  color: var(--color-text-muted) !important;
+}
+
+.theme-light .text-zinc-400 {
+  color: var(--color-text-subtle) !important;
+}
+
+.theme-light .text-zinc-500 {
+  color: var(--color-text-subtle) !important;
+}
+
+.theme-light .border-zinc-800,
+.theme-light .border-zinc-800\/80,
+.theme-light .border-zinc-800\/60,
+.theme-light .border-zinc-700 {
+  border-color: var(--color-border) !important;
+}
+
+/* Accent remap (teal -> warm terracotta in light) */
+.theme-light .text-teal-400,
+.theme-light .text-teal-300 {
+  color: var(--color-accent) !important;
+}
+
+.theme-light .bg-teal-500\/20,
+.theme-light .bg-teal-500\/10,
+.theme-light .bg-teal-950\/40 {
+  background-color: var(--color-accent-soft) !important;
+  border-color: var(--color-accent) !important;
+}
+
+.theme-light .bg-teal-500 {
+  background-color: var(--color-accent) !important;
+}
+
+.theme-light .border-teal-500,
+.theme-light .border-teal-500\/60 {
+  border-color: var(--color-accent) !important;
+}
+
+/* Dark theme legacy class overrides */
+:not(.theme-light) {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+:not(.theme-light) .bg-zinc-950 {
+  background-color: var(--color-bg) !important;
+}
+
+:not(.theme-light) .bg-zinc-900 {
+  background-color: var(--color-surface) !important;
+  border-color: var(--color-border) !important;
+}
+
+:not(.theme-light) .bg-zinc-800 {
+  background-color: var(--color-surface-raised) !important;
+  border-color: var(--color-border) !important;
+}
+
+:not(.theme-light) .border-zinc-800 {
+  border-color: var(--color-border) !important;
+}
+
+:not(.theme-light) .text-teal-400 {
+  color: var(--color-accent) !important;
+}
+
+:not(.theme-light) .bg-teal-500 {
+  background-color: var(--color-accent) !important;
+}
+
+:not(.theme-light) .bg-teal-500\/20 {
+  background-color: var(--color-accent-soft) !important;
+}
+
+/* Cozy pastel cards remain, but borders use tokens where possible */
+/* Friendly smooth tap transitions */
+button, a {
+  transition: transform var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard),
+    opacity var(--duration-base) var(--ease-standard),
+    color var(--duration-base) var(--ease-standard);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--duration-slow) var(--ease-emphasized) forwards;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-accent);
+  color: #fff;
+}
+
+/* ==========================================================
+   COZY PASTEL UTILITIES (preserved from prior design pass)
+   ========================================================== */
+
 .cozy-pink {
   background-color: #FDE8E4 !important;
   border-color: #F4C7BE !important;
@@ -55,7 +421,6 @@
   color: #8E3E1E !important;
 }
 
-/* Cozy Pastels - Dark Mode */
 .theme-dark .cozy-pink,
 :not(.theme-light) .cozy-pink {
   background-color: #2E1E1C !important;
@@ -85,142 +450,4 @@
   background-color: #2F201A !important;
   border-color: #4F2E23 !important;
   color: #F6AA94 !important;
-}
-
-/* Light Theme Overrides (Warm Cozy Cream) */
-.theme-light {
-  background-color: #FAF7F2 !important;
-  color: #28221D !important;
-}
-
-.theme-light header,
-.theme-light nav {
-  background-color: rgba(255, 253, 249, 0.92) !important;
-  border-color: #EBE3D7 !important;
-  box-shadow: 0 1px 6px rgba(40, 30, 20, 0.03);
-}
-
-.theme-light .bg-zinc-950,
-.theme-light .bg-zinc-950\/70,
-.theme-light .bg-zinc-950\/60,
-.theme-light .bg-zinc-950\/85 {
-  background-color: #FAF7F2 !important;
-  border-color: #EBE3D7 !important;
-}
-
-.theme-light .bg-zinc-900,
-.theme-light .bg-zinc-900\/90,
-.theme-light .bg-zinc-900\/60 {
-  background-color: #FFFDF9 !important;
-  border-color: #EBE3D7 !important;
-  box-shadow: 0 2px 8px rgba(40, 30, 20, 0.04);
-}
-
-.theme-light .bg-zinc-800,
-.theme-light .bg-zinc-800\/80,
-.theme-light .bg-zinc-800\/60,
-.theme-light .bg-zinc-800\/50 {
-  background-color: #F4EFE6 !important;
-  border-color: #EBE3D7 !important;
-}
-
-.theme-light .text-white,
-.theme-light .text-zinc-100 {
-  color: #28221D !important;
-}
-
-.theme-light .text-zinc-200,
-.theme-light .text-zinc-300 {
-  color: #473D35 !important;
-}
-
-.theme-light .text-zinc-400 {
-  color: #8A7B6E !important;
-}
-
-.theme-light .text-zinc-500 {
-  color: #A89B8F !important;
-}
-
-.theme-light .border-zinc-800,
-.theme-light .border-zinc-800\/80,
-.theme-light .border-zinc-800\/60,
-.theme-light .border-zinc-700 {
-  border-color: #EBE3D7 !important;
-}
-
-/* Warm terracotta accents in place of cold cyan */
-.theme-light .text-teal-400,
-.theme-light .text-teal-300 {
-  color: #C85A32 !important;
-}
-
-.theme-light .bg-teal-500\/20,
-.theme-light .bg-teal-500\/10,
-.theme-light .bg-teal-950\/40 {
-  background-color: #FCE8E4 !important;
-  border-color: #F4C7BE !important;
-}
-
-.theme-light .bg-teal-500 {
-  background-color: #E07A5F !important;
-}
-
-/* Dark Mode Cozy Warm Tones */
-:not(.theme-light) {
-  background-color: #161413;
-  color: #F7F2EC;
-}
-
-:not(.theme-light) .bg-zinc-950 {
-  background-color: #161413 !important;
-}
-
-:not(.theme-light) .bg-zinc-900 {
-  background-color: #211D1A !important;
-  border-color: #342D27 !important;
-}
-
-:not(.theme-light) .bg-zinc-800 {
-  background-color: #2C2622 !important;
-  border-color: #3C332C !important;
-}
-
-:not(.theme-light) .border-zinc-800 {
-  border-color: #342D27 !important;
-}
-
-:not(.theme-light) .text-teal-400 {
-  color: #E07A5F !important;
-}
-
-:not(.theme-light) .bg-teal-500 {
-  background-color: #E07A5F !important;
-}
-
-:not(.theme-light) .bg-teal-500\/20 {
-  background-color: rgba(224, 122, 95, 0.18) !important;
-}
-
-/* Hide scrollbar for clean native app look */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* Friendly smooth tap transitions */
-button, a {
-  transition: transform 0.1s ease, background-color 0.15s ease, opacity 0.15s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

@@ -422,3 +422,53 @@ export function formatWeight(valKg: number, unit: UnitSystem): string {
   return `${valKg.toFixed(1)} kg`;
 }
 
+/**
+ * Local date string formatter: returns YYYY-MM-DD in the user's local timezone.
+ * Eliminates UTC boundary shifting bugs where evening logs get stamped as tomorrow.
+ */
+export function getLocalDateString(d: Date = new Date()): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Format a YYYY-MM-DD date string into a clean human label (e.g., "Today", "Yesterday", "Thu, Oct 29")
+ */
+export function formatDisplayDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const today = getLocalDateString();
+  const yesterday = getLocalDateString(new Date(Date.now() - 86400000));
+
+  if (dateStr === today) return 'Today';
+  if (dateStr === yesterday) return 'Yesterday';
+
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const d = new Date(year, month - 1, day);
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+/**
+ * Returns an array of local date strings for the past N days (for up to 30 days history)
+ */
+export function getRecentDateStrings(days = 30): string[] {
+  const result: string[] = [];
+  const now = new Date();
+  for (let i = 0; i < days; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    result.push(getLocalDateString(d));
+  }
+  return result;
+}
+
+
+/**
+ * Determine the user's preferred color scheme from the OS/media query.
+ */
+export function getPreferredTheme(): 'dark' | 'light' {
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+  return 'dark';
+}

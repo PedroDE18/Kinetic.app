@@ -13,45 +13,82 @@ function parseXmlDocument(xmlContent: string) {
     return new DOMParser().parseFromString(xmlContent, 'application/xml');
   }
   // Lightweight fallback for Node test environments
+  function parseSelector(selector: string) {
+    const m = selector.match(/^([A-Za-z0-9_:-]+)(.*)$/);
+    const tag = m ? m[1] : selector;
+    const rest = m ? m[2] : '';
+    const attrs: { name: string; value: string }[] = [];
+    const attrRegex = /\[([^=\]]+)(?:=["']([^"']*)["'])?\]/g;
+    let am;
+    while ((am = attrRegex.exec(rest)) !== null) {
+      attrs.push({ name: am[1], value: am[2] ?? '' });
+    }
+    return { tag, attrs };
+  }
+
+  function attrOf(block: string, name: string): string | null {
+    const m = new RegExp(`${name}=["']([^"']*)["']`, 'i').exec(block);
+    return m ? m[1] : null;
+  }
+
+  function makeNode(fullBlock: string, attrBlock: string) {
+    return {
+      getAttribute(attrName: string) {
+        const m = new RegExp(`${attrName}=["']([^"']*)["']`, 'i').exec(attrBlock);
+        return m ? m[1] : null;
+      },
+      querySelector(subTag: string) {
+        // Support simple descendant selectors like "AverageHeartRateBpm > Value" or "A B"
+        const parts = subTag.split(/[\s>]+/).filter(Boolean);
+        let current: string = fullBlock;
+        for (const part of parts) {
+          const m = new RegExp(`<${part}\\b[^>]*>([\\s\\S]*?)</${part}>`, 'i').exec(current);
+          if (!m) return null;
+          current = m[1];
+        }
+        return { textContent: current.trim() };
+      },
+      querySelectorAll(subTag: string) {
+        const { tag: subTagName, attrs: subAttrs } = parseSelector(subTag);
+        const subRegex = new RegExp(`<${subTagName}\\b([^>]*?)(?:/>|>([\\s\\S]*?)</${subTagName}>)`, 'gi');
+        const subMatches: any[] = [];
+        let sm;
+        while ((sm = subRegex.exec(fullBlock)) !== null) {
+          const smAttrBlock = sm[1] || '';
+          const smFull = sm[0];
+          // attribute filter
+          let ok = true;
+          for (const a of subAttrs) {
+            const val = attrOf(smAttrBlock, a.name);
+            if (a.value && val !== a.value) { ok = false; break; }
+            if (!a.value && val === null) { ok = false; break; }
+          }
+          if (!ok) continue;
+          subMatches.push(makeNode(smFull, smAttrBlock));
+        }
+        return subMatches;
+      },
+      textContent: fullBlock.replace(/<[^>]+>/g, '').trim(),
+    };
+  }
+
   return {
-    querySelectorAll(tag: string) {
-      // Find full tag including closing if present, or self-closing
-      const regex = new RegExp(`<${tag}\\b([\\s\\S]*?)(?:/>|>(?:[\\s\\S]*?)</${tag}>)`, 'gi');
+    querySelectorAll(selector: string) {
+      const { tag, attrs } = parseSelector(selector);
+      const regex = new RegExp(`<${tag}\\b([^>]*?)(?:/>|>([\\s\\S]*?)</${tag}>)`, 'gi');
       const matches: any[] = [];
       let m;
       while ((m = regex.exec(xmlContent)) !== null) {
+        const attrBlock = m[1] || '';
         const fullBlock = m[0];
-        const attrBlock = m[1];
-        matches.push({
-          getAttribute(attrName: string) {
-            const attrMatch = new RegExp(`${attrName}=["']([^"']*)["']`, 'i').exec(attrBlock);
-            return attrMatch ? attrMatch[1] : null;
-          },
-          querySelector(subTag: string) {
-            const subMatch = new RegExp(`<${subTag}\\b[^>]*>([\\s\\S]*?)</${subTag}>`, 'i').exec(fullBlock);
-            return subMatch ? { textContent: subMatch[1].trim() } : null;
-          },
-          querySelectorAll(subTag: string) {
-            const subRegex = new RegExp(`<${subTag}\\b([\\s\\S]*?)(?:/>|>(?:[\\s\\S]*?)</${subTag}>)`, 'gi');
-            const subMatches: any[] = [];
-            let sm;
-            while ((sm = subRegex.exec(fullBlock)) !== null) {
-              const smBlock = sm[0];
-              const smAttrs = sm[1];
-              subMatches.push({
-                getAttribute(an: string) {
-                  const am = new RegExp(`${an}=["']([^"']*)["']`, 'i').exec(smAttrs);
-                  return am ? am[1] : null;
-                },
-                querySelector(st: string) {
-                  const m = new RegExp(`<${st}\\b[^>]*>([\\s\\S]*?)</${st}>`, 'i').exec(smBlock);
-                  return m ? { textContent: m[1].trim() } : null;
-                },
-              });
-            }
-            return subMatches;
-          },
-        });
+        let ok = true;
+        for (const a of attrs) {
+          const val = attrOf(attrBlock, a.name);
+          if (a.value && val !== a.value) { ok = false; break; }
+          if (!a.value && val === null) { ok = false; break; }
+        }
+        if (!ok) continue;
+        matches.push(makeNode(fullBlock, attrBlock));
       }
       return matches;
     },
@@ -69,7 +106,7 @@ export function parseAppleHealthXml(xmlContent: string): HealthImportResult {
 
   // Parse Workouts
   const workoutNodes = doc.querySelectorAll('Workout');
-  workoutNodes.forEach((node, idx) => {
+  workoutNodes.forEach((node: Element, idx: number) => {
     const rawType = node.getAttribute('workoutActivityType') || '';
     const duration = parseFloat(node.getAttribute('duration') || '0');
     const durationUnit = node.getAttribute('durationUnit') || 'sec';
@@ -142,7 +179,7 @@ export function parseAppleHealthXml(xmlContent: string): HealthImportResult {
 
   // Parse BodyMass Records (Weights)
   const weightNodes = doc.querySelectorAll('Record[type="HKQuantityTypeIdentifierBodyMass"]');
-  weightNodes.forEach((node) => {
+  weightNodes.forEach((node: Element) => {
     const rawVal = parseFloat(node.getAttribute('value') || '0');
     const unit = node.getAttribute('unit') || 'kg';
     const dateStr = (node.getAttribute('startDate') || node.getAttribute('creationDate') || '').slice(0, 10);
@@ -170,12 +207,11 @@ export function parseAppleHealthXml(xmlContent: string): HealthImportResult {
  * Parses Garmin TCX (Training Center XML)
  */
 export function parseGarminTcx(tcxContent: string): HealthImportResult {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(tcxContent, 'application/xml');
+  const doc = parseXmlDocument(tcxContent);
   const cardio: CardioSession[] = [];
 
   const activityNodes = doc.querySelectorAll('Activity');
-  activityNodes.forEach((act, idx) => {
+  activityNodes.forEach((act: any, idx: number) => {
     const sport = (act.getAttribute('Sport') || 'running').toLowerCase();
     const idNode = act.querySelector('Id');
     const rawDate = idNode?.textContent || new Date().toISOString();
@@ -187,7 +223,7 @@ export function parseGarminTcx(tcxContent: string): HealthImportResult {
     let hrCount = 0;
 
     const lapNodes = act.querySelectorAll('Lap');
-    lapNodes.forEach((lap) => {
+    lapNodes.forEach((lap: any) => {
       totalSec += parseFloat(lap.querySelector('TotalTimeSeconds')?.textContent || '0');
       totalMeters += parseFloat(lap.querySelector('DistanceMeters')?.textContent || '0');
       calories += parseFloat(lap.querySelector('Calories')?.textContent || '0');
@@ -255,12 +291,11 @@ export function parseGarminTcx(tcxContent: string): HealthImportResult {
  * Parses Garmin GPX Tracks
  */
 export function parseGarminGpx(gpxContent: string): HealthImportResult {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(gpxContent, 'application/xml');
+  const doc = parseXmlDocument(gpxContent);
   const cardio: CardioSession[] = [];
 
   const trkNodes = doc.querySelectorAll('trk');
-  trkNodes.forEach((trk, idx) => {
+  trkNodes.forEach((trk: any, idx: number) => {
     const name = trk.querySelector('name')?.textContent || 'Garmin GPX Activity';
     const trkpts = trk.querySelectorAll('trkpt');
 
@@ -272,7 +307,7 @@ export function parseGarminGpx(gpxContent: string): HealthImportResult {
     let totalElevation = 0;
     let prevEle: number | null = null;
 
-    trkpts.forEach((pt) => {
+    trkpts.forEach((pt: any) => {
       const lat = parseFloat(pt.getAttribute('lat') || '0');
       const lon = parseFloat(pt.getAttribute('lon') || '0');
       const timeStr = pt.querySelector('time')?.textContent;
