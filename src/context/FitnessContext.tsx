@@ -23,6 +23,7 @@ import {
   buildInitialWeeklyReview,
 } from '../utils/mockData';
 import { calculateWorkoutVolume, calculate1RM, getLocalDateString, getPreferredTheme } from '../utils/engine';
+import { sanitizeLoadedActiveWorkout } from '../utils/workoutSession';
 
 const STORAGE_KEY = 'kinetic_fitness_app_v3';
 
@@ -93,6 +94,9 @@ function loadInitialFitnessState(): FitnessState {
           hydrationLogs: hydration,
           waterMlToday: hydration[todayStr] ?? (parsed.waterMlToday || 0),
           weeklySchedule: parsed.weeklySchedule || defaultWeeklySchedule,
+          // Phantom sessions (corrupt writes, expired rest timers) are pruned
+          // at load so a reload can never resurrect a broken workout.
+          activeWorkout: sanitizeLoadedActiveWorkout(parsed.activeWorkout).session,
         };
       }
     }
@@ -566,7 +570,7 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
         templates: Array.isArray(parsed.templates) && parsed.templates.length ? parsed.templates : mockTemplates,
         completedWorkouts: Array.isArray(parsed.completedWorkouts) ? parsed.completedWorkouts : [],
         cardioSessions: Array.isArray(parsed.cardioSessions) ? parsed.cardioSessions : [],
-        activeWorkout: parsed.activeWorkout ?? null,
+        activeWorkout: sanitizeLoadedActiveWorkout(parsed.activeWorkout).session,
         reviews: Array.isArray(parsed.reviews) ? parsed.reviews : [],
         waterMlToday: typeof parsed.waterMlToday === 'number' ? parsed.waterMlToday : 0,
         hydrationLogs: parsed.hydrationLogs && typeof parsed.hydrationLogs === 'object' ? parsed.hydrationLogs : { [todayStr]: parsed.waterMlToday || 0 },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Play,
   Check,
@@ -22,6 +22,16 @@ import {
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { ActiveWorkoutSession, CompletedWorkout, WorkoutTemplate, ExerciseSet } from '../../types';
+import {
+  computeRestRemainingSeconds,
+  extendRestTimer,
+  readRestClock,
+  startRestTimer,
+  activeRestFields,
+  clearedRestFields,
+  DurableActiveWorkoutSession,
+  RestTimerClock,
+} from '../../utils/workoutSession';
 import { WorkoutSummaryModal } from './WorkoutSummaryModal';
 import { ProgramBuilderModal } from './ProgramBuilderModal';
 import { CardioLoggerModal } from './CardioLoggerModal';
@@ -54,9 +64,18 @@ export function TrainView() {
   // Live Elapsed Workout Timer
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  // Live Rest Timer
-  const [restSeconds, setRestSeconds] = useState(90);
+  // Live Rest Timer — the countdown always derives from a persisted timestamp
+  // pair (started-at + total duration) instead of accumulating ticks, so a
+  // reload or a throttled background tab converges on the correct remaining
+  // time and never restarts from a stale count.
   const [isResting, setIsResting] = useState(false);
+  const [restClock, setRestClock] = useState<RestTimerClock | null>(null);
+  const [restRemaining, setRestRemaining] = useState(0);
+
+  // Anchor refs for exercise cards (position restore + keyboard navigation).
+  const exerciseCardRefs = useRef<Record<number, HTMLElement | null>>({});
+  // Session identity already handled for timer/position restore.
+  const restoredSessionRef = useRef<string | null>(null);
 
   // Summary modal state after workout finishes
   const [completedSummary, setCompletedSummary] = useState<CompletedWorkout | null>(null);
@@ -82,18 +101,75 @@ export function TrainView() {
     return () => clearInterval(interval);
   }, [activeWorkout]);
 
-  // Rest Timer Countdown Effect
+  // Rest Timer Countdown Effect — remaining seconds are recomputed from the
+  // persisted timestamp pair on every short tick; background tabs catch up on
+  // visibilitychange instead of trusting intervals.
   useEffect(() => {
-    let restInterval: any = null;
-    if (isResting && restSeconds > 0) {
-      restInterval = setInterval(() => {
-        setRestSeconds((prev) => prev - 1);
-      }, 1000);
-    } else if (restSeconds <= 0 && isResting) {
-      setIsResting(false);
+    if (!isResting || !restClock) return;
+
+    const tick = () => {
+      const remaining = computeRestRemainingSeconds(restClock);
+      setRestRemaining(remaining);
+      if (remaining <= 0) {
+        setIsResting(false);
+        setRestClock(null);
+        // Gentle completion cue; silently a no-op where unsupported.
+        try {
+          navigator.vibrate?.(60);
+        } catch {
+          // vibration is best-effort
+        }
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 500);
+    const onVisibilityChange = () => tick();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [isResting, restClock]);
+
+  // Restore timers + exercise position once per session identity. Rechecks on
+  // remount (tab switching back) and on a new restored session id — but never
+  // on ordinary set edits, which only change the session's contents.
+  useEffect(() => {
+    if (!activeWorkout) return;
+    if (restoredSessionRef.current === activeWorkout.startTime) return;
+    restoredSessionRef.current = activeWorkout.startTime;
+
+    const clock = readRestClock(activeWorkout);
+    if (clock) {
+      const remaining = computeRestRemainingSeconds(clock);
+      if (remaining > 0) {
+        setRestClock(clock);
+        setRestRemaining(remaining);
+        setIsResting(true);
+      } else {
+        // The rest timer expired while the app was closed: strip the stale
+        // fields from persistence instead of resurrecting a dead banner.
+        clearPersistedRest(activeWorkout);
+      }
+    } else if (activeWorkout.isTimerRunning) {
+      clearPersistedRest(activeWorkout);
     }
-    return () => clearInterval(restInterval);
-  }, [isResting, restSeconds]);
+
+    // Position restore: scroll to the last exercise the user was working on.
+    const savedIdx = activeWorkout.activeExerciseIndex;
+    if (
+      typeof savedIdx === 'number' &&
+      savedIdx >= 0 &&
+      savedIdx < activeWorkout.exercises.length &&
+      exerciseCardRefs.current[savedIdx]
+    ) {
+      const node = exerciseCardRefs.current[savedIdx];
+      requestAnimationFrame(() => {
+        node?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, [activeWorkout?.startTime]);
 
   const formatTimer = (totalSecs: number) => {
     const mins = Math.floor(totalSecs / 60);
@@ -101,11 +177,48 @@ export function TrainView() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  /** Rewrite the session without the durable rest-timer extension fields. */
+  const clearPersistedRest = (session: ActiveWorkoutSession) => {
+    const plain: ActiveWorkoutSession = {
+      templateId: session.templateId,
+      name: session.name,
+      startTime: session.startTime,
+      exercises: session.exercises,
+      isTimerRunning: false,
+      restTimerSecondsRemaining: 0,
+      activeExerciseIndex: session.activeExerciseIndex,
+    };
+    updateActiveWorkout(plain);
+  };
+
+  /** Merge session updates into the durably-restorable shape and persist. */
+  const persistSession = (base: ActiveWorkoutSession, patch: Partial<DurableActiveWorkoutSession>) => {
+    const durable: DurableActiveWorkoutSession = { ...base, ...patch };
+    updateActiveWorkout(durable);
+  };
+
+  /** Reset the local rest tracking (used on finish/discard so the next
+   * session can't inherit the phantom banner). */
+  const stopRestTrackingLocally = () => {
+    setIsResting(false);
+    setRestClock(null);
+    setRestRemaining(0);
+  };
+
+  const scrollExerciseCard = (idx: number) => {
+    const node = exerciseCardRefs.current[idx];
+    if (!node) return;
+    node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const heading = node.querySelector<HTMLElement>('h4');
+    heading?.focus({ preventScroll: true });
+  };
+
   // Toggle set completion and trigger rest timer
   const handleToggleSet = (exIndex: number, setIndex: number) => {
     if (!activeWorkout) return;
     const updated: ActiveWorkoutSession = {
       ...activeWorkout,
+      activeExerciseIndex: exIndex,
       exercises: activeWorkout.exercises.map((ex, eIdx) => {
         if (eIdx !== exIndex) return ex;
         return {
@@ -124,8 +237,14 @@ export function TrainView() {
 
     if (targetSet.isCompleted) {
       const exDef = exercises.find((x) => x.id === updated.exercises[exIndex].exerciseId);
-      setRestSeconds(exDef?.defaultRestSeconds || 90);
-      setIsResting(true);
+      const clock = startRestTimer(exDef?.defaultRestSeconds || 90);
+      if (clock) {
+        setRestClock(clock);
+        setRestRemaining(clock.durationSeconds);
+        setIsResting(true);
+        // Persist the timestamp pair so reloads restore the countdown.
+        persistSession(updated, { ...activeRestFields(clock), ...clock });
+      }
     }
   };
 
@@ -138,6 +257,7 @@ export function TrainView() {
     if (!activeWorkout) return;
     const updated: ActiveWorkoutSession = {
       ...activeWorkout,
+      activeExerciseIndex: exIndex,
       exercises: activeWorkout.exercises.map((ex, eIdx) => {
         if (eIdx !== exIndex) return ex;
         return {
@@ -176,6 +296,9 @@ export function TrainView() {
   };
 
   const handleFinishWorkout = () => {
+    // Reset timer state so the completed workout can't leave a phantom banner
+    // behind for the next session; the session itself is cleared by the store.
+    stopRestTrackingLocally();
     const completed = finishActiveWorkout();
     if (completed) {
       setCompletedSummary(completed);
@@ -259,21 +382,40 @@ export function TrainView() {
                     <div className="text-[10px] font-bold text-[var(--color-accent)] uppercase tracking-wider">
                       Resting
                     </div>
-                    <div className="text-sm font-semibold font-mono text-[var(--color-text)] tabular-nums">
-                      {formatTimer(restSeconds)}
+                    <div
+                      className="text-sm font-semibold font-mono text-[var(--color-text)] tabular-nums"
+                      role="timer"
+                      aria-label={`Rest remaining ${formatTimer(restRemaining)}`}
+                    >
+                      {formatTimer(restRemaining)}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => setRestSeconds((s) => s + 30)}
+                    onClick={() => {
+                      if (!restClock) return;
+                      const extended = extendRestTimer(restClock, 30);
+                      if (!extended) return;
+                      setRestClock(extended);
+                      setRestRemaining(computeRestRemainingSeconds(extended));
+                      if (activeWorkout) {
+                        persistSession(activeWorkout, { ...activeRestFields(extended), ...extended });
+                      }
+                    }}
                     className="min-h-[36px] px-2.5 py-1 bg-[var(--color-surface)] text-xs font-semibold text-[var(--color-text-muted)] rounded-lg active:scale-95 transition-transform"
                   >
                     +30s
                   </button>
                   <button
-                    onClick={() => setIsResting(false)}
+                    onClick={() => {
+                      setIsResting(false);
+                      setRestClock(null);
+                      // Event handler with a fresh closure: safe to clear the
+                      // persisted fields with the current session.
+                      if (activeWorkout) persistSession(activeWorkout, clearedRestFields());
+                    }}
                     className="min-h-[36px] px-2.5 py-1 bg-[var(--color-accent-soft)] hover:bg-[var(--color-accent-soft)] text-xs font-semibold text-[var(--color-accent)] rounded-lg active:scale-95 transition-transform"
                   >
                     Skip
@@ -290,11 +432,19 @@ export function TrainView() {
               return (
                 <section
                   key={exercise.exerciseId}
-                  className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl p-4 shadow-sm space-y-2.5"
+                  ref={(el) => {
+                    exerciseCardRefs.current[exIdx] = el;
+                  }}
+                  className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl p-4 shadow-sm space-y-2.5 scroll-mt-36"
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="text-sm font-semibold text-[var(--color-text)]">{exercise.exerciseName}</h4>
+                      <h4
+                        tabIndex={-1}
+                        className="text-sm font-semibold text-[var(--color-text)] focus:outline-none"
+                      >
+                        {exercise.exerciseName}
+                      </h4>
                       <span className="text-[11px] text-[var(--color-text-muted)]">
                         {def?.muscleGroup} • {def?.equipment}
                       </span>
@@ -317,6 +467,22 @@ export function TrainView() {
                           PR: {def.personalRecord.weightKg}kg × {def.personalRecord.reps}
                         </span>
                       </div>
+                    )}
+
+                    {/* Keyboard navigation: jump to the next exercise card. */}
+                    {(
+                      activeWorkout.exercises[exIdx + 1]
+                    ) && (
+                      <button
+                        type="button"
+                        onClick={() => scrollExerciseCard(exIdx + 1)}
+                        aria-label={`Jump to next exercise: ${
+                          activeWorkout.exercises[exIdx + 1].exerciseName
+                        }`}
+                        className="min-h-[36px] px-2.5 py-1 bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] rounded-full text-[10px] font-semibold shrink-0 active:scale-95 transition-all"
+                      >
+                        Next ↓
+                      </button>
                     )}
                   </div>
 
@@ -374,6 +540,7 @@ export function TrainView() {
                             type="number"
                             step="0.5"
                             value={set.actualWeightKg}
+                            aria-label={`Weight for set ${set.setNumber} of ${exercise.exerciseName}, kilograms`}
                             onChange={(e) =>
                               handleUpdateSetValue(
                                 exIdx,
@@ -391,6 +558,7 @@ export function TrainView() {
                           <input
                             type="number"
                             value={set.actualReps}
+                            aria-label={`Reps for set ${set.setNumber} of ${exercise.exerciseName}`}
                             onChange={(e) =>
                               handleUpdateSetValue(
                                 exIdx,
@@ -856,6 +1024,7 @@ export function TrainView() {
               </button>
               <button
                 onClick={() => {
+                  stopRestTrackingLocally();
                   cancelActiveWorkout();
                   setShowDiscardConfirm(false);
                 }}
