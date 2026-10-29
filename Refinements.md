@@ -7,7 +7,7 @@ Ideas that a later Google AI Studio / Antigravity pass could take on, in priorit
 1. **Adaptive nutrition engine polish**
    - Improve crash-hit handling in food logging (serving count / favorites flow).
    - Add programmatic tests for adaptive TDEE boundary conditions (very low/high intake).
-   - Show a small inline "estimated" badge on the TDEE card so users know it's a model output, not measured.
+   - Show a small inline "estimated" badge on the TDEE card so users know it's a model output, not measured. ✅ Done (2026-10-29) — card reads "Estimate · N% confidence".
 
 2. **Program editor UX**
    - Move ProgramBuilderModal to the same editorial layout (k-card, k-section-title, token surfaces).
@@ -19,12 +19,12 @@ Ideas that a later Google AI Studio / Antigravity pass could take on, in priorit
    - Ensure axis labels are localized, have accessible `role="img"` + `aria-label`, and read correctly at 200% text zoom.
 
 4. **Active workout experience**
-   - Keep a per-exercise progress indicator (e.g. "3/4 sets done").
+   - Keep a per-exercise progress indicator (e.g. "3/4 sets done"). ✅ Done (2026-10-29) — n/m sets chip on each exercise header in the active workout.
    - Persist active workout elapsed time across page reloads using the existing Firebase sync (already partly saved).
    - Add keyboard-accessible skip-to-next-exercise in the long set list.
 
 5. **Hydration**
-   - Show a small 5-day hydration bar on the Today view so weekly progress is visible without leaving the tab.
+   - Show a small 5-day hydration bar on the Today view so weekly progress is visible without leaving the tab. ✅ Done (2026-10-29).
    - Add warnings when a huge amount is logged in one tap (e.g. >1500 ml) to avoid fat-finger errors.
 
 ## Medium
