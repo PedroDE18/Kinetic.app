@@ -483,41 +483,52 @@ export const mockExercises: ExerciseDefinition[] = [
 
 export const mockTemplates: WorkoutTemplate[] = [
   {
-    id: 'tmpl-upper',
-    name: 'Upper Hypertrophy A',
-    targetSplit: 'Upper / Lower',
-    description: 'Heavy horizontal press, row, vertical accessory and arm superset.',
+    id: 'tmpl-push',
+    name: 'Push (Chest, Delts & Triceps)',
+    targetSplit: 'Push / Pull / Legs',
+    description: 'Horizontal and vertical pressing volume with tricep isolation.',
     exercises: [
       { exerciseId: 'ex-1', defaultSets: 3, defaultReps: 8 },
-      { exerciseId: 'ex-7', defaultSets: 3, defaultReps: 10 },
       { exerciseId: 'ex-2', defaultSets: 3, defaultReps: 10 },
+      { exerciseId: 'ex-5', defaultSets: 3, defaultReps: 6 },
       { exerciseId: 'ex-8', defaultSets: 3, defaultReps: 15 },
       { exerciseId: 'ex-9', defaultSets: 3, defaultReps: 12 },
     ],
   },
   {
-    id: 'tmpl-lower',
-    name: 'Lower Strength B',
-    targetSplit: 'Upper / Lower',
-    description: 'Quad strength, posterior chain hinge, and calf volume.',
+    id: 'tmpl-pull',
+    name: 'Pull (Back, Rear Delts & Biceps)',
+    targetSplit: 'Push / Pull / Legs',
+    description: 'Vertical and horizontal pulling with heavy lat and bicep emphasis.',
+    exercises: [
+      { exerciseId: 'ex-6', defaultSets: 3, defaultReps: 6 },
+      { exerciseId: 'ex-7', defaultSets: 3, defaultReps: 10 },
+      { exerciseId: 'ex-8', defaultSets: 3, defaultReps: 15 },
+      { exerciseId: 'ex-10', defaultSets: 3, defaultReps: 10 },
+    ],
+  },
+  {
+    id: 'tmpl-legs',
+    name: 'Legs & Core (Quads, Posterior Chain & Abs)',
+    targetSplit: 'Push / Pull / Legs',
+    description: 'Quad strength, posterior chain hinge, and abdominal control.',
     exercises: [
       { exerciseId: 'ex-3', defaultSets: 3, defaultReps: 6 },
       { exerciseId: 'ex-4', defaultSets: 3, defaultReps: 8 },
       { exerciseId: 'ex-11', defaultSets: 3, defaultReps: 10 },
+      { exerciseId: 'ex-12', defaultSets: 3, defaultReps: 15 },
     ],
   },
-  {
-    id: 'tmpl-push',
-    name: 'Push & Shoulders C',
-    targetSplit: 'Push / Pull / Legs',
-    description: 'Shoulder press focus with chest accessory volume.',
-    exercises: [
-      { exerciseId: 'ex-5', defaultSets: 3, defaultReps: 6 },
-      { exerciseId: 'ex-2', defaultSets: 3, defaultReps: 10 },
-      { exerciseId: 'ex-8', defaultSets: 3, defaultReps: 15 },
-      { exerciseId: 'ex-9', defaultSets: 3, defaultReps: 12 },
-    ],
-  },
+];
+
+export const defaultWeeklySchedule = [
+  { dayIndex: 0, dayName: 'Sunday', type: 'active_recovery' as const, focusName: 'Active Recovery: Walk & Mobility' },
+  { dayIndex: 1, dayName: 'Monday', type: 'training' as const, templateId: 'tmpl-push', focusName: 'Push: Chest, Shoulders & Triceps' },
+  { dayIndex: 2, dayName: 'Tuesday', type: 'active_recovery' as const, focusName: 'Active Recovery: Zone 2 Cardio & Stretch' },
+  { dayIndex: 3, dayName: 'Wednesday', type: 'training' as const, templateId: 'tmpl-pull', focusName: 'Pull: Back, Rear Delts & Biceps' },
+  { dayIndex: 4, dayName: 'Thursday', type: 'active_recovery' as const, focusName: 'Active Recovery: 8,000 Steps & Mobility' },
+  { dayIndex: 5, dayName: 'Friday', type: 'training' as const, templateId: 'tmpl-legs', focusName: 'Legs: Quads, Hamstrings & Core' },
+  { dayIndex: 6, dayName: 'Saturday', type: 'active_recovery' as const, focusName: 'Active Recovery: Outdoor Light Ride or Walk' },
 ];
 
 export const initialCardioSessions: CardioSession[] = [

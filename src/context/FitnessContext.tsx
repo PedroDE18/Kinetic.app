@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   UserProfile,
   WeightRecord,
@@ -23,8 +23,6 @@ import {
   buildInitialWeeklyReview,
 } from '../utils/mockData';
 import { calculateWorkoutVolume, calculate1RM, getLocalDateString, getPreferredTheme } from '../utils/engine';
-import { useAuth } from './AuthContext';
-import { saveUserFitnessState, loadUserFitnessState } from '../services/firebase';
 
 const STORAGE_KEY = 'kinetic_fitness_app_v3';
 
@@ -46,8 +44,6 @@ export interface FitnessState {
 
 export interface FitnessContextType {
   state: FitnessState;
-  syncStatus: 'idle' | 'syncing' | 'saved' | 'error';
-  forceSyncCloud: () => Promise<boolean>;
   updateProfile: (updater: Partial<UserProfile> | ((prev: UserProfile) => UserProfile)) => void;
   addWeightRecord: (record: WeightRecord) => void;
   addLoggedFood: (food: LoggedFood) => void;
@@ -133,151 +129,36 @@ function loadInitialFitnessState(): FitnessState {
 }
 
 export function FitnessProvider({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useAuth();
   const [state, setState] = useState<FitnessState>(loadInitialFitnessState);
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'saved' | 'error'>('idle');
-  const isInitialLoadRef = useRef(true);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // When currentUser changes (sign in, sign out, switch account)
+  // Keep waterMlToday in sync when the calendar day rolls over while the app is open
   useEffect(() => {
-    let isCancelled = false;
-
-    async function handleUserAuthChange() {
-      if (!currentUser) {
-        // Fallback to local default state if not signed in
-        setState(loadInitialFitnessState());
-        return;
-      }
-
-      const uid = currentUser.uid;
-      const userStorageKey = `${STORAGE_KEY}_${uid}`;
-      isInitialLoadRef.current = true;
-
-      // 1. Immediately hydrate from user's local cache if available
-      const localCache = localStorage.getItem(userStorageKey);
-      if (localCache) {
-        try {
-          const parsed = JSON.parse(localCache);
-          if (parsed && parsed.profile && parsed.weights) {
-            setState(parsed);
-          }
-        } catch (e) {
-          console.warn('Failed parsing user local cache', e);
+    const syncDay = () => {
+      const today = getLocalDateString();
+      setState((prev) => {
+        const logs = prev.hydrationLogs || {};
+        if (logs[today] === undefined) {
+          // new day: start at 0
+          return { ...prev, hydrationLogs: { ...logs, [today]: 0 }, waterMlToday: 0 };
         }
-      }
-
-      // 2. Fetch fresh user data from Cloud Firestore
-      setSyncStatus('syncing');
-      try {
-        const remoteState = await loadUserFitnessState(uid);
-        if (isCancelled) return;
-
-        if (remoteState && remoteState.profile) {
-          setState(remoteState);
-          try {
-            localStorage.setItem(userStorageKey, JSON.stringify(remoteState));
-          } catch {}
-          setSyncStatus('saved');
-        } else {
-          // First time user: initialize with starting data customized with their account name
-          const initialCustomState: FitnessState = {
-            ...loadInitialFitnessState(),
-            profile: {
-              ...initialProfile,
-              theme: getPreferredTheme(),
-              name: currentUser.displayName || currentUser.email?.split('@')[0] || initialProfile.name,
-            },
-          };
-          setState(initialCustomState);
-          try {
-            localStorage.setItem(userStorageKey, JSON.stringify(initialCustomState));
-            await saveUserFitnessState(uid, initialCustomState);
-            setSyncStatus('saved');
-          } catch (initErr) {
-            console.error('Failed to initialize user state in Firestore:', initErr);
-          }
+        if (prev.waterMlToday !== logs[today]) {
+          return { ...prev, waterMlToday: logs[today] };
         }
-      } catch (err) {
-        console.error('Error fetching user fitness state from Firestore:', err);
-        setSyncStatus('error');
-      } finally {
-        setTimeout(() => {
-          if (!isCancelled) {
-            isInitialLoadRef.current = false;
-            setSyncStatus('idle');
-          }
-        }, 1200);
-      }
-    }
-
-    handleUserAuthChange();
-
-    return () => {
-      isCancelled = true;
+        return prev;
+      });
     };
-  }, [currentUser]);
+    const id = setInterval(syncDay, 60000);
+    return () => clearInterval(id);
+  }, []);
 
-  // Sync state changes to local storage & debounced Cloud Firestore
+  // Persist state changes to localStorage
   useEffect(() => {
-    if (!currentUser) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      } catch {}
-      return;
-    }
-
-    const uid = currentUser.uid;
-    const userStorageKey = `${STORAGE_KEY}_${uid}`;
-
-    // Always keep local storage updated
     try {
-      localStorage.setItem(userStorageKey, JSON.stringify(state));
-    } catch (err) {
-      console.warn('Failed caching to localStorage:', err);
-    }
-
-    // Skip cloud save if currently performing initial load
-    if (isInitialLoadRef.current) return;
-
-    // Debounce Firestore save to keep well within Spark free tier limits
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    debounceTimerRef.current = setTimeout(async () => {
-      setSyncStatus('syncing');
-      try {
-        await saveUserFitnessState(uid, state);
-        setSyncStatus('saved');
-        setTimeout(() => setSyncStatus('idle'), 3000);
-      } catch (e) {
-        console.error('Debounced save to Firestore failed:', e);
-        setSyncStatus('error');
-      }
-    }, 1500);
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [state, currentUser]);
-
-  const forceSyncCloud = async (): Promise<boolean> => {
-    if (!currentUser) return false;
-    setSyncStatus('syncing');
-    try {
-      await saveUserFitnessState(currentUser.uid, state);
-      setSyncStatus('saved');
-      setTimeout(() => setSyncStatus('idle'), 2500);
-      return true;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
-      console.error('Manual force sync failed:', e);
-      setSyncStatus('error');
-      return false;
+      console.warn('Failed caching to localStorage:', e);
     }
-  };
+  }, [state]);
 
   const updateProfile = (updater: Partial<UserProfile> | ((prev: UserProfile) => UserProfile)) => {
     setState((prev) => {
@@ -587,9 +468,6 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
 
   const resetAllData = () => {
     localStorage.removeItem(STORAGE_KEY);
-    if (currentUser) {
-      localStorage.removeItem(`${STORAGE_KEY}_${currentUser.uid}`);
-    }
     const { weights, loggedFoods, completedWorkouts, cardioSessions } = generateMockHistory();
     const freshReview = buildInitialWeeklyReview(weights, loggedFoods, initialProfile);
     const todayStr = getLocalDateString();
@@ -597,7 +475,7 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
       profile: {
         ...initialProfile,
         theme: getPreferredTheme(),
-        name: currentUser?.displayName || currentUser?.email?.split('@')[0] || initialProfile.name,
+        name: initialProfile.name,
       },
       weights,
       loggedFoods,
@@ -613,9 +491,6 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
       weeklySchedule: defaultWeeklySchedule,
     };
     setState(freshState);
-    if (currentUser) {
-      saveUserFitnessState(currentUser.uid, freshState).catch(console.error);
-    }
   };
 
   const exportAllJson = () => {
@@ -675,27 +550,6 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
     dlAnchor.click();
   };
 
-  // Keep waterMlToday in sync when the calendar day rolls over while the app is open
-  useEffect(() => {
-    const syncDay = () => {
-      const today = getLocalDateString();
-      setState((prev) => {
-        const logs = prev.hydrationLogs || {};
-        if (logs[today] === undefined) {
-          // new day: start at 0
-          return { ...prev, hydrationLogs: { ...logs, [today]: 0 }, waterMlToday: 0 };
-        }
-        if (prev.waterMlToday !== logs[today]) {
-          return { ...prev, waterMlToday: logs[today] };
-        }
-        return prev;
-      });
-    };
-    const id = setInterval(syncDay, 60000);
-    return () => clearInterval(id);
-  }, []);
-
-
   const importAllJson = (payload: string): { ok: boolean; error?: string } => {
     try {
       const parsed = JSON.parse(payload);
@@ -719,11 +573,7 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
         weeklySchedule: Array.isArray(parsed.weeklySchedule) ? parsed.weeklySchedule : defaultWeeklySchedule,
       };
       setState(next);
-      if (currentUser) {
-        saveUserFitnessState(currentUser.uid, next).catch(console.error);
-      } else {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
-      }
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
       return { ok: true };
     } catch (e: any) {
       return { ok: false, error: e?.message || 'Parse error' };
@@ -734,8 +584,6 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
     <FitnessContext.Provider
       value={{
         state,
-        syncStatus,
-        forceSyncCloud,
         updateProfile,
         addWeightRecord,
         addLoggedFood,

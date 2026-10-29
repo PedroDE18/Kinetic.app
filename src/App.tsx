@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
 import { FitnessProvider, useFitness } from './context/FitnessContext';
-import { AuthScreen } from './components/auth/AuthScreen';
 import { Header } from './components/Header';
 import { Navigation, TabType } from './components/Navigation';
 import { TodayView } from './components/today/TodayView';
@@ -15,11 +13,10 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { HealthSyncModal } from './components/sync/HealthSyncModal';
 import { InstallPwaModal } from './components/pwa/InstallPwaModal';
 import { checkUrlForHealthSync } from './services/healthSync';
-import { Play, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { Play, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { MealType } from './types';
 
 function AppContent() {
-  const { currentUser, loading } = useAuth();
   const { state, resolveReview, importHealthBatch } = useFitness();
   const [activeTab, setActiveTab] = useState<TabType>('today');
 
@@ -50,26 +47,6 @@ function AppContent() {
     }
   }, [importHealthBatch]);
 
-  // Loading state while checking Firebase authentication
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[var(--color-surface-sunken)] flex flex-col items-center justify-center gap-3 text-[var(--color-text)]">
-        <div className="h-12 w-12 rounded-2xl bg-[#E07A5F]/20 text-[#E07A5F] flex items-center justify-center font-black text-xl border border-[#E07A5F]/30 animate-pulse">
-          K
-        </div>
-        <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-          <Loader2 className="w-4 h-4 animate-spin text-[#E07A5F]" />
-          <span>Connecting to Kinetic Cloud...</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Not signed in: show sign-in / create account screen
-  if (!currentUser) {
-    return <AuthScreen />;
-  }
-
   const handleOpenAddFood = (mealType?: MealType, targetDate?: string) => {
     setAddFoodInitialMeal(mealType || 'breakfast');
     setAddFoodTargetDate(targetDate);
@@ -83,21 +60,21 @@ function AppContent() {
       }`}
     >
       {/* Top Header */}
-      <Header 
-        onOpenSettings={() => setShowSettingsModal(true)} 
+      <Header
+        onOpenSettings={() => setShowSettingsModal(true)}
         onOpenHealthSync={() => setShowHealthSyncModal(true)}
         onOpenInstallPwa={() => setShowInstallPwaModal(true)}
       />
 
       {/* Health Sync Auto Toast */}
       {healthSyncToast && (
-        <div className="fixed top-[calc(max(env(safe-area-inset-top,0px),16px)+56px)] left-4 right-4 z-40 max-w-md mx-auto p-3.5 rounded-2xl bg-[#EEF5EE] dark:bg-[#1E2E22] border border-[#CDE3CD] dark:border-[#2C4933] text-[#245330] dark:text-[#9DD2A7] shadow-lg flex items-center gap-2.5 text-xs animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-[#3B7A4C] dark:text-[#81B29A] shrink-0" />
+        <div className="fixed top-[calc(max(env(safe-area-inset-top,0px),16px)+56px)] left-4 right-4 z-40 max-w-md mx-auto p-3.5 rounded-2xl bg-[var(--color-success-soft)] border border-[var(--color-success)]/30 text-[var(--color-success)] shadow-lg flex items-center gap-2.5 text-xs animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span className="font-medium">{healthSyncToast}</span>
         </div>
       )}
 
-      {/* Main Viewport Container (iOS mobile-first frame) */}
+      {/* Main Viewport Container */}
       <main className="flex-1 pb-32 px-4 pt-3.5 max-w-md mx-auto w-full overflow-x-hidden">
         {activeTab === 'today' && (
           <TodayView
@@ -127,24 +104,24 @@ function AppContent() {
         <aside
           aria-label="Active Workout in progress"
           onClick={() => setActiveTab('train')}
-          className="fixed bottom-20 left-4 right-4 max-w-md mx-auto bg-[#2E201B] border border-[#E07A5F]/50 backdrop-blur-md rounded-2xl p-3 flex items-center justify-between shadow-xl cursor-pointer z-20 animate-pulse active:scale-[0.98] transition-all"
+          className="fixed bottom-20 left-4 right-4 max-w-md mx-auto bg-[var(--color-surface-raised)] border border-[var(--color-accent)]/50 backdrop-blur-md rounded-2xl p-3 flex items-center justify-between shadow-xl cursor-pointer z-20 active:scale-[0.98] transition-all"
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#E07A5F] text-[var(--color-text)] flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center font-bold">
               <Play className="w-4 h-4 fill-current ml-0.5" />
             </div>
             <div>
-              <div className="text-[10px] font-bold text-[#E07A5F] uppercase tracking-wider">
+              <div className="text-[10px] font-bold text-[var(--color-accent)] uppercase tracking-wider">
                 Workout in Progress
               </div>
               <div className="text-xs font-bold text-[var(--color-text)]">{state.activeWorkout?.name}</div>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-[#E07A5F]" />
+          <ChevronRight className="w-4 h-4 text-[var(--color-accent)]" />
         </aside>
       )}
 
-      {/* Persistent iOS Bottom Tab Navigation */}
+      {/* Persistent Bottom Tab Navigation */}
       <Navigation
         activeTab={activeTab}
         onSelectTab={(tab) => setActiveTab(tab)}
@@ -181,8 +158,8 @@ function AppContent() {
       )}
 
       {showSettingsModal && (
-        <SettingsModal 
-          onClose={() => setShowSettingsModal(false)} 
+        <SettingsModal
+          onClose={() => setShowSettingsModal(false)}
           onOpenHealthSync={() => {
             setShowSettingsModal(false);
             setShowHealthSyncModal(true);
@@ -207,10 +184,8 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <FitnessProvider>
-        <AppContent />
-      </FitnessProvider>
-    </AuthProvider>
+    <FitnessProvider>
+      <AppContent />
+    </FitnessProvider>
   );
 }

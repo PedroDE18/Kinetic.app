@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Moon, Sun, Watch, Smartphone, Cloud, Check, Loader2, AlertCircle } from 'lucide-react';
+import { Settings, Moon, Sun, Watch, Smartphone } from 'lucide-react';
 import { useFitness } from '../context/FitnessContext';
 
 interface HeaderProps {
@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 export function Header({ onOpenSettings, onOpenHealthSync, onOpenInstallPwa }: HeaderProps) {
-  const { state, updateProfile, syncStatus, forceSyncCloud } = useFitness();
+  const { state, updateProfile } = useFitness();
   const isLight = state.profile.theme === 'light';
 
   const toggleTheme = () => {
@@ -69,43 +69,6 @@ export function Header({ onOpenSettings, onOpenHealthSync, onOpenInstallPwa }: H
             <Smartphone className="w-4 h-4" />
           </button>
         )}
-
-        {/* Firebase Cloud Sync Status */}
-        <button
-          onClick={() => forceSyncCloud()}
-          aria-label={
-            syncStatus === 'syncing'
-              ? 'Syncing with Firestore...'
-              : syncStatus === 'saved'
-              ? 'Synced with Firebase'
-              : syncStatus === 'error'
-              ? 'Cloud Sync Error - Tap to retry'
-              : 'Tap to sync with Firestore'
-          }
-          title={
-            syncStatus === 'syncing'
-              ? 'Syncing with Firestore...'
-              : syncStatus === 'saved'
-              ? 'Saved to Cloud'
-              : syncStatus === 'error'
-              ? 'Sync failed - Tap to retry'
-              : 'Cloud Synced'
-          }
-          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-text)] active:scale-95 transition-all relative"
-        >
-          {syncStatus === 'syncing' ? (
-            <Loader2 className="w-4 h-4 text-[var(--color-accent)] animate-spin" />
-          ) : syncStatus === 'saved' ? (
-            <div className="relative">
-              <Cloud className="w-4 h-4 text-[var(--color-success)]" />
-              <Check className="w-2.5 h-2.5 text-[var(--color-success)] absolute -bottom-1 -right-1 stroke-[3]" />
-            </div>
-          ) : syncStatus === 'error' ? (
-            <AlertCircle className="w-4 h-4 text-[var(--color-warning)]" />
-          ) : (
-            <Cloud className="w-4 h-4 text-[var(--color-text-subtle)] hover:text-[var(--color-text-muted)]" />
-          )}
-        </button>
 
         {/* Theme Toggle (Cozy Light vs Cozy Dark) */}
         <button
