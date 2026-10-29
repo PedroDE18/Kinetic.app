@@ -15,11 +15,20 @@ export function WorkoutSummaryModal({ workout, onClose }: WorkoutSummaryModalPro
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-[var(--color-accent)] text-[var(--color-accent)] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
@@ -55,19 +64,19 @@ export function WorkoutSummaryModal({ workout, onClose }: WorkoutSummaryModalPro
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)]">
             <Clock className="w-4 h-4 text-[var(--color-text-muted)] mx-auto mb-1" />
-            <div className="text-base font-black text-[var(--color-text)]">{durationMins}</div>
+            <div className="text-base font-semibold text-[var(--color-text)]">{durationMins}</div>
             <div className="text-[10px] text-[var(--color-text-muted)] uppercase">Minutes</div>
           </div>
           <div className="bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)]">
             <Dumbbell className="w-4 h-4 text-[var(--color-text-muted)] mx-auto mb-1" />
-            <div className="text-base font-black text-[var(--color-accent)]">
+            <div className="text-base font-semibold text-[var(--color-accent)]">
               {workout.totalVolumeKg.toLocaleString()}
             </div>
             <div className="text-[10px] text-[var(--color-text-muted)] uppercase">Total Vol (kg)</div>
           </div>
           <div className="bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)]">
             <CheckCircle2 className="w-4 h-4 text-[var(--color-text-muted)] mx-auto mb-1" />
-            <div className="text-base font-black text-[var(--color-text)]">{totalCompletedSets}</div>
+            <div className="text-base font-semibold text-[var(--color-text)]">{totalCompletedSets}</div>
             <div className="text-[10px] text-[var(--color-text-muted)] uppercase">Sets Done</div>
           </div>
         </div>

@@ -10,6 +10,7 @@ import {
   AlertCircle,
   X,
   ChevronRight,
+  ChevronDown,
   Flame,
   Heart,
   Timer,
@@ -62,6 +63,10 @@ export function TrainView() {
 
   // Discard confirmation
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
+  // Interaction state: expand a routine card, open a past session
+  const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
+  const [historyWorkout, setHistoryWorkout] = useState<CompletedWorkout | null>(null);
 
   // Workout Elapsed Timer Effect
   useEffect(() => {
@@ -295,6 +300,16 @@ export function TrainView() {
                       </span>
                     </div>
 
+                    <span
+                      className={`shrink-0 px-2 py-1 rounded-full text-[10px] font-semibold tabular-nums ${
+                        exercise.sets.every((st) => st.isCompleted)
+                          ? 'bg-[var(--color-success-soft)] text-[var(--color-success)]'
+                          : 'bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)]'
+                      }`}
+                    >
+                      {exercise.sets.filter((st) => st.isCompleted).length}/{exercise.sets.length} sets
+                    </span>
+
                     {def?.personalRecord && (
                       <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)] tabular-nums">
                         <Award className="w-3 h-3 text-[var(--color-accent)]" />
@@ -511,75 +526,106 @@ export function TrainView() {
                     )
                   );
 
+                  const isExpanded = expandedTemplateId === tmpl.id;
+                  const previewNames = tmpl.exercises
+                    .map((item) => {
+                      const exDef = exercises.find((x) => x.id === item.exerciseId);
+                      return exDef?.name || 'Exercise';
+                    });
+                  const collapsedPreview =
+                    previewNames.slice(0, 3).join(', ') +
+                    (previewNames.length > 3 ? ` +${previewNames.length - 3} more` : '');
+
                   return (
                     <section
                       key={tmpl.id}
-                      className="k-card transition-all hover:border-[var(--color-accent)]/40 space-y-3"
+                      className="k-card p-4 transition-all hover:border-[var(--color-accent)]/40 space-y-3"
                     >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-subtle)]">
-                              {tmpl.targetSplit}
-                            </span>
-                            <span className="text-[var(--color-text-subtle)] text-xs">•</span>
-                            <span className="text-[11px] text-[var(--color-text-muted)]">
-                              {tmpl.exercises.length} exercises
-                            </span>
-                          </div>
-                          <h4 className="k-display text-lg text-[var(--color-text)]">{tmpl.name}</h4>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => {
-                              setEditingTemplate(tmpl);
-                              setShowProgramBuilder(true);
-                            }}
-                            className="min-h-[44px] px-3 py-2 bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-xs font-semibold rounded-xl border border-[var(--color-border)] active:scale-95 transition-all"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => startWorkout(tmpl.id)}
-                            className="min-h-[44px] px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition-all"
-                          >
-                            <Play className="w-4 h-4 fill-current" />
-                            <span>Start</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      <p className="text-xs text-[var(--color-text-muted)]">{tmpl.description}</p>
-
-                      {/* Targeted Muscles Breakdown */}
-                      <div className="flex flex-wrap items-center gap-1 pt-1">
-                        <span className="text-[10px] font-semibold text-[var(--color-text-subtle)] uppercase tracking-wider mr-1">
-                          Muscles:
-                        </span>
-                        {routinePrimaryMuscles.map((muscle) => (
-                          <span
-                            key={muscle}
-                            className="px-2 py-1 rounded-full bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] text-[10px] font-semibold"
-                          >
-                            {muscle}
+                      {/* Tappable header — expands the full plan */}
+                      <button
+                        type="button"
+                        onClick={() => setExpandedTemplateId(isExpanded ? null : tmpl.id)}
+                        aria-expanded={isExpanded}
+                        className="w-full text-left space-y-1"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="k-section-title">
+                            {tmpl.targetSplit} · {tmpl.exercises.length} exercises
                           </span>
-                        ))}
+                          <ChevronDown
+                            className={`w-4 h-4 text-[var(--color-text-subtle)] transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          />
+                        </div>
+                        <h4 className="k-display text-lg text-[var(--color-text)]">{tmpl.name}</h4>
+                        <p className="text-xs text-[var(--color-text-muted)] leading-snug">
+                          {tmpl.description}
+                        </p>
+                      </button>
+
+                      {/* Collapsed preview — compact text line */}
+                      <p className="text-[11px] text-[var(--color-text-subtle)] truncate">
+                        {collapsedPreview}
+                      </p>
+
+                      {/* Actions */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingTemplate(tmpl);
+                            setShowProgramBuilder(true);
+                          }}
+                          className="min-h-[44px] py-2 bg-[var(--color-surface-raised)] text-[var(--color-text)] text-xs font-semibold rounded-xl border border-[var(--color-border)] active:scale-95 transition-all"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => startWorkout(tmpl.id)}
+                          className="min-h-[44px] py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                        >
+                          <Play className="w-4 h-4 fill-current" />
+                          <span>Start</span>
+                        </button>
                       </div>
 
-                      {/* Exercises Preview Tags */}
-                      <div className="flex flex-wrap gap-1.5 pt-1 border-t border-[var(--color-border)]">
-                        {tmpl.exercises.map((item) => {
-                          const exDef = exercises.find((x) => x.id === item.exerciseId);
-                          return (
-                            <span
-                              key={item.exerciseId}
-                              className="px-2 py-1 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)] font-medium"
-                            >
-                              {exDef?.name || 'Exercise'} ({item.defaultSets}×{item.defaultReps})
-                            </span>
-                          );
-                        })}
-                      </div>
+                      {/* Expanded detail — full plan */}
+                      {isExpanded && (
+                        <div className="border-t border-[var(--color-border)] pt-2.5 space-y-2.5">
+                          <div className="flex flex-wrap items-center gap-1">
+                            {routinePrimaryMuscles.slice(0, 3).map((muscle) => (
+                              <span
+                                key={muscle}
+                                className="px-2 py-0.5 rounded-full bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] text-[10px] font-semibold"
+                              >
+                                {muscle}
+                              </span>
+                            ))}
+                            {routinePrimaryMuscles.length > 3 && (
+                              <span className="text-[10px] text-[var(--color-text-subtle)]">
+                                +{routinePrimaryMuscles.length - 3}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="divide-y divide-[var(--color-border)]">
+                            {tmpl.exercises.map((item) => {
+                              const exDef = exercises.find((x) => x.id === item.exerciseId);
+                              return (
+                                <div
+                                  key={item.exerciseId}
+                                  className="py-1.5 flex items-center justify-between gap-2 text-xs"
+                                >
+                                  <span className="font-medium text-[var(--color-text)] truncate">
+                                    {exDef?.name || 'Exercise'}
+                                  </span>
+                                  <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums shrink-0">
+                                    {item.defaultSets} sets × {item.defaultReps}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </section>
                   );
                 })}
@@ -601,7 +647,12 @@ export function TrainView() {
                 ) : (
                   <div className="divide-y divide-[var(--color-border)]">
                     {completedWorkouts.map((wo) => (
-                      <div key={wo.id} className="py-3 flex items-center justify-between">
+                      <button
+                        key={wo.id}
+                        type="button"
+                        onClick={() => setHistoryWorkout(wo)}
+                        className="w-full py-3 flex items-center justify-between gap-2 text-left rounded-xl hover:bg-[var(--color-surface-raised)] transition-colors focus-visible:outline-[var(--color-accent)]"
+                      >
                         <div className="min-w-0">
                           <div className="text-sm font-medium text-[var(--color-text)] truncate">{wo.name}</div>
                           <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
@@ -610,13 +661,16 @@ export function TrainView() {
                           </div>
                         </div>
 
-                        <div className="text-right shrink-0">
-                          <div className="text-xs font-semibold text-[var(--color-accent)] tabular-nums">
-                            {wo.totalVolumeKg.toLocaleString()} kg
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="text-right">
+                            <div className="text-xs font-semibold text-[var(--color-accent)] tabular-nums">
+                              {wo.totalVolumeKg.toLocaleString()} kg
+                            </div>
+                            <span className="text-[10px] text-[var(--color-text-subtle)]">volume</span>
                           </div>
-                          <span className="text-[10px] text-[var(--color-text-subtle)]">volume</span>
+                          <ChevronRight className="w-4 h-4 text-[var(--color-text-subtle)] shrink-0" />
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -831,11 +885,14 @@ export function TrainView() {
       {/* Targeted Muscle Atlas Modal */}
       {showAtlas && <ExerciseAtlasModal onClose={() => setShowAtlas(false)} />}
 
-      {/* Finished Workout Summary Modal */}
-      {completedSummary && (
+      {/* Finished Workout Summary / Past Session Detail Modal */}
+      {(completedSummary || historyWorkout) && (
         <WorkoutSummaryModal
-          workout={completedSummary}
-          onClose={() => setCompletedSummary(null)}
+          workout={(completedSummary || historyWorkout)!}
+          onClose={() => {
+            setCompletedSummary(null);
+            setHistoryWorkout(null);
+          }}
         />
       )}
 
