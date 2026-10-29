@@ -29,7 +29,7 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl max-w-md w-full p-6 space-y-4 max-h-[92vh] flex flex-col shadow-2xl">
+      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-md w-full p-6 space-y-4 max-h-[92vh] flex flex-col shadow-2xl">
         <div className="flex justify-between items-center">
           <div>
             <div className="flex items-center gap-1.5 text-[var(--color-accent)] text-xs font-bold uppercase tracking-wider">

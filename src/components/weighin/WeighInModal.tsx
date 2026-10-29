@@ -51,7 +51,7 @@ export function WeighInModal({ onClose }: WeighInModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
         <div className="flex justify-between items-center">
           <div>
             <h3 className="font-bold text-[var(--color-text)] text-base">Record Weigh-In</h3>
@@ -151,7 +151,7 @@ export function WeighInModal({ onClose }: WeighInModalProps) {
             </button>
             <button
               type="submit"
-              className="min-h-[44px] py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-zinc-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
+              className="min-h-[44px] py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
             >
               <Check className="w-4 h-4 stroke-[3]" />
               <span>Save Weigh-in</span>

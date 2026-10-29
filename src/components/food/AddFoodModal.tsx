@@ -519,7 +519,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                   {/* Add Button */}
                   <button
                     onClick={handleConfirmAddSelectedFood}
-                    className="min-h-[48px] w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-zinc-950 font-bold rounded-xl text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-sm"
+                    className="min-h-[48px] w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-bold rounded-xl text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-sm"
                   >
                     <Plus className="w-4 h-4 stroke-[3]" />
                     <span>Add to {selectedMeal}</span>
@@ -548,7 +548,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                           onClick={() => setSelectedCategory(cat)}
                           className={`min-h-[34px] px-3 py-1 rounded-full whitespace-nowrap font-medium transition-all ${
                             selectedCategory === cat
-                              ? 'bg-[var(--color-accent)] text-zinc-950 font-bold'
+                              ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] font-bold'
                               : 'bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                           }`}
                         >
@@ -596,7 +596,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                             {item.isFavorite && (
                               <Heart className="w-3.5 h-3.5 fill-rose-500/80 text-rose-500" />
                             )}
-                            <div className="w-7 h-7 rounded-lg bg-[var(--color-surface-raised)] text-[var(--color-accent)] flex items-center justify-center group-hover:bg-[var(--color-accent)] group-hover:text-zinc-950 transition-colors">
+                            <div className="w-7 h-7 rounded-lg bg-[var(--color-surface-raised)] text-[var(--color-accent)] flex items-center justify-center group-hover:bg-[var(--color-accent)] group-hover:text-[var(--color-on-accent)] transition-colors">
                               <Plus className="w-4 h-4" />
                             </div>
                           </div>
@@ -638,7 +638,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                 type="button"
                 onClick={handleSimulateAiEstimation}
                 disabled={!aiMealPrompt.trim() || aiIsEstimating}
-                className="min-h-[44px] w-full py-2.5 bg-[var(--color-accent)] disabled:opacity-50 hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-sm"
+                className="min-h-[44px] w-full py-2.5 bg-[var(--color-accent)] disabled:opacity-50 hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-sm"
               >
                 {aiIsEstimating ? (
                   <span>Estimating ingredients…</span>
@@ -763,7 +763,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                   {/* Confirm Log All Button */}
                   <button
                     onClick={handleConfirmAllItemizedEntries}
-                    className="min-h-[48px] w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-zinc-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
+                    className="min-h-[48px] w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
                   >
                     <Plus className="w-4 h-4 stroke-[3]" />
                     <span>Log All {aiItemizedParts.length} Items to {selectedMeal}</span>
@@ -850,7 +850,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
 
               <button
                 type="submit"
-                className="min-h-[48px] w-full mt-4 py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-zinc-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                className="min-h-[48px] w-full mt-4 py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm"
               >
                 Save Food to Library
               </button>

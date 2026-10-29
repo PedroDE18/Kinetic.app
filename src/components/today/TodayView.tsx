@@ -474,7 +474,7 @@ function SparklineChart({ points }: { points: number[] }) {
     <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
       <polyline
         fill="none"
-        stroke="var(--color-accent)"
+        style={{ stroke: "var(--color-accent)" }}
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"

@@ -236,7 +236,7 @@ export function TrainView() {
                 </button>
                 <button
                   onClick={handleFinishWorkout}
-                  className="min-h-[44px] px-4 py-1.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold text-xs rounded-xl transition-all active:scale-95 shadow-sm"
+                  className="min-h-[44px] px-4 py-1.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold text-xs rounded-xl transition-all active:scale-95 shadow-sm"
                 >
                   Finish
                 </button>
@@ -395,7 +395,7 @@ export function TrainView() {
                             aria-label={`Toggle set ${set.setNumber}`}
                             className={`min-h-[40px] min-w-[40px] rounded-xl flex items-center justify-center transition-all ${
                               set.isCompleted
-                                ? 'bg-[var(--color-accent)] text-white shadow-sm font-semibold'
+                                ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-sm font-semibold'
                                 : 'bg-[var(--color-surface-raised)] text-[var(--color-text-subtle)] hover:text-[var(--color-text)]'
                             }`}
                           >
@@ -477,7 +477,7 @@ export function TrainView() {
                     setEditingTemplate(undefined);
                     setShowProgramBuilder(true);
                   }}
-                  className="min-h-[40px] flex-1 sm:flex-none px-3 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
+                  className="min-h-[40px] flex-1 sm:flex-none px-3 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>New Routine</span>
@@ -485,7 +485,7 @@ export function TrainView() {
               ) : (
                 <button
                   onClick={() => setShowCardioLogger(true)}
-                  className="min-h-[40px] flex-1 sm:flex-none px-3 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
+                  className="min-h-[40px] flex-1 sm:flex-none px-3 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>Log Cardio</span>
@@ -541,7 +541,7 @@ export function TrainView() {
                           </button>
                           <button
                             onClick={() => startWorkout(tmpl.id)}
-                            className="min-h-[44px] px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition-all"
+                            className="min-h-[44px] px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition-all"
                           >
                             <Play className="w-4 h-4 fill-current" />
                             <span>Start</span>
@@ -788,7 +788,7 @@ export function TrainView() {
       {/* Discard Confirmation Dialog */}
       {showDiscardConfirm && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
+          <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
             <h4 className="font-bold text-[var(--color-text)] text-sm">Discard Active Workout?</h4>
             <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
               Are you sure you want to cancel? Current session progress will be lost.

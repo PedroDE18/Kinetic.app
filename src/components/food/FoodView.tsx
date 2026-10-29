@@ -149,7 +149,7 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
                 onClick={() => setSelectedDate(d)}
                 className={`shrink-0 flex flex-col items-center justify-center w-9 py-2 rounded-xl text-[11px] transition-all relative ${
                   isSel
-                    ? 'bg-[var(--color-accent)] text-white font-semibold shadow-sm'
+                    ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] font-semibold shadow-sm'
                     : 'bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                 }`}
               >
@@ -180,7 +180,7 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
 
           <button
             onClick={() => onOpenAddModal('breakfast', selectedDate)}
-            className="min-h-[44px] px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
+            className="min-h-[44px] px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>Add Food</span>
@@ -305,7 +305,7 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
       {/* Edit Serving Dialog */}
       {editingItem && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
+          <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
             <h4 className="font-bold text-[var(--color-text)] text-sm">Edit Serving Quantity</h4>
             <div className="text-xs text-[var(--color-text-muted)] font-semibold">{editingItem.name}</div>
 
@@ -332,7 +332,7 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="min-h-[44px] py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-xl text-xs shadow-sm"
+                className="min-h-[44px] py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs shadow-sm"
               >
                 Update
               </button>
@@ -344,7 +344,7 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
       {/* Delete Confirmation Dialog */}
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
+          <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
             <h4 className="font-bold text-[var(--color-text)] text-sm">Remove Food Entry?</h4>
             <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
               This will remove the food item from this day's diary and update your daily calorie totals.

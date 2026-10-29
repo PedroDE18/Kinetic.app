@@ -16,7 +16,7 @@ export function WorkoutSummaryModal({ workout, onClose }: WorkoutSummaryModalPro
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-[var(--color-accent)] text-[var(--color-accent)] flex items-center justify-center">
@@ -92,7 +92,7 @@ export function WorkoutSummaryModal({ workout, onClose }: WorkoutSummaryModalPro
 
         <button
           onClick={onClose}
-          className="min-h-[48px] w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-zinc-950 font-bold rounded-xl text-xs flex items-center justify-center active:scale-95 transition-all shadow-sm"
+          className="min-h-[48px] w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-bold rounded-xl text-xs flex items-center justify-center active:scale-95 transition-all shadow-sm"
         >
           Done
         </button>

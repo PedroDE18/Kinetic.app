@@ -84,7 +84,7 @@ export function InstallPwaModal({ isOpen, onClose }: InstallPwaModalProps) {
 
         <button
           onClick={onClose}
-          className="w-full py-2.5 rounded-2xl bg-[var(--color-accent)] text-[var(--color-text)] text-xs font-semibold hover:bg-[#D0694E] transition-colors"
+          className="w-full py-2.5 rounded-2xl bg-[var(--color-accent)] text-[var(--color-on-accent)] text-xs font-semibold hover:bg-[var(--color-accent-hover)] transition-colors"
         >
           Got it
         </button>

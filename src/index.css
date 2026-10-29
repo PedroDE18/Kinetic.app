@@ -7,27 +7,31 @@
 
 @layer base {
   :root {
-    /* --- Color tokens (dark by default) --- */
-    --color-bg: #161413;
-    --color-bg-elevated: #211D1A;
-    --color-surface: #211D1A;
-    --color-surface-raised: #2C2622;
-    --color-surface-sunken: #12100F;
-    --color-border: #342D27;
-    --color-border-subtle: #2A2420;
-    --color-text: #F7F2EC;
-    --color-text-muted: #B9AFA3;
-    --color-text-subtle: #8A7B6E;
-    --color-accent: #E07A5F;
-    --color-accent-hover: #D0694E;
-    --color-accent-soft: rgba(224, 122, 95, 0.14);
-    --color-success: #81B29A;
-    --color-success-soft: rgba(129, 178, 154, 0.14);
-    --color-warning: #E6A838;
-    --color-warning-soft: rgba(230, 168, 56, 0.14);
-    --color-danger: #E06B6B;
-    --color-danger-soft: rgba(224, 107, 107, 0.14);
-    --color-info: #7FAFCB;
+    /* --- Color tokens (dark by default) ---
+       "Graphite ember": a wide warm-neutral elevation ramp with clear steps
+       (sunken < surface < raised < elevated), restrained accent usage, and a
+       dedicated on-accent ink so accent-filled buttons always clear AA. */
+    --color-bg: #141311;
+    --color-bg-elevated: #201D1A;
+    --color-surface: #1C1A18;
+    --color-surface-raised: #262320;
+    --color-surface-sunken: #0D0C0B;
+    --color-border: #302C28;
+    --color-border-subtle: #242220;
+    --color-text: #F4F1EA;
+    --color-text-muted: #ABA39A;
+    --color-text-subtle: #867D72;
+    --color-accent: #E8815E;
+    --color-accent-hover: #F29A77;
+    --color-accent-soft: rgba(232, 129, 94, 0.16);
+    --color-on-accent: #201009;
+    --color-success: #8FC3A4;
+    --color-success-soft: rgba(143, 195, 164, 0.14);
+    --color-warning: #E9B45C;
+    --color-warning-soft: rgba(233, 180, 92, 0.14);
+    --color-danger: #E77B7B;
+    --color-danger-soft: rgba(231, 123, 123, 0.14);
+    --color-info: #8FB8D8;
 
     /* --- Typography --- */
     --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -104,6 +108,7 @@
     --color-accent: #C85A32;
     --color-accent-hover: #B04E2A;
     --color-accent-soft: rgba(200, 90, 50, 0.10);
+    --color-on-accent: #FFFFFF;
     --color-success: #3B7A4C;
     --color-success-soft: rgba(59, 122, 76, 0.10);
     --color-warning: #A87A0B;

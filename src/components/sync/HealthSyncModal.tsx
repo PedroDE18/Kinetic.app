@@ -273,7 +273,7 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
                 <button
                   onClick={handlePasteClipboard}
                   disabled={!clipboardText.trim()}
-                  className="w-full py-2.5 rounded-2xl bg-[var(--color-accent)] text-[var(--color-text)] font-medium hover:bg-[#D0694E] disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 rounded-2xl bg-[var(--color-accent)] text-[var(--color-on-accent)] font-medium hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
                 >
                   <ClipboardPaste className="w-3.5 h-3.5" />
                   Parse & Ingest Clipboard
@@ -383,7 +383,7 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
                 </button>
                 <button
                   onClick={handleApplyImport}
-                  className="flex-1 py-2 rounded-xl bg-[var(--color-accent)] text-[var(--color-text)] text-xs font-semibold hover:bg-[#D0694E] shadow-sm transition-colors"
+                  className="flex-1 py-2 rounded-xl bg-[var(--color-accent)] text-[var(--color-on-accent)] text-xs font-semibold hover:bg-[var(--color-accent-hover)] shadow-sm transition-colors"
                 >
                   Confirm & Ingest
                 </button>

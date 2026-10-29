@@ -210,7 +210,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
             {/* Open Weekly Review Action */}
             <button
               onClick={onOpenWeeklyReview}
-              className="min-h-[44px] mt-4 w-full py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-zinc-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
+              className="min-h-[44px] mt-4 w-full py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
             >
               <span>
                 {pendingReview ? 'Review Proposed Calorie Target' : 'View Latest Weekly Check-In'}
@@ -624,23 +624,21 @@ function VolumeProgressionChart({
         y1={height * 0.3}
         x2={width - 10}
         y2={height * 0.3}
-        stroke="var(--color-border)"
-        strokeDasharray="3 3"
+        style={{ stroke: "var(--color-border)", strokeDasharray: "3 3" }}
       />
       <line
         x1="10"
         y1={height * 0.7}
         x2={width - 10}
         y2={height * 0.7}
-        stroke="var(--color-border)"
-        strokeDasharray="3 3"
+        style={{ stroke: "var(--color-border)", strokeDasharray: "3 3" }}
       />
 
       {/* Area gradient under line */}
       <defs>
         <linearGradient id="volGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0" />
+          <stop offset="0%" style={{ stopColor: "var(--color-accent)", stopOpacity: 0.25 }} />
+          <stop offset="100%" style={{ stopColor: "var(--color-accent)", stopOpacity: 0 }} />
         </linearGradient>
       </defs>
 
@@ -655,8 +653,8 @@ function VolumeProgressionChart({
       {/* Line */}
       <polyline
         fill="none"
-        stroke="var(--color-accent)"
         strokeWidth="2.5"
+        style={{ stroke: "var(--color-accent)" }}
         strokeLinecap="round"
         strokeLinejoin="round"
         points={polylineCoords}
@@ -665,12 +663,13 @@ function VolumeProgressionChart({
       {/* Data points */}
       {points.map((p, idx) => (
         <g key={idx}>
-          <circle cx={p.x} cy={p.y} r="4" fill="var(--color-bg)" stroke="var(--color-accent)" strokeWidth="2" />
+          <circle cx={p.x} cy={p.y} r="4" strokeWidth="2"
+            style={{ fill: "var(--color-bg)", stroke: "var(--color-accent)" }} />
           <text
             x={p.x}
             y={height - 2}
             textAnchor="middle"
-            fill="var(--color-text-subtle)"
+            style={{ fill: "var(--color-text-subtle)" }}
             fontSize="8"
             fontWeight="bold"
           >
@@ -722,30 +721,28 @@ function DualWeightChart({
         y1={height * 0.25}
         x2={width}
         y2={height * 0.25}
-        stroke="var(--color-border)"
-        strokeDasharray="3 3"
+        style={{ stroke: "var(--color-border)", strokeDasharray: "3 3" }}
       />
       <line
         x1="0"
         y1={height * 0.75}
         x2={width}
         y2={height * 0.75}
-        stroke="var(--color-border)"
-        strokeDasharray="3 3"
+        style={{ stroke: "var(--color-border)", strokeDasharray: "3 3" }}
       />
 
       {/* Raw Scale Scatter Dots */}
       {points.map((p, idx) => {
         const x = (idx / (points.length - 1)) * width;
         const y = height - ((p.actualWeightKg - min) / range) * (height - 24) - 12;
-        return <circle key={idx} cx={x} cy={y} r="2.5" fill="var(--color-text-subtle)" opacity="0.6" />;
+        return <circle key={idx} cx={x} cy={y} r="2.5" opacity="0.6" style={{ fill: "var(--color-text-subtle)" }} />;
       })}
 
       {/* Smoothed EWMA Trend Curve */}
       <polyline
         fill="none"
-        stroke="var(--color-accent)"
         strokeWidth="2.5"
+        style={{ stroke: "var(--color-accent)" }}
         strokeLinecap="round"
         strokeLinejoin="round"
         points={trendCoords.join(' ')}

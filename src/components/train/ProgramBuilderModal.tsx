@@ -93,7 +93,7 @@ export function ProgramBuilderModal({ onClose, initialTemplate }: ProgramBuilder
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl max-w-md w-full p-6 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl">
+      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-md w-full p-6 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl">
         <div className="flex justify-between items-center">
           <div>
             <h3 className="font-bold text-[var(--color-text)] text-base">
@@ -333,7 +333,7 @@ export function ProgramBuilderModal({ onClose, initialTemplate }: ProgramBuilder
         {/* Exercise Selector Sub-Modal */}
         {showPicker && (
           <div className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-5 space-y-3.5 max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-5 space-y-3.5 max-h-[85vh] flex flex-col shadow-2xl">
               <div className="flex justify-between items-center">
                 <h4 className="font-bold text-[var(--color-text)] text-sm">Select Exercise</h4>
                 <button

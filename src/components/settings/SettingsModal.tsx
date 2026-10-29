@@ -75,7 +75,7 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-6 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl">
+      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-6 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl">
         <div className="flex justify-between items-center">
           <div>
             <h3 className="k-display text-lg text-[var(--color-text)]">Settings</h3>
@@ -207,7 +207,7 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
 
           <button
             type="submit"
-            className="min-h-[48px] w-full py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
+            className="min-h-[48px] w-full py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
           >
             {saveSuccess ? (
               <>
@@ -347,7 +347,7 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
       {/* Reset Confirmation Dialog */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-60 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
+          <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
             <h4 className="k-display text-base text-[var(--color-text)]">Reset demo data?</h4>
             <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
               Your logged weigh-ins, workouts, meals, and hydration entries will be replaced with the initial
