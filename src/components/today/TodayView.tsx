@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Plus,
   Flame,
@@ -49,6 +49,23 @@ export function TodayView({
   } = state as any;
 
   const todayStr = useMemo(() => getLocalDateString(), []);
+  const [waterToast, setWaterToast] = useState<{ amount: number; message: string } | null>(null);
+
+  const handleQuickAddWater = (amount: number) => {
+    addWater(amount);
+    setWaterToast({ amount, message: `Added +${amount} ml water` });
+    setTimeout(() => {
+      setWaterToast((curr: { amount: number; message: string } | null) =>
+        curr?.amount === amount ? null : curr
+      );
+    }, 4500);
+  };
+
+  const handleUndoWater = () => {
+    if (!waterToast) return;
+    addWater(-waterToast.amount);
+    setWaterToast(null);
+  };
 
   const todayFoods = useMemo(
     () => loggedFoods.filter((f: any) => f.loggedAt.startsWith(todayStr)),
@@ -235,7 +252,7 @@ export function TodayView({
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button
-                onClick={() => addWater(250)}
+                onClick={() => handleQuickAddWater(250)}
                 className="min-h-[44px] py-2.5 rounded-2xl bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text)] text-xs font-semibold flex items-center justify-center gap-2 active:scale-95"
               >
                 <Droplets className="w-4 h-4 text-[var(--color-info)]" />
@@ -329,7 +346,7 @@ export function TodayView({
               {(waterMlToday / 1000).toFixed(2)} / {(profile.targets.waterMl / 1000).toFixed(1)} L
             </span>
             <button
-              onClick={() => addWater(250)}
+              onClick={() => handleQuickAddWater(250)}
               aria-label="Add 250ml water"
               className="px-2.5 py-1 bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text)] font-semibold rounded-xl text-xs active:scale-95"
             >
@@ -337,6 +354,22 @@ export function TodayView({
             </button>
           </div>
         </div>
+
+        {/* Quick Water Undo Toast */}
+        {waterToast && (
+          <div className="mt-2 p-2 rounded-xl bg-[var(--color-surface-raised)] border border-[var(--color-info)]/30 text-xs flex items-center justify-between text-[var(--color-text)] animate-fade-in">
+            <span className="text-[11px] text-[var(--color-info)] font-semibold flex items-center gap-1.5">
+              <Droplets className="w-3.5 h-3.5" />
+              {waterToast.message}
+            </span>
+            <button
+              onClick={handleUndoWater}
+              className="text-[10px] font-bold text-[var(--color-accent)] hover:underline px-2 py-0.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)]"
+            >
+              Undo
+            </button>
+          </div>
+        )}
 
         {/* 5-day hydration mini bar */}
         <div className="pt-2.5">
