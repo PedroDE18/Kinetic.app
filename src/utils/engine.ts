@@ -55,11 +55,43 @@ export function calculateAdaptiveTDEE(
   weighInCount: number;
   isConfident: boolean;
 } {
-  const trend = calculateWeightTrend(weights);
+  // ---- Input sanitation: garbage in must not produce pseudoscience out ----
+  // Implausible or malformed records are excluded from the ESTIMATE only;
+  // nothing is deleted from the user's data.
+  const nowMs = Date.now();
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const DATE_TOLERANCE_MS = DAY_MS; // ignore clock-skew at the day boundary
+  const MIN_PLAUSIBLE_WEIGHT_KG = 25; // below this the scale is not weighing a human adult
+  const MAX_PLAUSIBLE_WEIGHT_KG = 350;
+  const MAX_PLAUSIBLE_ENTRY_CALORIES = 8000; // a single logged entry above this is a typo
+
+  const isFiniteNum = (v: unknown): v is number =>
+    typeof v === 'number' && Number.isFinite(v);
+
+  const validWeights = (weights || []).filter((w) => {
+    if (!w || typeof w !== 'object') return false;
+    if (!isFiniteNum(w.weightKg) || w.weightKg < MIN_PLAUSIBLE_WEIGHT_KG || w.weightKg > MAX_PLAUSIBLE_WEIGHT_KG) {
+      return false;
+    }
+    const t = new Date(w.date).getTime();
+    return isFiniteNum(t) && t <= nowMs + DATE_TOLERANCE_MS;
+  });
+
+  const validFoods = (loggedFoods || []).filter((f) => {
+    if (!f || typeof f !== 'object') return false;
+    if (!isFiniteNum(f.calories) || f.calories < 0 || f.calories > MAX_PLAUSIBLE_ENTRY_CALORIES) {
+      return false;
+    }
+    if (!isFiniteNum(f.protein) || f.protein < 0) return false;
+    return isFiniteNum(new Date(f.loggedAt).getTime());
+  });
+
+  const trend = calculateWeightTrend(validWeights);
+  const fallbackConfidence = 0.2;
   if (trend.length < 3) {
     return {
       estimatedTdee: 2400,
-      confidenceScore: 0.2,
+      confidenceScore: fallbackConfidence,
       avgDailyIntake: 2150,
       avgProteinIntake: 160,
       weeklyTrendDeltaKg: 0,
@@ -69,16 +101,15 @@ export function calculateAdaptiveTDEE(
     };
   }
 
-  const now = new Date();
-  const cutoffTime = now.getTime() - windowDays * 24 * 60 * 60 * 1000;
+  const cutoffTime = nowMs - windowDays * DAY_MS;
 
   const windowTrend = trend.filter((t) => new Date(t.date).getTime() >= cutoffTime);
   const effectiveTrend = windowTrend.length >= 3 ? windowTrend : trend.slice(-14);
 
-  const windowFoods = loggedFoods.filter(
+  const windowFoods = validFoods.filter(
     (f) => new Date(f.loggedAt).getTime() >= cutoffTime
   );
-  const effectiveFoods = windowFoods.length > 0 ? windowFoods : loggedFoods;
+  const effectiveFoods = windowFoods.length > 0 ? windowFoods : validFoods;
 
   // Aggregate daily intake
   const dailyIntakeMap: Record<string, { cals: number; protein: number }> = {};
@@ -125,20 +156,27 @@ export function calculateAdaptiveTDEE(
 
   // Dampen with confidence: if confidence is low, blend toward default baseline 2400
   const baselineTdee = 2400;
-  const blendedTdee = calculatedTdee * confidenceScore + baselineTdee * (1 - confidenceScore);
+
+  // Short observation windows cannot support confident energy estimates: a few
+  // weigh-ins separated by a single day can swing the trend wildly. Dampen the
+  // consistency-based confidence by the observed span (full strength from 7+ days).
+  const spanFactor = Math.min(1, Math.max(0.35, deltaDays / 7));
+  const effectiveConfidence = confidenceScore * spanFactor;
+
+  const blendedTdee = calculatedTdee * effectiveConfidence + baselineTdee * (1 - effectiveConfidence);
 
   // Clamp within realistic human physiological bounds
   const clampedTdee = Math.round(Math.min(Math.max(blendedTdee, 1300), 4500));
 
   return {
     estimatedTdee: clampedTdee,
-    confidenceScore,
+    confidenceScore: Number(effectiveConfidence.toFixed(2)),
     avgDailyIntake,
     avgProteinIntake,
     weeklyTrendDeltaKg,
     loggedDaysCount,
     weighInCount,
-    isConfident: confidenceScore >= 0.65,
+    isConfident: effectiveConfidence >= 0.65,
   };
 }
 
@@ -156,7 +194,23 @@ export function generateWeeklyAdjustmentProposal(
   adjustmentDelta: number;
   reason: string;
 } {
-  if (confidenceScore < 0.5) {
+  // Non-finite or corrupt inputs must never produce a target adjustment.
+  const allFinite = [currentTdee, currentTarget, targetRateKgPerWeek].every(
+    (n) => typeof n === 'number' && Number.isFinite(n)
+  );
+  if (!allFinite) {
+    // When the current target itself is corrupt, fall back to the engine's
+    // baseline instead of propagating non-finite numbers into the UI.
+    const proposedTarget = Number.isFinite(currentTarget) && currentTarget > 0 ? currentTarget : 2400;
+    return {
+      proposedTarget,
+      adjustmentDelta: 0,
+      reason: 'Estimate data is not ready. Keep your current target for now.',
+    };
+  }
+  const boundedConfidence = Math.min(1, Math.max(0, confidenceScore));
+
+  if (boundedConfidence < 0.5) {
     return {
       proposedTarget: currentTarget,
       adjustmentDelta: 0,
@@ -176,7 +230,7 @@ export function generateWeeklyAdjustmentProposal(
 
   // Round to nearest 25 kcal for clean nutrition numbers
   delta = Math.round(delta / 25) * 25;
-  const proposedTarget = currentTarget + delta;
+  const proposedTarget = Math.round(currentTarget) + delta;
 
   let reason = `Based on your recent logged intake and trend weight change, your estimated expenditure is ${currentTdee} kcal. `;
   if (Math.abs(delta) < 25) {
