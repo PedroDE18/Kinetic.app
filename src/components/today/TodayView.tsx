@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { calculateWeightTrend, formatWeight, getLocalDateString, getRecentDateStrings } from '../../utils/engine';
+import { QuickLogBar } from './QuickLogBar';
 
 interface TodayViewProps {
   onOpenFoodModal: () => void;
@@ -136,6 +137,9 @@ export function TodayView({
           </div>
         </div>
       </header>
+
+      {/* Natural Language Quick-Log Bar */}
+      <QuickLogBar />
 
       {/* Pending review alert */}
       {pendingReview && (
