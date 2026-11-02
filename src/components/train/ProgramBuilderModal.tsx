@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2, ArrowUp, ArrowDown, Dumbbell, Check, Search } from 'lucide-react';
+import { X, Plus, Trash2, ArrowUp, ArrowDown, Dumbbell, Check, Search, Sparkles, Cpu } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { WorkoutTemplate, WorkoutTemplateExercise } from '../../types';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
+import { generateRoutineDraft } from '../../services/routineGenerator';
 
 interface ProgramBuilderModalProps {
   onClose: () => void;
@@ -23,6 +24,41 @@ export function ProgramBuilderModal({ onClose, initialTemplate }: ProgramBuilder
       { exerciseId: 'ex-3', defaultSets: 3, defaultReps: 10, targetRpe: 8 },
     ]
   );
+
+  // AI Routine Draftsman State
+  const [showAiDraftsman, setShowAiDraftsman] = useState(false);
+  const [aiFocus, setAiFocus] = useState<'hypertrophy' | 'strength' | 'conditioning'>('hypertrophy');
+  const [aiDays, setAiDays] = useState<number>(4);
+  const [aiEquipment, setAiEquipment] = useState<'all' | 'Barbell' | 'Dumbbell' | 'Bodyweight'>('all');
+  const [aiSessionLength, setAiSessionLength] = useState<number>(45);
+  const [aiIsGenerating, setAiIsGenerating] = useState(false);
+  const [aiDraftBadge, setAiDraftBadge] = useState<'model' | 'offline' | null>(null);
+
+  const handleGenerateAiRoutine = async () => {
+    setAiIsGenerating(true);
+    try {
+      const draft = await generateRoutineDraft(
+        {
+          focus: aiFocus,
+          daysPerWeek: aiDays,
+          equipment: aiEquipment,
+          sessionLengthMinutes: aiSessionLength,
+        },
+        exercises,
+        state.profile.geminiApiKey
+      );
+      setName(draft.name);
+      setSplit(draft.targetSplit);
+      setDescription(draft.description);
+      setSelectedExercises(draft.exercises);
+      setAiDraftBadge(draft.source);
+      setShowAiDraftsman(false);
+    } catch {
+      // Graceful fallback handled inside service
+    } finally {
+      setAiIsGenerating(false);
+    }
+  };
 
   // Exercise picker state
   const [showPicker, setShowPicker] = useState(false);
@@ -108,6 +144,116 @@ export function ProgramBuilderModal({ onClose, initialTemplate }: ProgramBuilder
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* AI Draftsman Launch Bar */}
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[var(--color-accent)]" />
+              <span className="text-xs font-bold text-[var(--color-text)]">AI Routine Draftsman</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {aiDraftBadge && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
+                  {aiDraftBadge === 'model' ? <Sparkles className="w-2.5 h-2.5" /> : <Cpu className="w-2.5 h-2.5" />}
+                  {aiDraftBadge === 'model' ? 'Gemini Draft' : 'Offline Draft (Free)'}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowAiDraftsman(!showAiDraftsman)}
+                className="text-xs font-semibold text-[var(--color-accent)] hover:underline"
+              >
+                {showAiDraftsman ? 'Close' : 'Draft Routine'}
+              </button>
+            </div>
+          </div>
+
+          {showAiDraftsman && (
+            <div className="pt-2 border-t border-[var(--color-border)] space-y-2.5 animate-in fade-in">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <label className="text-[10px] font-semibold text-[var(--color-text-muted)] block mb-1">Goal Focus</label>
+                  <select
+                    value={aiFocus}
+                    onChange={(e: any) => setAiFocus(e.target.value)}
+                    className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl p-2 text-xs text-[var(--color-text)] focus:outline-none"
+                  >
+                    <option value="hypertrophy">Hypertrophy (Muscle)</option>
+                    <option value="strength">Strength & Power</option>
+                    <option value="conditioning">Conditioning</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-semibold text-[var(--color-text-muted)] block mb-1">Equipment</label>
+                  <select
+                    value={aiEquipment}
+                    onChange={(e: any) => setAiEquipment(e.target.value)}
+                    className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl p-2 text-xs text-[var(--color-text)] focus:outline-none"
+                  >
+                    <option value="all">Full Gym</option>
+                    <option value="Dumbbell">Dumbbells Only</option>
+                    <option value="Barbell">Barbell Only</option>
+                    <option value="Bodyweight">Bodyweight Only</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <label className="text-[10px] font-semibold text-[var(--color-text-muted)] block mb-1">Days / Week</label>
+                  <div className="flex gap-1">
+                    {[2, 3, 4, 5, 6].map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setAiDays(d)}
+                        className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all ${
+                          aiDays === d
+                            ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+                            : 'bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)]'
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-semibold text-[var(--color-text-muted)] block mb-1">Session Length</label>
+                  <select
+                    value={aiSessionLength}
+                    onChange={(e) => setAiSessionLength(Number(e.target.value))}
+                    className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl p-2 text-xs text-[var(--color-text)] focus:outline-none"
+                  >
+                    <option value={30}>30 mins (Express)</option>
+                    <option value={45}>45 mins (Standard)</option>
+                    <option value={60}>60 mins (Complete)</option>
+                    <option value={75}>75 mins (High Volume)</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGenerateAiRoutine}
+                disabled={aiIsGenerating}
+                className="w-full py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center justify-center gap-2 active:scale-98 transition-all shadow-sm"
+              >
+                {aiIsGenerating ? (
+                  <span>Drafting workout with library…</span>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Generate Editable Routine Draft</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSave} className="space-y-4">
