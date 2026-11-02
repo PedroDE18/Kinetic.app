@@ -17,6 +17,7 @@ import {
   BedDouble,
   Footprints,
   CalendarDays,
+  Scale,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { calculateWeightTrend, formatWeight, getLocalDateString, getRecentDateStrings } from '../../utils/engine';
@@ -26,6 +27,7 @@ interface TodayViewProps {
   onOpenFoodModal: () => void;
   onOpenWeighInModal: () => void;
   onOpenWeeklyReview: () => void;
+  onOpenProfile?: () => void;
   onNavigateTab: (tab: 'food' | 'train' | 'progress') => void;
 }
 
@@ -33,6 +35,7 @@ export function TodayView({
   onOpenFoodModal,
   onOpenWeighInModal,
   onOpenWeeklyReview,
+  onOpenProfile,
   onNavigateTab,
 }: TodayViewProps) {
   const { state, addWater, startWorkout, getScheduledDayForDate } = useFitness();
@@ -154,6 +157,40 @@ export function TodayView({
           </div>
         </div>
       </header>
+
+      {/* Onboarding Welcome Banner for Fresh Athletes */}
+      {!profile.onboardingCompleted && weights.length === 0 && (
+        <section className="bg-gradient-to-br from-[#E07A5F]/15 via-[var(--color-surface)] to-[var(--color-surface)] border border-[#E07A5F]/40 p-4 sm:p-5 rounded-3xl space-y-3 shadow-md animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[var(--color-accent)] text-[var(--color-on-accent)] flex items-center justify-center font-bold">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[var(--color-text)]">Welcome to Kinetic</h3>
+              <p className="text-[11px] text-[var(--color-text-muted)]">Athletic-grade, local-first fitness tracking</p>
+            </div>
+          </div>
+          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+            Set up your athletic profile (height, weight, age, activity level) to calculate your personalized metabolic expenditure and recommended macros using Mifflin-St Jeor.
+          </p>
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={onOpenProfile}
+              className="flex-1 min-h-[44px] py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
+            >
+              <span>Set Up Athletic Profile</span>
+              <ChevronRight className="w-3.5 h-3.5 stroke-[2.5]" />
+            </button>
+            <button
+              onClick={onOpenWeighInModal}
+              className="px-3.5 min-h-[44px] py-2.5 bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
+            >
+              <Scale className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+              <span>First Weigh-in</span>
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* Natural Language Quick-Log Bar */}
       <QuickLogBar />

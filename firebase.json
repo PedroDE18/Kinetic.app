@@ -1,4 +1,15 @@
 {
+  "auth": {
+    "providers": {
+      "emailPassword": true
+    }
+  },
+  "firestore": [
+    {
+      "database": "ai-studio-vitality-10f5d45b-6622-4349-8f38-c2208ba37786",
+      "rules": "firestore.rules"
+    }
+  ],
   "hosting": {
     "public": "dist",
     "ignore": [

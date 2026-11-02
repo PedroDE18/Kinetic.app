@@ -8,6 +8,10 @@ import {
   Watch,
   Smartphone,
   Sparkles,
+  User,
+  Database,
+  Trash2,
+  Play,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { FitnessGoal, UnitSystem } from '../../types';
@@ -15,13 +19,23 @@ import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
 
 interface SettingsModalProps {
   onClose: () => void;
+  onOpenProfile?: () => void;
   onOpenHealthSync?: () => void;
   onOpenInstallPwa?: () => void;
 }
 
-export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: SettingsModalProps) {
+export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpenInstallPwa }: SettingsModalProps) {
   useBodyScrollLock(true);
-  const { state, updateProfile, resetAllData, exportAllJson, exportCsv, importAllJson } = useFitness();
+  const {
+    state,
+    updateProfile,
+    resetAllData,
+    loadDemoData,
+    clearAllHistory,
+    exportAllJson,
+    exportCsv,
+    importAllJson,
+  } = useFitness();
   const { profile } = state;
 
   const [name, setName] = useState(profile.name);
@@ -36,6 +50,8 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
   const [geminiApiKey, setGeminiApiKey] = useState<string>(profile.geminiApiKey || '');
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
 
@@ -92,6 +108,33 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Athletic Profile Quick Card */}
+        {onOpenProfile && (
+          <div className="p-3.5 bg-[var(--color-surface-sunken)] border border-[var(--color-accent)]/40 rounded-2xl flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[var(--color-accent)]/15 text-[var(--color-accent)] flex items-center justify-center shrink-0 font-bold">
+                <User className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-[var(--color-text)]">Athletic Profile & Stats</h4>
+                <p className="text-[10px] text-[var(--color-text-muted)]">
+                  {profile.heightCm} cm • {profile.age || 26} yo • {profile.goal.replace('_', ' ')}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenProfile();
+              }}
+              className="px-3 py-1.5 bg-[var(--color-accent)] text-[var(--color-on-accent)] font-semibold rounded-xl text-[11px] active:scale-95 transition-all shadow-sm shrink-0"
+            >
+              Open
+            </button>
+          </div>
+        )}
 
         <form onSubmit={handleSaveProfile} className="space-y-4">
           {/* User Name */}
@@ -367,26 +410,93 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
           </div>
         </div>
 
-        {/* Reset State Action */}
-        <div className="pt-2 border-t border-[var(--color-border)]">
+        {/* History & Demo Controls */}
+        <div className="pt-3 border-t border-[var(--color-border)] space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-[var(--color-text-muted)] flex items-center gap-1.5">
+              <Database className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+              <span>History & Sample Data</span>
+            </span>
+          </div>
+
+          {actionSuccess && (
+            <div className="p-2.5 rounded-xl bg-[var(--color-success-soft)] border border-[var(--color-success)]/30 text-[var(--color-success)] text-xs font-semibold flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5" />
+              <span>{actionSuccess}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                loadDemoData();
+                setActionSuccess('Sample demo history loaded!');
+                setTimeout(() => setActionSuccess(null), 3000);
+              }}
+              className="min-h-[40px] py-2 px-3 bg-[var(--color-surface-raised)] hover:bg-[var(--color-surface-raised)]/80 text-[var(--color-text)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all border border-[var(--color-border)]"
+            >
+              <Play className="w-3 h-3 text-[var(--color-accent)] fill-current" />
+              <span>Load Sample Data</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowClearConfirm(true)}
+              className="min-h-[40px] py-2 px-3 bg-[var(--color-surface-raised)] hover:bg-[var(--color-danger-soft)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all border border-[var(--color-border)]"
+            >
+              <Trash2 className="w-3 h-3" />
+              <span>Clear History</span>
+            </button>
+          </div>
+
           <button
             onClick={() => setShowResetConfirm(true)}
-            className="min-h-[48px] w-full py-2.5 bg-[var(--color-danger-soft)] hover:bg-[var(--color-danger-soft)] border border-[var(--color-danger)]/40 text-[var(--color-danger)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
+            className="min-h-[40px] w-full py-2 bg-[var(--color-danger-soft)] hover:bg-[var(--color-danger-soft)] border border-[var(--color-danger)]/40 text-[var(--color-danger)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.99] mt-1"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset demo data</span>
+            <span>Reset Factory Defaults</span>
           </button>
         </div>
       </div>
+
+      {/* Clear History Confirmation Dialog */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-60 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
+            <h4 className="k-display text-base text-[var(--color-text)]">Clear History Logs?</h4>
+            <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+              This will erase all recorded weigh-ins, meals, and workouts so you can start completely fresh. Your food library and target settings will be kept.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="min-h-[44px] py-2 bg-[var(--color-surface-raised)] rounded-xl text-xs font-semibold text-[var(--color-text-muted)] border border-[var(--color-border)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  clearAllHistory();
+                  setShowClearConfirm(false);
+                  onClose();
+                }}
+                className="min-h-[44px] py-2 bg-[var(--color-danger)] hover:bg-[var(--color-danger)] text-white font-semibold rounded-xl text-xs active:scale-95 transition-transform"
+              >
+                Clear logs
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reset Confirmation Dialog */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-60 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
-            <h4 className="k-display text-base text-[var(--color-text)]">Reset demo data?</h4>
+            <h4 className="k-display text-base text-[var(--color-text)]">Reset to factory clean?</h4>
             <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-              Your logged weigh-ins, workouts, meals, and hydration entries will be replaced with the initial
-              sample data. This action cannot be undone.
+              This completely resets Kinetic to a blank slate, erasing all data and custom targets.
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button

@@ -205,14 +205,26 @@ export interface WeeklyRoutineDay {
   focusName: string; // e.g. "Push: Chest & Shoulders" or "Active Recovery & Mobility"
 }
 
+export type SexType = 'male' | 'female' | 'other';
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'very_active' | 'athlete';
+export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
+
 export interface UserProfile {
   name: string;
+  email?: string;
   unitSystem: UnitSystem;
   goal: FitnessGoal;
   targetRateKgPerWeek: number; // e.g. -0.4 for cutting, 0 for maintenance, +0.2 for lean bulk
   heightCm: number;
+  weightKg?: number;
+  targetWeightKg?: number;
+  age?: number;
+  sex?: SexType;
+  activityLevel?: ActivityLevel;
+  experienceLevel?: ExperienceLevel;
   targets: MacroGoals;
   theme: 'dark' | 'light';
   startDate: string;
   geminiApiKey?: string;
+  onboardingCompleted?: boolean;
 }

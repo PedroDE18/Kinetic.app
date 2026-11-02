@@ -12,17 +12,23 @@ import {
 import { calculateAdaptiveTDEE, generateWeeklyAdjustmentProposal } from './engine';
 
 export const initialProfile: UserProfile = {
-  name: 'Alex Rivera',
+  name: 'Athlete',
   unitSystem: 'metric',
   goal: 'fat_loss',
   targetRateKgPerWeek: -0.4,
-  heightCm: 180,
+  heightCm: 175,
+  weightKg: 75,
+  age: 26,
+  sex: 'male',
+  activityLevel: 'moderate',
+  experienceLevel: 'intermediate',
   theme: 'dark',
-  startDate: '2026-10-01',
+  startDate: new Date().toISOString().split('T')[0],
+  onboardingCompleted: false,
   targets: {
     calories: 2150,
-    proteinGrams: 175,
-    carbsGrams: 200,
+    proteinGrams: 165,
+    carbsGrams: 210,
     fatGrams: 65,
     waterMl: 3000,
   },

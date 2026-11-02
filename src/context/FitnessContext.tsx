@@ -76,6 +76,9 @@ export interface FitnessContextType {
     customTarget?: number
   ) => void;
   resetAllData: () => void;
+  loadDemoData: () => void;
+  clearAllHistory: () => void;
+  replaceFitnessState: (newState: FitnessState) => void;
   exportAllJson: () => void;
   importAllJson: (payload: string) => { ok: boolean; error?: string };
   exportCsv: (type: 'weights' | 'foods' | 'workouts' | 'cardio') => void;
@@ -89,12 +92,14 @@ function loadInitialFitnessState(): FitnessState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.profile && parsed.weights) {
-        const hydration = parsed.hydrationLogs || { [todayStr]: parsed.waterMlToday || 1750 };
+      if (parsed && parsed.profile && Array.isArray(parsed.weights)) {
+        const hydration = parsed.hydrationLogs || { [todayStr]: parsed.waterMlToday || 0 };
         return {
           ...parsed,
+          foodLibrary: parsed.foodLibrary && parsed.foodLibrary.length > 0 ? parsed.foodLibrary : mockFoodLibrary,
+          exercises: parsed.exercises && parsed.exercises.length > 0 ? parsed.exercises : mockExercises,
           templates: parsed.templates && parsed.templates.length >= 3 ? parsed.templates : mockTemplates,
-          cardioSessions: parsed.cardioSessions || initialCardioSessions,
+          cardioSessions: parsed.cardioSessions || [],
           hydrationLogs: hydration,
           waterMlToday: hydration[todayStr] ?? (parsed.waterMlToday || 0),
           weeklySchedule: parsed.weeklySchedule || defaultWeeklySchedule,
@@ -108,22 +113,20 @@ function loadInitialFitnessState(): FitnessState {
     console.warn('Could not parse saved fitness state from localStorage', e);
   }
 
-  const { weights, loggedFoods, completedWorkouts, cardioSessions } = generateMockHistory();
-  const initialReview = buildInitialWeeklyReview(weights, loggedFoods, initialProfile);
-
+  // CLEAN INITIAL STATE: Real user first-run with zero artificial mock history
   const freshState: FitnessState = {
     profile: { ...initialProfile, theme: getPreferredTheme() },
-    weights,
-    loggedFoods,
+    weights: [],
+    loggedFoods: [],
     foodLibrary: mockFoodLibrary,
     exercises: mockExercises,
     templates: mockTemplates,
-    completedWorkouts,
-    cardioSessions: cardioSessions || initialCardioSessions,
+    completedWorkouts: [],
+    cardioSessions: [],
     activeWorkout: null,
-    reviews: [initialReview],
-    waterMlToday: 1750,
-    hydrationLogs: { [todayStr]: 1750 },
+    reviews: [],
+    waterMlToday: 0,
+    hydrationLogs: { [todayStr]: 0 },
     weeklySchedule: defaultWeeklySchedule,
   };
 
@@ -491,29 +494,67 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
 
   const resetAllData = () => {
     localStorage.removeItem(STORAGE_KEY);
-    const { weights, loggedFoods, completedWorkouts, cardioSessions } = generateMockHistory();
-    const freshReview = buildInitialWeeklyReview(weights, loggedFoods, initialProfile);
     const todayStr = getLocalDateString();
     const freshState: FitnessState = {
       profile: {
         ...initialProfile,
         theme: getPreferredTheme(),
-        name: initialProfile.name,
+        name: 'Athlete',
       },
-      weights,
-      loggedFoods,
+      weights: [],
+      loggedFoods: [],
       foodLibrary: mockFoodLibrary,
       exercises: mockExercises,
       templates: mockTemplates,
-      completedWorkouts,
-      cardioSessions: cardioSessions || initialCardioSessions,
+      completedWorkouts: [],
+      cardioSessions: [],
       activeWorkout: null,
-      reviews: [freshReview],
-      waterMlToday: 1750,
-      hydrationLogs: { [todayStr]: 1750 },
+      reviews: [],
+      waterMlToday: 0,
+      hydrationLogs: { [todayStr]: 0 },
       weeklySchedule: defaultWeeklySchedule,
     };
     setState(freshState);
+  };
+
+  const loadDemoData = () => {
+    const { weights, loggedFoods, completedWorkouts, cardioSessions } = generateMockHistory();
+    const freshReview = buildInitialWeeklyReview(weights, loggedFoods, initialProfile);
+    const todayStr = getLocalDateString();
+    setState((prev) => ({
+      ...prev,
+      profile: {
+        ...prev.profile,
+        name: 'Alex Rivera',
+        onboardingCompleted: true,
+      },
+      weights,
+      loggedFoods,
+      completedWorkouts,
+      cardioSessions: cardioSessions || [],
+      reviews: [freshReview],
+      waterMlToday: 1750,
+      hydrationLogs: { [todayStr]: 1750 },
+    }));
+  };
+
+  const clearAllHistory = () => {
+    const todayStr = getLocalDateString();
+    setState((prev) => ({
+      ...prev,
+      weights: [],
+      loggedFoods: [],
+      completedWorkouts: [],
+      cardioSessions: [],
+      reviews: [],
+      waterMlToday: 0,
+      hydrationLogs: { [todayStr]: 0 },
+    }));
+  };
+
+  const replaceFitnessState = (newState: FitnessState) => {
+    if (!newState || !newState.profile) return;
+    setState(newState);
   };
 
   const exportAllJson = () => {
@@ -630,6 +671,9 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
         importHealthBatch,
         resolveReview,
         resetAllData,
+        loadDemoData,
+        clearAllHistory,
+        replaceFitnessState,
         exportAllJson,
         importAllJson,
         exportCsv,

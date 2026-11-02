@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FitnessProvider, useFitness } from './context/FitnessContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { Navigation, TabType } from './components/Navigation';
 import { TodayView } from './components/today/TodayView';
@@ -12,12 +13,16 @@ import { WeeklyReviewModal } from './components/progress/WeeklyReviewModal';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { HealthSyncModal } from './components/sync/HealthSyncModal';
 import { InstallPwaModal } from './components/pwa/InstallPwaModal';
+import { ProfileModal } from './components/profile/ProfileModal';
+import { AuthModal } from './components/auth/AuthModal';
 import { checkUrlForHealthSync } from './services/healthSync';
+import { saveUserFitnessState, loadUserFitnessState } from './services/firebase';
 import { Play, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { MealType } from './types';
 
 function AppContent() {
-  const { state, resolveReview, importHealthBatch } = useFitness();
+  const { state, resolveReview, importHealthBatch, replaceFitnessState } = useFitness();
+  const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('today');
 
   // Modals
@@ -29,11 +34,56 @@ function AppContent() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showHealthSyncModal, setShowHealthSyncModal] = useState(false);
   const [showInstallPwaModal, setShowInstallPwaModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [healthSyncToast, setHealthSyncToast] = useState<string | null>(null);
 
   const hasActiveWorkout = !!state.activeWorkout;
   const pendingReview = state.reviews.find((r) => r.status === 'pending');
   const isLight = state.profile.theme === 'light';
+  const hasHydratedFromCloud = useRef(false);
+
+  // Cloud Sync Hydration upon login
+  useEffect(() => {
+    if (!currentUser?.uid || hasHydratedFromCloud.current) return;
+    let isMounted = true;
+
+    async function checkCloudData() {
+      try {
+        const cloudState = await loadUserFitnessState(currentUser!.uid);
+        if (cloudState && isMounted) {
+          hasHydratedFromCloud.current = true;
+          // If local state is empty (clean user) or has fewer entries, hydrate from cloud
+          if (state.weights.length === 0 && state.loggedFoods.length === 0) {
+            replaceFitnessState(cloudState);
+            setHealthSyncToast('Restored your fitness data from Firebase Cloud!');
+            setTimeout(() => setHealthSyncToast(null), 4000);
+          }
+        }
+      } catch (e) {
+        console.warn('Cloud hydration check skipped:', e);
+      }
+    }
+
+    checkCloudData();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.uid, replaceFitnessState, state.weights.length, state.loggedFoods.length]);
+
+  // Debounced Auto-sync to Firebase Firestore whenever state changes
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+    const timer = setTimeout(async () => {
+      try {
+        await saveUserFitnessState(currentUser.uid, state);
+      } catch (e) {
+        console.warn('Background auto-sync to Firestore failed:', e);
+      }
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [state, currentUser?.uid]);
 
   // Check URL query for iOS Health Shortcut ?health_sync=...
   useEffect(() => {
@@ -62,6 +112,7 @@ function AppContent() {
       {/* Top Header */}
       <Header
         onOpenSettings={() => setShowSettingsModal(true)}
+        onOpenProfile={() => setShowProfileModal(true)}
         onOpenHealthSync={() => setShowHealthSyncModal(true)}
         onOpenInstallPwa={() => setShowInstallPwaModal(true)}
       />
@@ -81,6 +132,7 @@ function AppContent() {
             onOpenFoodModal={() => handleOpenAddFood('breakfast')}
             onOpenWeighInModal={() => setShowWeighInModal(true)}
             onOpenWeeklyReview={() => setShowWeeklyReviewModal(true)}
+            onOpenProfile={() => setShowProfileModal(true)}
             onNavigateTab={(tab) => setActiveTab(tab)}
           />
         )}
@@ -160,6 +212,10 @@ function AppContent() {
       {showSettingsModal && (
         <SettingsModal
           onClose={() => setShowSettingsModal(false)}
+          onOpenProfile={() => {
+            setShowSettingsModal(false);
+            setShowProfileModal(true);
+          }}
           onOpenHealthSync={() => {
             setShowSettingsModal(false);
             setShowHealthSyncModal(true);
@@ -168,6 +224,20 @@ function AppContent() {
             setShowSettingsModal(false);
             setShowInstallPwaModal(true);
           }}
+        />
+      )}
+
+      {showProfileModal && (
+        <ProfileModal
+          onClose={() => setShowProfileModal(false)}
+          onOpenAuth={() => setShowAuthModal(true)}
+        />
+      )}
+
+      {showAuthModal && (
+        <AuthModal
+          onClose={() => setShowAuthModal(false)}
+          onSuccess={() => setShowAuthModal(false)}
         />
       )}
 
@@ -184,8 +254,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <FitnessProvider>
-      <AppContent />
-    </FitnessProvider>
+    <AuthProvider>
+      <FitnessProvider>
+        <AppContent />
+      </FitnessProvider>
+    </AuthProvider>
   );
 }

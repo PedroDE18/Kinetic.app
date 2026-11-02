@@ -1,15 +1,18 @@
 import React from 'react';
-import { Settings, Moon, Sun, Watch, Smartphone } from 'lucide-react';
+import { Settings, Moon, Sun, Watch, Smartphone, User, Cloud } from 'lucide-react';
 import { useFitness } from '../context/FitnessContext';
+import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {
   onOpenSettings: () => void;
+  onOpenProfile: () => void;
   onOpenHealthSync?: () => void;
   onOpenInstallPwa?: () => void;
 }
 
-export function Header({ onOpenSettings, onOpenHealthSync, onOpenInstallPwa }: HeaderProps) {
+export function Header({ onOpenSettings, onOpenProfile, onOpenHealthSync, onOpenInstallPwa }: HeaderProps) {
   const { state, updateProfile } = useFitness();
+  const { currentUser } = useAuth();
   const isLight = state.profile.theme === 'light';
 
   const toggleTheme = () => {
@@ -28,24 +31,47 @@ export function Header({ onOpenSettings, onOpenHealthSync, onOpenInstallPwa }: H
 
   return (
     <header className="sticky top-0 z-30 bg-[var(--color-surface-sunken)] dark:bg-[var(--color-surface-sunken)] backdrop-blur-md border-b border-[var(--color-border)] px-4 notch-header-padding pb-2.5 flex items-center justify-between max-w-md mx-auto w-full transition-colors">
-      <div className="flex items-center gap-2.5">
+      <button
+        onClick={onOpenProfile}
+        className="flex items-center gap-2.5 text-left active:scale-[0.98] transition-all"
+        title="View & Edit Athletic Profile"
+      >
         <div className="h-7 w-7 rounded-xl bg-[var(--color-accent)]/20 text-[var(--color-accent)] flex items-center justify-center font-black text-sm tracking-tighter border border-[#E07A5F]/30 shadow-xs">
           K
         </div>
         <div>
           <div className="flex items-center gap-1.5">
-            <h1 className="text-sm font-bold tracking-tight text-[var(--color-text)]">Kinetic</h1>
+            <h1 className="text-sm font-bold tracking-tight text-[var(--color-text)]">
+              {state.profile.name || 'Kinetic'}
+            </h1>
             <span className="text-[10px] font-semibold px-2 py-0.5 bg-[var(--color-surface-raised)] dark:bg-[#2C241E] text-[#C85A32] dark:text-[var(--color-accent)] rounded-full border border-[var(--color-border)] dark:border-[#42362C]">
-              Adaptive
+              {currentUser ? 'Cloud' : 'Adaptive'}
             </span>
           </div>
           <span className="text-[10px] text-[var(--color-text-muted)] font-medium">
             {goalName} • {state.profile.targets.calories} kcal
           </span>
         </div>
-      </div>
+      </button>
 
       <div className="flex items-center gap-0.5">
+        {/* Profile & Cloud Account Button */}
+        <button
+          onClick={onOpenProfile}
+          aria-label="Athletic Profile and Cloud Account"
+          title={currentUser ? `Signed in as ${currentUser.email || 'Cloud'}` : 'Athletic Profile'}
+          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-accent)] active:scale-95 transition-all relative"
+        >
+          {currentUser ? (
+            <div className="relative">
+              <User className="w-4 h-4 text-[var(--color-accent)]" />
+              <span className="w-2 h-2 rounded-full bg-[var(--color-success)] absolute -top-0.5 -right-0.5 border-2 border-[var(--color-surface)]" />
+            </div>
+          ) : (
+            <User className="w-4 h-4" />
+          )}
+        </button>
+
         {/* Health & Garmin Sync */}
         {onOpenHealthSync && (
           <button
