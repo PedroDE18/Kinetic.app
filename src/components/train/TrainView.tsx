@@ -19,9 +19,10 @@ import {
   Sparkles,
   BookOpen,
   Watch,
+  Disc,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
-import { ActiveWorkoutSession, CompletedWorkout, WorkoutTemplate, ExerciseSet } from '../../types';
+import { ActiveWorkoutSession, CompletedWorkout, WorkoutTemplate, ExerciseSet, SetType } from '../../types';
 import {
   computeRestRemainingSeconds,
   extendRestTimer,
@@ -37,6 +38,8 @@ import { ProgramBuilderModal } from './ProgramBuilderModal';
 import { CardioLoggerModal } from './CardioLoggerModal';
 import { ExerciseAtlasModal } from './ExerciseAtlasModal';
 import { HealthSyncModal } from '../sync/HealthSyncModal';
+import { PlateCalculatorModal } from './PlateCalculatorModal';
+import { playRestTimerCompleteSound, triggerHapticFeedback } from '../../utils/audioHaptics';
 import { formatPace, calculateCardioStats, formatDistance, formatDisplayDate, getLocalDateString } from '../../utils/engine';
 
 export function TrainView() {
@@ -83,9 +86,45 @@ export function TrainView() {
   // Discard confirmation
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
+  // Plate Calculator state
+  const [plateCalcTarget, setPlateCalcTarget] = useState<{
+    exIdx: number;
+    setIdx: number;
+    weight: number;
+  } | null>(null);
+
   // Interaction state: expand a routine card, open a past session
   const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
   const [historyWorkout, setHistoryWorkout] = useState<CompletedWorkout | null>(null);
+
+  // Historical lookup for last completed performance on an exercise
+  const getLastPerformance = (
+    exerciseId: string,
+    setIndex: number
+  ): { weightKg: number; reps: number } | null => {
+    for (const prevWorkout of completedWorkouts) {
+      const matchEx = prevWorkout.exercises.find((e) => e.exerciseId === exerciseId);
+      if (matchEx && matchEx.sets.length > 0) {
+        const completedSets = matchEx.sets.filter((s) => s.isCompleted);
+        if (completedSets.length > 0) {
+          const matchSet = completedSets[setIndex] || completedSets[completedSets.length - 1];
+          if (matchSet && matchSet.actualWeightKg > 0 && matchSet.actualReps > 0) {
+            return { weightKg: matchSet.actualWeightKg, reps: matchSet.actualReps };
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  const handleCycleSetType = (exIdx: number, setIdx: number) => {
+    if (!activeWorkout) return;
+    const currentType = activeWorkout.exercises[exIdx].sets[setIdx].setType || 'normal';
+    const sequence: SetType[] = ['normal', 'warmup', 'dropset', 'failure'];
+    const nextIdx = (sequence.indexOf(currentType) + 1) % sequence.length;
+    const nextType = sequence[nextIdx];
+    handleUpdateSetValue(exIdx, setIdx, 'setType', nextType);
+  };
 
   // Workout Elapsed Timer Effect
   useEffect(() => {
@@ -113,12 +152,8 @@ export function TrainView() {
       if (remaining <= 0) {
         setIsResting(false);
         setRestClock(null);
-        // Gentle completion cue; silently a no-op where unsupported.
-        try {
-          navigator.vibrate?.(60);
-        } catch {
-          // vibration is best-effort
-        }
+        playRestTimerCompleteSound();
+        triggerHapticFeedback([200, 100, 200]);
       }
     };
 
@@ -251,8 +286,8 @@ export function TrainView() {
   const handleUpdateSetValue = (
     exIndex: number,
     setIndex: number,
-    field: 'actualWeightKg' | 'actualReps',
-    val: number
+    field: 'actualWeightKg' | 'actualReps' | 'setType',
+    val: any
   ) => {
     if (!activeWorkout) return;
     const updated: ActiveWorkoutSession = {
@@ -521,72 +556,131 @@ export function TrainView() {
 
                   {/* Sets List */}
                   <div className="space-y-2 pt-1">
-                    {exercise.sets.map((set, setIdx) => (
-                      <div
-                        key={set.id}
-                        className={`grid grid-cols-12 gap-1 items-center p-1.5 rounded-xl transition-colors ${
-                          set.isCompleted
-                            ? 'bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30'
-                            : 'bg-[var(--color-surface-sunken)] border border-[var(--color-border)]'
-                        }`}
-                      >
-                        <div className="col-span-2 text-center text-xs font-extrabold text-[var(--color-text-muted)]">
-                          {set.setNumber}
-                        </div>
+                    {exercise.sets.map((set, setIdx) => {
+                      const lastPerf = getLastPerformance(exercise.exerciseId, setIdx);
+                      const setType = set.setType || 'normal';
+                      const setTypeBadge =
+                        setType === 'warmup'
+                          ? { label: 'W', color: 'text-amber-400 bg-amber-400/10 border-amber-400/30' }
+                          : setType === 'dropset'
+                          ? { label: 'D', color: 'text-purple-400 bg-purple-400/10 border-purple-400/30' }
+                          : setType === 'failure'
+                          ? { label: 'F', color: 'text-rose-400 bg-rose-400/10 border-rose-400/30' }
+                          : {
+                              label: String(set.setNumber),
+                              color: 'text-[var(--color-text-muted)] bg-[var(--color-surface)] border-[var(--color-border)]',
+                            };
 
-                        {/* Weight input */}
-                        <div className="col-span-4 flex justify-center">
-                          <input
-                            type="number"
-                            step="0.5"
-                            value={set.actualWeightKg}
-                            aria-label={`Weight for set ${set.setNumber} of ${exercise.exerciseName}, kilograms`}
-                            onChange={(e) =>
-                              handleUpdateSetValue(
-                                exIdx,
-                                setIdx,
-                                'actualWeightKg',
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                            className="w-16 tabular-nums bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg py-1.5 text-center text-sm font-semibold text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
-                          />
-                        </div>
+                      return (
+                        <div
+                          key={set.id}
+                          className={`space-y-1.5 p-2 rounded-xl transition-colors ${
+                            set.isCompleted
+                              ? 'bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30'
+                              : 'bg-[var(--color-surface-sunken)] border border-[var(--color-border)]'
+                          }`}
+                        >
+                          <div className="grid grid-cols-12 gap-1 items-center">
+                            {/* Set type badge (tap to cycle) */}
+                            <div className="col-span-2 flex justify-center">
+                              <button
+                                type="button"
+                                onClick={() => handleCycleSetType(exIdx, setIdx)}
+                                title={`Set type: ${setType}. Tap to cycle (Normal -> Warmup -> Drop -> Failure)`}
+                                className={`w-7 h-7 rounded-lg border text-xs font-black flex items-center justify-center active:scale-90 transition-all ${setTypeBadge.color}`}
+                              >
+                                {setTypeBadge.label}
+                              </button>
+                            </div>
 
-                        {/* Reps input */}
-                        <div className="col-span-3 flex justify-center">
-                          <input
-                            type="number"
-                            value={set.actualReps}
-                            aria-label={`Reps for set ${set.setNumber} of ${exercise.exerciseName}`}
-                            onChange={(e) =>
-                              handleUpdateSetValue(
-                                exIdx,
-                                setIdx,
-                                'actualReps',
-                                parseInt(e.target.value) || 0
-                              )
-                            }
-                            className="w-12 tabular-nums bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg py-1.5 text-center text-sm font-semibold text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
-                          />
-                        </div>
+                            {/* Weight input with Plate Calculator button */}
+                            <div className="col-span-4 flex items-center justify-center gap-1">
+                              <input
+                                type="number"
+                                step="0.5"
+                                value={set.actualWeightKg}
+                                aria-label={`Weight for set ${set.setNumber} of ${exercise.exerciseName}, kilograms`}
+                                onChange={(e) =>
+                                  handleUpdateSetValue(
+                                    exIdx,
+                                    setIdx,
+                                    'actualWeightKg',
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                className="w-14 tabular-nums bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg py-1.5 text-center text-sm font-semibold text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
+                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPlateCalcTarget({
+                                    exIdx,
+                                    setIdx,
+                                    weight: set.actualWeightKg || 60,
+                                  })
+                                }
+                                title="Open Barbell Plate Calculator"
+                                className="p-1 rounded-md text-[var(--color-text-subtle)] hover:text-[var(--color-accent)] hover:bg-[var(--color-surface)] transition-colors"
+                              >
+                                <Disc className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
 
-                        {/* Complete Checkbox Button */}
-                        <div className="col-span-3 flex justify-end pr-1">
-                          <button
-                            onClick={() => handleToggleSet(exIdx, setIdx)}
-                            aria-label={`Toggle set ${set.setNumber}`}
-                            className={`min-h-[40px] min-w-[40px] rounded-xl flex items-center justify-center transition-all ${
-                              set.isCompleted
-                                ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-sm font-semibold'
-                                : 'bg-[var(--color-surface-raised)] text-[var(--color-text-subtle)] hover:text-[var(--color-text)]'
-                            }`}
-                          >
-                            <Check className="w-5 h-5 stroke-[3]" />
-                          </button>
+                            {/* Reps input */}
+                            <div className="col-span-3 flex justify-center">
+                              <input
+                                type="number"
+                                value={set.actualReps}
+                                aria-label={`Reps for set ${set.setNumber} of ${exercise.exerciseName}`}
+                                onChange={(e) =>
+                                  handleUpdateSetValue(
+                                    exIdx,
+                                    setIdx,
+                                    'actualReps',
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
+                                className="w-12 tabular-nums bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg py-1.5 text-center text-sm font-semibold text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
+                              />
+                            </div>
+
+                            {/* Complete Checkbox Button */}
+                            <div className="col-span-3 flex justify-end pr-1">
+                              <button
+                                onClick={() => handleToggleSet(exIdx, setIdx)}
+                                aria-label={`Toggle set ${set.setNumber}`}
+                                className={`min-h-[40px] min-w-[40px] rounded-xl flex items-center justify-center transition-all ${
+                                  set.isCompleted
+                                    ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-sm font-semibold'
+                                    : 'bg-[var(--color-surface-raised)] text-[var(--color-text-subtle)] hover:text-[var(--color-text)]'
+                                }`}
+                              >
+                                <Check className="w-5 h-5 stroke-[3]" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Historical Last Performance Ghost Badge */}
+                          {lastPerf && !set.isCompleted && (
+                            <div className="flex items-center justify-between px-2 text-[10px] text-[var(--color-text-subtle)] border-t border-[var(--color-border)]/50 pt-1">
+                              <span>
+                                Prior session: <strong className="text-[var(--color-text)]">{lastPerf.weightKg} kg × {lastPerf.reps}</strong>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleUpdateSetValue(exIdx, setIdx, 'actualWeightKg', lastPerf.weightKg);
+                                  handleUpdateSetValue(exIdx, setIdx, 'actualReps', lastPerf.reps);
+                                }}
+                                className="text-[var(--color-accent)] hover:underline font-bold"
+                              >
+                                Match Last
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Add set button */}
@@ -1070,6 +1164,24 @@ export function TrainView() {
         <HealthSyncModal
           isOpen={showHealthSync}
           onClose={() => setShowHealthSync(false)}
+        />
+      )}
+
+      {/* Plate Calculator Modal */}
+      {plateCalcTarget && (
+        <PlateCalculatorModal
+          initialWeightKg={plateCalcTarget.weight}
+          unit={profile.unitSystem === 'imperial' ? 'lbs' : 'kg'}
+          onClose={() => setPlateCalcTarget(null)}
+          onApplyWeight={(newWt) => {
+            handleUpdateSetValue(
+              plateCalcTarget.exIdx,
+              plateCalcTarget.setIdx,
+              'actualWeightKg',
+              newWt
+            );
+            setPlateCalcTarget(null);
+          }}
         />
       )}
     </div>

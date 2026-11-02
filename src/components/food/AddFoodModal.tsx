@@ -1,9 +1,26 @@
-import React, { useState, useMemo } from 'react';
-import { Search, Plus, Sparkles, X, Heart, Utensils, Check, Trash2, Database, Info, Cpu } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import {
+  Search,
+  Plus,
+  Sparkles,
+  X,
+  Heart,
+  Utensils,
+  Check,
+  Trash2,
+  Database,
+  Info,
+  Cpu,
+  ScanBarcode,
+  Camera,
+  RefreshCw,
+  AlertCircle,
+} from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { FoodItem, LoggedFood, MealType, ParsedAiFoodItem } from '../../types';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
 import { estimateMealWithAi, estimateMealOffline } from '../../services/aiFoodEstimation';
+import { lookupBarcodeOpenFoodFacts, BarcodeFoodItem } from '../../services/barcodeService';
 
 interface AddFoodModalProps {
   initialMealType?: MealType;
@@ -15,11 +32,22 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
   useBodyScrollLock(true);
   const { state, addLoggedFood, toggleFoodFavorite, addFoodToLibrary } = useFitness();
   const [selectedMeal, setSelectedMeal] = useState<MealType>(initialMealType);
-  const [activeTab, setActiveTab] = useState<'database' | 'ai_describe' | 'custom'>('database');
+  const [activeTab, setActiveTab] = useState<'database' | 'barcode' | 'ai_describe' | 'custom'>('database');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [servingMultiplier, setServingMultiplier] = useState<number>(1);
+
+  // Barcode Scanner State (OpenFoodFacts - 100% Free Open API)
+  const [barcodeInput, setBarcodeInput] = useState('');
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const [barcodeError, setBarcodeError] = useState<string | null>(null);
+  const [scannedProduct, setScannedProduct] = useState<BarcodeFoodItem | null>(null);
+  const [scannedMultiplier, setScannedMultiplier] = useState<number>(1);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const getLogTimestamp = () => {
     if (!targetDate) return new Date().toISOString();
@@ -79,6 +107,146 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
     addLoggedFood(newEntry);
     onClose();
   };
+
+  // Barcode Camera and Search Handlers
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setCameraActive(false);
+  };
+
+  const startCamera = async () => {
+    setCameraError(null);
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError('Camera access is not supported by your browser.');
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+      setCameraActive(true);
+
+      // Start BarcodeDetector scanning loop if supported natively
+      if ('BarcodeDetector' in window) {
+        const detector = new (window as any).BarcodeDetector({
+          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'qr_code'],
+        });
+
+        const scanInterval = setInterval(async () => {
+          if (!streamRef.current) {
+            clearInterval(scanInterval);
+            return;
+          }
+          if (videoRef.current && videoRef.current.readyState >= 2) {
+            try {
+              const barcodes = await detector.detect(videoRef.current);
+              if (barcodes.length > 0 && barcodes[0].rawValue) {
+                const detectedCode = barcodes[0].rawValue;
+                clearInterval(scanInterval);
+                stopCamera();
+                setBarcodeInput(detectedCode);
+                handleBarcodeSearch(detectedCode);
+              }
+            } catch {
+              // Ignore frame read failures
+            }
+          }
+        }, 350);
+      }
+    } catch (err: any) {
+      setCameraError(err?.message || 'Unable to access camera. Please allow camera permissions.');
+      setCameraActive(false);
+    }
+  };
+
+  const handleBarcodeSearch = async (barcodeToSearch?: string) => {
+    const code = (barcodeToSearch || barcodeInput).trim();
+    if (!code) return;
+    setBarcodeLoading(true);
+    setBarcodeError(null);
+    setScannedProduct(null);
+
+    try {
+      const res = await lookupBarcodeOpenFoodFacts(code);
+      if (res.found && res.food) {
+        setScannedProduct(res.food);
+        setScannedMultiplier(1);
+      } else {
+        setBarcodeError(res.error || 'Product not found in OpenFoodFacts database.');
+      }
+    } catch (err: any) {
+      setBarcodeError(err?.message || 'Failed to search barcode.');
+    } finally {
+      setBarcodeLoading(false);
+    }
+  };
+
+  const handleConfirmAddScannedFood = () => {
+    if (!scannedProduct) return;
+    const count = Math.max(0.1, scannedMultiplier);
+
+    // Save to food library if not already present
+    const existing = state.foodLibrary.find(
+      (f) => f.barcode === scannedProduct.barcode || f.name.toLowerCase() === scannedProduct.name.toLowerCase()
+    );
+
+    let foodId = existing?.id;
+    if (!foodId) {
+      foodId = `food-barcode-${scannedProduct.barcode}`;
+      const newFoodItem: FoodItem = {
+        id: foodId,
+        name: scannedProduct.name,
+        brand: scannedProduct.brand,
+        barcode: scannedProduct.barcode,
+        category: 'Meals',
+        servingSize: scannedProduct.servingSize,
+        servingUnit: scannedProduct.servingUnit,
+        calories: scannedProduct.calories,
+        protein: scannedProduct.protein,
+        carbs: scannedProduct.carbs,
+        fat: scannedProduct.fat,
+        fiber: scannedProduct.fiber,
+        source: 'OpenFoodFacts Global Database',
+        isFavorite: true,
+      };
+      addFoodToLibrary(newFoodItem);
+    }
+
+    const newLog: LoggedFood = {
+      id: `food-log-${Date.now()}`,
+      foodId,
+      mealType: selectedMeal,
+      name: scannedProduct.name,
+      servingCount: count,
+      servingSize: scannedProduct.servingSize,
+      servingUnit: scannedProduct.servingUnit,
+      calories: Math.round(scannedProduct.calories * count),
+      protein: Number((scannedProduct.protein * count).toFixed(1)),
+      carbs: Number((scannedProduct.carbs * count).toFixed(1)),
+      fat: Number((scannedProduct.fat * count).toFixed(1)),
+      fiber: scannedProduct.fiber ? Number((scannedProduct.fiber * count).toFixed(1)) : undefined,
+      loggedAt: getLogTimestamp(),
+    };
+
+    addLoggedFood(newLog);
+    stopCamera();
+    onClose();
+  };
+
+  // Cleanup camera stream on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
   // Itemized Multi-Part Estimation using Gemini 2.5 Flash with free offline fallback
   const handleRunAiEstimation = async () => {
@@ -211,11 +379,12 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
         </div>
 
         {/* Section Navigation Tabs */}
-        <div className="grid grid-cols-3 border-b border-[var(--color-border)] text-xs font-semibold bg-[var(--color-surface-sunken)]">
+        <div className="grid grid-cols-4 border-b border-[var(--color-border)] text-xs font-semibold bg-[var(--color-surface-sunken)]">
           <button
             onClick={() => {
               setActiveTab('database');
               setSelectedFood(null);
+              stopCamera();
             }}
             className={`min-h-[40px] py-2 text-center transition-all ${
               activeTab === 'database'
@@ -223,10 +392,27 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                 : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
             }`}
           >
-            Food Library
+            Library
           </button>
           <button
-            onClick={() => setActiveTab('ai_describe')}
+            onClick={() => {
+              setActiveTab('barcode');
+              setSelectedFood(null);
+            }}
+            className={`min-h-[40px] py-2 text-center flex items-center justify-center gap-1 transition-all ${
+              activeTab === 'barcode'
+                ? 'border-b-2 border-[var(--color-accent)] text-[var(--color-accent)]'
+                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+            }`}
+          >
+            <ScanBarcode className="w-3.5 h-3.5" />
+            <span>Barcode</span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('ai_describe');
+              stopCamera();
+            }}
             className={`min-h-[40px] py-2 text-center flex items-center justify-center gap-1 transition-all ${
               activeTab === 'ai_describe'
                 ? 'border-b-2 border-[var(--color-accent)] text-[var(--color-accent)]'
@@ -234,17 +420,20 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>AI Describe</span>
+            <span>AI</span>
           </button>
           <button
-            onClick={() => setActiveTab('custom')}
+            onClick={() => {
+              setActiveTab('custom');
+              stopCamera();
+            }}
             className={`min-h-[40px] py-2 text-center transition-all ${
               activeTab === 'custom'
                 ? 'border-b-2 border-[var(--color-accent)] text-[var(--color-accent)]'
                 : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
             }`}
           >
-            + Create New
+            + Custom
           </button>
         </div>
 
@@ -491,7 +680,216 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
             </>
           )}
 
-          {/* TAB 2: MULTI-PART AI DESCRIBE */}
+          {/* TAB 2: BARCODE SCANNER (FREE OPENFOODFACTS) */}
+          {activeTab === 'barcode' && (
+            <div className="space-y-3.5">
+              <div className="p-3 bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-2xl text-xs text-[var(--color-text-muted)] leading-relaxed">
+                <span className="font-semibold text-[var(--color-accent)] flex items-center gap-1 mb-1">
+                  <ScanBarcode className="w-3.5 h-3.5" />
+                  Free OpenFoodFacts Barcode Scanner
+                </span>
+                Scan package barcodes using your camera or enter the digits directly. Queries a free open database of over 3 million foods.
+              </div>
+
+              {/* Camera Scanner Viewfinder */}
+              {cameraActive ? (
+                <div className="relative rounded-2xl overflow-hidden bg-black border border-[var(--color-border)] aspect-video flex items-center justify-center shadow-inner">
+                  <video
+                    ref={videoRef}
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    playsInline
+                    muted
+                  />
+                  {/* Visual reticle & laser */}
+                  <div className="absolute inset-10 border-2 border-dashed border-white/50 rounded-xl pointer-events-none flex items-center justify-center">
+                    <div className="w-full h-0.5 bg-[var(--color-accent)] shadow-[0_0_12px_var(--color-accent)] animate-pulse" />
+                  </div>
+                  <div className="absolute top-2.5 right-2.5">
+                    <button
+                      type="button"
+                      onClick={stopCamera}
+                      className="px-3 py-1 rounded-lg bg-black/70 border border-white/20 text-white text-[11px] font-semibold backdrop-blur-sm active:scale-95 transition-all"
+                    >
+                      Close Camera
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="w-full py-3 bg-[var(--color-surface-raised)] border border-[var(--color-border)] hover:border-[var(--color-accent)] rounded-2xl text-xs font-semibold text-[var(--color-text)] flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm"
+                >
+                  <Camera className="w-4 h-4 text-[var(--color-accent)]" />
+                  <span>Scan with Device Camera</span>
+                </button>
+              )}
+
+              {cameraError && (
+                <div className="p-2.5 bg-[var(--color-danger-soft)] text-[var(--color-danger)] rounded-xl text-xs flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{cameraError}</span>
+                </div>
+              )}
+
+              {/* Manual Barcode Input */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider block">
+                  Or enter barcode digits:
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="e.g. 0737628064502"
+                    value={barcodeInput}
+                    onChange={(e) => setBarcodeInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleBarcodeSearch();
+                      }
+                    }}
+                    className="flex-1 bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)] font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleBarcodeSearch()}
+                    disabled={!barcodeInput.trim() || barcodeLoading}
+                    className="px-4 py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition-all disabled:opacity-40"
+                  >
+                    {barcodeLoading ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Search className="w-3.5 h-3.5 stroke-[2.5]" />
+                    )}
+                    <span>Search</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Preset Barcode Chips */}
+              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                <span className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold">Demo items:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBarcodeInput('0737628064502');
+                    handleBarcodeSearch('0737628064502');
+                  }}
+                  className="text-[11px] bg-[var(--color-surface-raised)] border border-[var(--color-border)] px-2 py-0.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                >
+                  Thai Noodles
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBarcodeInput('748927028645');
+                    handleBarcodeSearch('748927028645');
+                  }}
+                  className="text-[11px] bg-[var(--color-surface-raised)] border border-[var(--color-border)] px-2 py-0.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                >
+                  Whey Isolate
+                </button>
+              </div>
+
+              {/* Barcode Search Error */}
+              {barcodeError && (
+                <div className="p-3 bg-[var(--color-danger-soft)] text-[var(--color-danger)] rounded-2xl text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{barcodeError}</span>
+                </div>
+              )}
+
+              {/* Scanned Food Card & Review */}
+              {scannedProduct && (
+                <div className="p-4 bg-[var(--color-surface-sunken)] border border-[var(--color-accent)]/50 rounded-2xl space-y-3 animate-in fade-in">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-accent)]/15 text-[var(--color-accent)] font-semibold inline-block mb-1">
+                        Barcode: {scannedProduct.barcode}
+                      </span>
+                      <h4 className="font-bold text-sm text-[var(--color-text)] leading-snug">
+                        {scannedProduct.name}
+                      </h4>
+                      {scannedProduct.brand && (
+                        <p className="text-xs text-[var(--color-text-muted)] font-medium mt-0.5">
+                          {scannedProduct.brand}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Serving Stepper */}
+                  <div className="flex items-center justify-between py-2 border-y border-[var(--color-border)]">
+                    <span className="text-xs font-semibold text-[var(--color-text-muted)]">
+                      Serving portion ({scannedProduct.servingSize} {scannedProduct.servingUnit})
+                    </span>
+                    <div className="flex items-center bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-xl overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setScannedMultiplier((m) => Math.max(0.25, Number((m - 0.25).toFixed(2))))}
+                        className="w-8 h-8 flex items-center justify-center font-bold text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                      >
+                        -
+                      </button>
+                      <span className="w-12 text-center text-xs font-bold text-[var(--color-text)] tabular-nums">
+                        {scannedMultiplier}×
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setScannedMultiplier((m) => Number((m + 0.25).toFixed(2)))}
+                        className="w-8 h-8 flex items-center justify-center font-bold text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Calculated Nutrition */}
+                  <div className="grid grid-cols-4 gap-1.5 text-center">
+                    <div className="bg-[var(--color-surface-raised)] rounded-xl p-2">
+                      <span className="text-[10px] text-[var(--color-text-muted)] block uppercase font-semibold">Calories</span>
+                      <span className="text-xs font-bold text-[var(--color-text)] tabular-nums">
+                        {Math.round(scannedProduct.calories * scannedMultiplier)}
+                      </span>
+                    </div>
+                    <div className="bg-[var(--color-surface-raised)] rounded-xl p-2">
+                      <span className="text-[10px] text-[var(--color-success)] block uppercase font-semibold">Protein</span>
+                      <span className="text-xs font-bold text-[var(--color-text)] tabular-nums">
+                        {(scannedProduct.protein * scannedMultiplier).toFixed(1)}g
+                      </span>
+                    </div>
+                    <div className="bg-[var(--color-surface-raised)] rounded-xl p-2">
+                      <span className="text-[10px] text-[var(--color-warning)] block uppercase font-semibold">Carbs</span>
+                      <span className="text-xs font-bold text-[var(--color-text)] tabular-nums">
+                        {(scannedProduct.carbs * scannedMultiplier).toFixed(1)}g
+                      </span>
+                    </div>
+                    <div className="bg-[var(--color-surface-raised)] rounded-xl p-2">
+                      <span className="text-[10px] text-[var(--color-danger)] block uppercase font-semibold">Fat</span>
+                      <span className="text-xs font-bold text-[var(--color-text)] tabular-nums">
+                        {(scannedProduct.fat * scannedMultiplier).toFixed(1)}g
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Confirm Log Action */}
+                  <button
+                    type="button"
+                    onClick={handleConfirmAddScannedFood}
+                    className="w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                    <span>Log to {selectedMeal} & Save to Library</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: MULTI-PART AI DESCRIBE */}
           {activeTab === 'ai_describe' && (
             <div className="space-y-4">
               <div className="p-3 bg-[var(--color-accent-soft)] border border-[var(--color-accent)] rounded-2xl text-xs text-[var(--color-text-muted)] leading-relaxed">

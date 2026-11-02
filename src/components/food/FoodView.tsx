@@ -11,10 +11,12 @@ import {
   Clock,
   Heart,
   X,
+  ChefHat,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { LoggedFood, MealType } from '../../types';
 import { getLocalDateString, formatDisplayDate, getRecentDateStrings } from '../../utils/engine';
+import { RecipeBuilderModal } from './RecipeBuilderModal';
 
 interface FoodViewProps {
   onOpenAddModal: (mealType?: MealType, targetDate?: string) => void;
@@ -39,6 +41,7 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
   const [editServingCount, setEditServingCount] = useState<number>(1);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [detailItem, setDetailItem] = useState<LoggedFood | null>(null);
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
 
   // The library definition underneath a logged entry, for favorite control
   const detailLibraryFood = useMemo(() => {
@@ -195,13 +198,24 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
             </div>
           </div>
 
-          <button
-            onClick={() => onOpenAddModal('breakfast', selectedDate)}
-            className="min-h-[44px] px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>Add Food</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowRecipeModal(true)}
+              className="min-h-[44px] px-3.5 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] hover:bg-[var(--color-surface-raised)]/80 text-[var(--color-text)] font-semibold rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition-all"
+              title="Create multi-ingredient recipe"
+            >
+              <ChefHat className="w-4 h-4 text-[var(--color-accent)]" />
+              <span className="hidden sm:inline">New Recipe</span>
+            </button>
+
+            <button
+              onClick={() => onOpenAddModal('breakfast', selectedDate)}
+              className="min-h-[44px] px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Add Food</span>
+            </button>
+          </div>
         </div>
 
         {/* Macro split chips */}
@@ -493,6 +507,14 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Recipe Builder Modal */}
+      {showRecipeModal && (
+        <RecipeBuilderModal
+          onClose={() => setShowRecipeModal(false)}
+          targetDate={selectedDate}
+        />
       )}
     </div>
   );

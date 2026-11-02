@@ -9,6 +9,18 @@ export interface MacroGoals {
   waterMl: number;
 }
 
+export interface RecipeIngredient {
+  id: string;
+  foodId?: string;
+  name: string;
+  amount: number;
+  unit: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 export interface FoodItem {
   id: string;
   name: string;
@@ -22,8 +34,10 @@ export interface FoodItem {
   fat: number;
   fiber?: number;
   source?: string; // e.g. "USDA FoodData Central SR Legacy"
+  barcode?: string;
   isFavorite?: boolean;
   isRecent?: boolean;
+  recipeIngredients?: RecipeIngredient[];
 }
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
@@ -64,6 +78,8 @@ export interface WeightRecord {
   notes?: string;
 }
 
+export type SetType = 'normal' | 'warmup' | 'dropset' | 'failure';
+
 export interface ExerciseSet {
   id: string;
   setNumber: number;
@@ -73,6 +89,7 @@ export interface ExerciseSet {
   actualReps: number;
   isCompleted: boolean;
   rpe?: number;
+  setType?: SetType;
 }
 
 export interface ExerciseDefinition {
