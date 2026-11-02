@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, Sparkles, X, Heart, Utensils, Check, Trash2, Database, Info } from 'lucide-react';
+import { Search, Plus, Sparkles, X, Heart, Utensils, Check, Trash2, Database, Info, Cpu } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { FoodItem, LoggedFood, MealType, ParsedAiFoodItem } from '../../types';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
+import { estimateMealWithAi, estimateMealOffline } from '../../services/aiFoodEstimation';
 
 interface AddFoodModalProps {
   initialMealType?: MealType;
@@ -29,6 +30,8 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
   const [aiMealPrompt, setAiMealPrompt] = useState('greek yogurt with a standard banana and seed mix');
   const [aiIsEstimating, setAiIsEstimating] = useState(false);
   const [aiItemizedParts, setAiItemizedParts] = useState<ParsedAiFoodItem[] | null>(null);
+  const [aiEstimationSource, setAiEstimationSource] = useState<'model' | 'offline' | null>(null);
+  const [aiEstimationError, setAiEstimationError] = useState<string | null>(null);
 
   // Custom Food Creator State
   const [customName, setCustomName] = useState('');
@@ -77,176 +80,26 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
     onClose();
   };
 
-  // Itemized Multi-Part Parsing Simulation
-  const handleSimulateAiEstimation = () => {
+  // Itemized Multi-Part Estimation using Gemini 2.5 Flash with free offline fallback
+  const handleRunAiEstimation = async () => {
     if (!aiMealPrompt.trim()) return;
     setAiIsEstimating(true);
-    setTimeout(() => {
-      const promptLower = aiMealPrompt.toLowerCase();
-      const parts: ParsedAiFoodItem[] = [];
-
-      // Check for yogurt
-      if (promptLower.includes('yogurt')) {
-        parts.push({
-          id: `ai-part-${Date.now()}-1`,
-          name: 'Greek Yogurt 0% (Fage Total)',
-          servingCount: 1,
-          servingSize: 200,
-          servingUnit: 'g',
-          calories: 108,
-          protein: 20.6,
-          carbs: 6.0,
-          fat: 0,
-        });
+    setAiEstimationError(null);
+    try {
+      const result = await estimateMealWithAi(aiMealPrompt, state.profile.geminiApiKey);
+      setAiItemizedParts(result.items);
+      setAiEstimationSource(result.source);
+      if (result.error) {
+        setAiEstimationError(result.error);
       }
-
-      // Check for banana or fruit
-      if (promptLower.includes('banana')) {
-        parts.push({
-          id: `ai-part-${Date.now()}-2`,
-          name: 'Fresh Banana',
-          servingCount: 1,
-          servingSize: 118,
-          servingUnit: 'medium (118g)',
-          calories: 105,
-          protein: 1.3,
-          carbs: 27.0,
-          fat: 0.3,
-        });
-      } else if (promptLower.includes('berry') || promptLower.includes('blueberries')) {
-        parts.push({
-          id: `ai-part-${Date.now()}-2b`,
-          name: 'Fresh Blueberries',
-          servingCount: 1,
-          servingSize: 100,
-          servingUnit: 'g',
-          calories: 57,
-          protein: 0.7,
-          carbs: 14.5,
-          fat: 0.3,
-        });
-      }
-
-      // Check for seeds or nuts
-      if (promptLower.includes('seed') || promptLower.includes('chia') || promptLower.includes('flax')) {
-        parts.push({
-          id: `ai-part-${Date.now()}-3`,
-          name: 'Chia & Hemp Seed Mix',
-          servingCount: 1,
-          servingSize: 20,
-          servingUnit: 'g (2 tbsp)',
-          calories: 105,
-          protein: 4.2,
-          carbs: 4.8,
-          fat: 7.2,
-        });
-      } else if (promptLower.includes('nut') || promptLower.includes('almond') || promptLower.includes('peanut')) {
-        parts.push({
-          id: `ai-part-${Date.now()}-3b`,
-          name: 'Raw Almonds',
-          servingCount: 1,
-          servingSize: 30,
-          servingUnit: 'g',
-          calories: 170,
-          protein: 6.0,
-          carbs: 6.0,
-          fat: 15.0,
-        });
-      }
-
-      // Check for eggs
-      if (promptLower.includes('egg') || promptLower.includes('omelet')) {
-        parts.push({
-          id: `ai-part-${Date.now()}-4`,
-          name: 'Pasture-Raised Eggs',
-          servingCount: 2,
-          servingSize: 2,
-          servingUnit: 'large eggs',
-          calories: 144,
-          protein: 12.6,
-          carbs: 0.8,
-          fat: 9.8,
-        });
-      }
-
-      // Check for toast / bread
-      if (promptLower.includes('toast') || promptLower.includes('bread') || promptLower.includes('sourdough')) {
-        parts.push({
-          id: `ai-part-${Date.now()}-5`,
-          name: 'Sourdough Bread',
-          servingCount: 1,
-          servingSize: 50,
-          servingUnit: 'slice (50g)',
-          calories: 120,
-          protein: 4.5,
-          carbs: 23.0,
-          fat: 1.0,
-        });
-      }
-
-      // Check for avocado
-      if (promptLower.includes('avocado')) {
-        parts.push({
-          id: `ai-part-${Date.now()}-6`,
-          name: 'Fresh Hass Avocado',
-          servingCount: 1,
-          servingSize: 75,
-          servingUnit: 'half fruit (75g)',
-          calories: 120,
-          protein: 1.5,
-          carbs: 6.5,
-          fat: 11.0,
-        });
-      }
-
-      // Check for chicken / poultry
-      if (promptLower.includes('chicken') || promptLower.includes('breast')) {
-        parts.push({
-          id: `ai-part-${Date.now()}-7`,
-          name: 'Grilled Chicken Breast',
-          servingCount: 1,
-          servingSize: 150,
-          servingUnit: 'g',
-          calories: 248,
-          protein: 46.0,
-          carbs: 0,
-          fat: 5.4,
-        });
-      }
-
-      // Check for rice / carbs
-      if (promptLower.includes('rice')) {
-        parts.push({
-          id: `ai-part-${Date.now()}-8`,
-          name: 'Jasmine Rice (Cooked)',
-          servingCount: 1,
-          servingSize: 150,
-          servingUnit: 'g',
-          calories: 195,
-          protein: 3.8,
-          carbs: 43.0,
-          fat: 0.5,
-        });
-      }
-
-      // Fallback if none matched
-      if (parts.length === 0) {
-        parts.push({
-          id: `ai-part-${Date.now()}-custom`,
-          name: aiMealPrompt.trim(),
-          servingCount: 1,
-          servingSize: 1,
-          servingUnit: 'portion',
-          calories: 450,
-          protein: 30,
-          carbs: 45,
-          fat: 15,
-        });
-      }
-
-      setAiItemizedParts(parts);
+    } catch (err: any) {
+      const fallback = estimateMealOffline(aiMealPrompt);
+      setAiItemizedParts(fallback);
+      setAiEstimationSource('offline');
+      setAiEstimationError(err?.message || 'Fallback to offline estimation');
+    } finally {
       setAiIsEstimating(false);
-    }, 400);
+    }
   };
 
   const handleUpdateItemizedPart = (index: number, field: keyof ParsedAiFoodItem, value: any) => {
@@ -665,7 +518,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
 
               <button
                 type="button"
-                onClick={handleSimulateAiEstimation}
+                onClick={handleRunAiEstimation}
                 disabled={!aiMealPrompt.trim() || aiIsEstimating}
                 className="min-h-[44px] w-full py-2.5 bg-[var(--color-accent)] disabled:opacity-50 hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-sm"
               >
@@ -674,7 +527,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    <span>Estimate ingredients (demo)</span>
+                    <span>Estimate Ingredients with AI</span>
                   </>
                 )}
               </button>
@@ -682,10 +535,21 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
               {/* Itemized Parts Display */}
               {aiItemizedParts && aiItemizedParts.length > 0 && (
                 <div className="space-y-3 pt-1">
-                  <div className="flex items-center justify-between text-xs font-bold text-[var(--color-accent)]">
-                    <span className="flex items-center gap-1">
-                      <Check className="w-4 h-4" /> {aiItemizedParts.length} Separate Items Detected
-                    </span>
+                  <div className="flex flex-wrap items-center justify-between gap-1 text-xs font-bold text-[var(--color-accent)]">
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1">
+                        <Check className="w-4 h-4" /> {aiItemizedParts.length} Separate Items
+                      </span>
+                      {aiEstimationSource === 'model' ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-[var(--color-info-soft)] text-[var(--color-info)] font-semibold flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5" /> Gemini 2.5 Flash
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-muted)] font-semibold flex items-center gap-1">
+                          <Cpu className="w-2.5 h-2.5" /> Offline Estimate (Free)
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[var(--color-text)] font-extrabold">
                       Total: {aiTotalNutrients.calories} kcal ({aiTotalNutrients.protein}g P)
                     </span>

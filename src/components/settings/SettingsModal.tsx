@@ -7,6 +7,7 @@ import {
   Check,
   Watch,
   Smartphone,
+  Sparkles,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { FitnessGoal, UnitSystem } from '../../types';
@@ -32,6 +33,7 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
   const [carbs, setCarbs] = useState<number>(profile.targets.carbsGrams);
   const [fat, setFat] = useState<number>(profile.targets.fatGrams);
   const [waterMl, setWaterMl] = useState<number>(profile.targets.waterMl);
+  const [geminiApiKey, setGeminiApiKey] = useState<string>(profile.geminiApiKey || '');
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -44,6 +46,7 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
       unitSystem,
       goal,
       targetRateKgPerWeek: targetRate,
+      geminiApiKey: geminiApiKey.trim(),
       targets: {
         calories,
         proteinGrams: protein,
@@ -203,6 +206,38 @@ export function SettingsModal({ onClose, onOpenHealthSync, onOpenInstallPwa }: S
                 className="w-20 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-1 text-center font-bold text-[var(--color-text)] focus:outline-none"
               />
             </div>
+          </div>
+
+          {/* AI Intelligence (Free Tier / Offline) */}
+          <div className="pt-2 border-t border-[var(--color-border)] space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-[var(--color-text-muted)] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+                <span>Google AI Studio API Key (Free)</span>
+              </label>
+              <span className="text-[10px] text-[var(--color-accent)] font-semibold bg-[var(--color-accent)]/10 px-2 py-0.5 rounded-full border border-[var(--color-accent)]/30">
+                $0 / Zero Cost
+              </span>
+            </div>
+            <input
+              type="password"
+              placeholder="AIzaSy... (leave empty to use free offline engine)"
+              value={geminiApiKey}
+              onChange={(e) => setGeminiApiKey(e.target.value)}
+              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-2.5 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)] font-mono"
+            />
+            <p className="text-[10px] text-[var(--color-text-subtle)] leading-relaxed">
+              Kinetic uses Google’s Free Tier Gemini models. You can get an API key at{' '}
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[var(--color-accent)] underline hover:text-[var(--color-accent-hover)]"
+              >
+                aistudio.google.com
+              </a>{' '}
+              with zero cost. If blank, Kinetic automatically uses the built-in free offline engine.
+            </p>
           </div>
 
           <button

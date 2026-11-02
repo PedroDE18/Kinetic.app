@@ -180,6 +180,14 @@ export interface WeeklyReviewRecord {
   status: 'pending' | 'accepted' | 'rejected';
 }
 
+export interface WeeklyRoutineDay {
+  dayIndex: number; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  dayName: string; // 'Monday', 'Tuesday', etc.
+  type: 'training' | 'active_recovery' | 'rest';
+  templateId?: string; // ID of WorkoutTemplate if type === 'training'
+  focusName: string; // e.g. "Push: Chest & Shoulders" or "Active Recovery & Mobility"
+}
+
 export interface UserProfile {
   name: string;
   unitSystem: UnitSystem;
@@ -189,4 +197,5 @@ export interface UserProfile {
   targets: MacroGoals;
   theme: 'dark' | 'light';
   startDate: string;
+  geminiApiKey?: string;
 }
