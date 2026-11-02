@@ -1,50 +1,18 @@
 # Kinetic — later refinement pass notes
 
 Ideas that a later Google Antigravity / AI Studio pass could take on, in priority order.
-The prior batch that shipped on 2026-10-29 (TDEE estimate badge, per-exercise set-progress
-chip, 5-day hydration bar — plus the dark "graphite ember" theme, workout/food detail
-sheets, and favorite-food management from that same session) has been removed from this
-list. Items 1–5 lead with what Antigravity + the Gemini/AI Suite do best: agentic
-implementation, structured output, and evals. Note: `@google/genai` is already a
-dependency, so the AI items need no install step.
+The batch that shipped on 2026-11-02:
+- Real AI meal estimation with Gemini 2.5 Flash + offline fallback (`AddFoodModal.tsx`, `aiFoodEstimation.ts`)
+- AI routine draftsman with exercise library constraints (`ProgramBuilderModal.tsx`, `routineGenerator.ts`)
+- Natural-language quick-log command bar on Today with undo support (`QuickLogBar.tsx`, `quickLogParser.ts`)
+- Weekly narrative athletic coach insight with visual confidence meter (`WeeklyReviewModal.tsx`, `narrativeCoach.ts`)
+- Interactive target calibration in weekly check-in (-/+ 25 kcal fine-tuning)
+- Hydration instant undo toast on TodayView
+- Token-based accessible SVG chart layer with crosshair tooltips (`TrendChart.tsx`, `ProgressView.tsx`)
+- Automated AI model evaluation harness CI gate (`aiEvaluationHarness.test.ts`)
+- Zero-cost architecture guaranteed ($0 tokens/subscriptions; local-first fallback)
 
-## High impact — AI Suite / Gemini-first
-
-1. **Real AI meal estimation (replace the mock)**
-   - The itemized "AI estimation" in `src/components/food/AddFoodModal.tsx` is currently a
-     deterministic script (`handleSimulateAiEstimation`). Replace it with a real Gemini
-     call via `@google/genai`: meal description text (stretch goal: a meal photo) →
-     structured `FoodItem[]` using a JSON response schema.
-   - Keep the human in the loop: parsed rows fill the existing editable review rows and the
-     user confirms before `addLoggedFood`. Nothing is stored or synced cloud-side
-     (local-first constraint).
-   - Offline / missing-key fallback: keep the current parser behind the same UI contract,
-     and label which path produced the result ("on-device estimate" vs "model estimate").
-
-2. **AI routine authoring with human approval**
-   - Draft a complete `WorkoutTemplate` in `ProgramBuilderModal` from a short brief
-     (goal, days/week, equipment, session length, split preference).
-   - Constraints the agent must honor: reference existing exercise-library ids only, balance
-     push/pull/legs volume, fill default sets × reps and rest times.
-   - Delivery is an editable draft inside the builder — never auto-saved without review.
-
-3. **Natural-language quick-log command bar**
-   - One input on Today: "chugged a liter and ran 5k in 27:12". A structured-output route
-     picks the action (water / meal / cardio / weigh-in) and pre-fills the existing forms;
-     the user confirms before anything logs.
-   - Every route must reuse existing local actions (`addWater`, `addLoggedFood`, cardio
-     logger) and pair with an undo interaction.
-
-4. **Weekly narrative insight**
-   - Generate a 3–4 sentence plain-language weekly story (volume trend, adherence,
-     hydration, nutrition pacing) plus one targeted suggestion, computed from local
-     aggregates only. Deterministic template fallback when offline or out of budget.
-
-5. **Model eval harness as a CI gate**
-   - Golden set: meal phrases, routine briefs, adversarial inputs (empty, numeric-only,
-     pt-BR decimal separators). Assert the parsed food/volume shapes.
-   - Run the mock path in PR checks and the real model nightly; block merges on shape
-     regressions or prompt drift. This is the piece agents maintain best over time.
+## Next backlog candidates
 
 ## High impact — app fundamentals
 
