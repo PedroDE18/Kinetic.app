@@ -70,7 +70,11 @@ export interface FitnessContextType {
     workouts?: CompletedWorkout[];
     weights?: WeightRecord[];
   }) => { addedCardio: number; addedWorkouts: number; addedWeights: number };
-  resolveReview: (reviewId: string, decision: 'accepted' | 'rejected') => void;
+  resolveReview: (
+    reviewId: string,
+    decision: 'accepted' | 'rejected',
+    customTarget?: number
+  ) => void;
   resetAllData: () => void;
   exportAllJson: () => void;
   importAllJson: (payload: string) => { ok: boolean; error?: string };
@@ -447,18 +451,33 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
     return { addedCardio, addedWorkouts, addedWeights };
   };
 
-  const resolveReview = (reviewId: string, decision: 'accepted' | 'rejected') => {
+  const resolveReview = (
+    reviewId: string,
+    decision: 'accepted' | 'rejected',
+    customTarget?: number
+  ) => {
     setState((prev) => {
       const review = prev.reviews.find((r) => r.id === reviewId);
       if (!review) return prev;
 
-      const updatedReview: WeeklyReviewRecord = { ...review, status: decision };
+      const finalTarget =
+        typeof customTarget === 'number' && Number.isFinite(customTarget) && customTarget > 500
+          ? Math.round(customTarget)
+          : review.proposedCalorieTarget;
+
+      const updatedReview: WeeklyReviewRecord = {
+        ...review,
+        status: decision,
+        proposedCalorieTarget: decision === 'accepted' ? finalTarget : review.proposedCalorieTarget,
+        adjustmentDelta:
+          decision === 'accepted' ? finalTarget - review.currentCalorieTarget : review.adjustmentDelta,
+      };
       const updatedProfile = { ...prev.profile };
 
       if (decision === 'accepted') {
         updatedProfile.targets = {
           ...updatedProfile.targets,
-          calories: review.proposedCalorieTarget,
+          calories: finalTarget,
         };
       }
 

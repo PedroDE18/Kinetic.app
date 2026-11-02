@@ -146,8 +146,8 @@ function AppContent() {
         <WeeklyReviewModal
           review={pendingReview || state.reviews[0]}
           onClose={() => setShowWeeklyReviewModal(false)}
-          onAccept={(id) => {
-            resolveReview(id, 'accepted');
+          onAccept={(id, customTarget) => {
+            resolveReview(id, 'accepted', customTarget);
             setShowWeeklyReviewModal(false);
           }}
           onReject={(id) => {

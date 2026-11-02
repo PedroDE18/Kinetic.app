@@ -1,11 +1,23 @@
-import { Sparkles, X, Check, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  Sparkles,
+  X,
+  Check,
+  ShieldCheck,
+  Cpu,
+  Minus,
+  Plus,
+  Compass,
+} from 'lucide-react';
 import { WeeklyReviewRecord } from '../../types';
+import { useFitness } from '../../context/FitnessContext';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
+import { generateNarrativeInsight, NarrativeInsight } from '../../services/narrativeCoach';
 
 interface WeeklyReviewModalProps {
   review?: WeeklyReviewRecord;
   onClose: () => void;
-  onAccept: (reviewId: string) => void;
+  onAccept: (reviewId: string, customTarget?: number) => void;
   onReject: (reviewId: string) => void;
 }
 
@@ -16,18 +28,54 @@ export function WeeklyReviewModal({
   onReject,
 }: WeeklyReviewModalProps) {
   useBodyScrollLock(true);
+  const { state } = useFitness();
+
+  const [adjustedTarget, setAdjustedTarget] = useState<number>(
+    review?.proposedCalorieTarget || 2000
+  );
+  const [narrative, setNarrative] = useState<NarrativeInsight | null>(null);
+  const [loadingNarrative, setLoadingNarrative] = useState(false);
+
+  useEffect(() => {
+    if (!review) return;
+    setAdjustedTarget(review.proposedCalorieTarget);
+    setLoadingNarrative(true);
+
+    generateNarrativeInsight(
+      {
+        profile: state.profile,
+        review,
+        completedWorkoutsCount: state.completedWorkouts.length,
+        avgDailyWaterMl: state.waterMlToday,
+      },
+      state.profile.geminiApiKey
+    )
+      .then((res) => {
+        setNarrative(res);
+      })
+      .catch(() => {
+        // Fallback already handled inside generateNarrativeInsight
+      })
+      .finally(() => {
+        setLoadingNarrative(false);
+      });
+  }, [review, state.profile, state.completedWorkouts.length, state.waterMlToday]);
+
   if (!review) return null;
 
-  const deltaFormatted =
-    review.adjustmentDelta > 0
-      ? `+${review.adjustmentDelta}`
-      : `${review.adjustmentDelta}`;
-
+  const currentCal = review.currentCalorieTarget;
+  const currentDelta = adjustedTarget - currentCal;
+  const deltaFormatted = currentDelta > 0 ? `+${currentDelta}` : `${currentDelta}`;
   const isPending = review.status === 'pending';
+  const confidenceScore = narrative?.confidenceBreakdown.scorePct ?? Math.round(review.confidenceScore * 100);
+
+  const handleStepTarget = (amount: number) => {
+    setAdjustedTarget((prev) => Math.min(5000, Math.max(1000, prev + amount)));
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-5 space-y-3.5 max-h-[92vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-2.5">
@@ -36,9 +84,11 @@ export function WeeklyReviewModal({
             </div>
             <div>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-subtle)]">
-                Weekly metabolic check-in
+                Weekly Metabolic Check-in
               </span>
-              <h3 className="k-display text-base text-[var(--color-text)] leading-tight">Adaptive calorie review</h3>
+              <h3 className="k-display text-base text-[var(--color-text)] leading-tight">
+                Adaptive Calorie Review
+              </h3>
             </div>
           </div>
           <button
@@ -62,65 +112,133 @@ export function WeeklyReviewModal({
             <ShieldCheck className="w-4 h-4" />
             <span>
               {review.status === 'accepted'
-                ? `Accepted on ${review.weekEndDate} (Target: ${review.proposedCalorieTarget} kcal)`
-                : `Dismissed on ${review.weekEndDate} (Target kept at ${review.currentCalorieTarget} kcal)`}
+                ? `Accepted (Target: ${review.proposedCalorieTarget} kcal)`
+                : `Dismissed (Target kept at ${review.currentCalorieTarget} kcal)`}
             </span>
           </div>
         )}
 
-        {/* Nutrition & Metabolic Summary Grid */}
-        <div className="bg-[var(--color-surface-sunken)] rounded-2xl p-4 border border-[var(--color-border)] space-y-2.5">
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-[var(--color-text-muted)]">Avg Logged Calorie Intake:</span>
+        {/* Narrative Athletic Coaching Insight */}
+        <div className="bg-[var(--color-surface)] rounded-2xl p-3.5 border border-[var(--color-border)] space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--color-text)]">
+              <Compass className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+              <span>{narrative ? narrative.headline : 'Weekly Narrative Coach'}</span>
+            </div>
+            {narrative && (
+              <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 bg-[var(--color-accent-soft)] text-[var(--color-accent)]">
+                {narrative.source === 'model' ? <Sparkles className="w-2.5 h-2.5" /> : <Cpu className="w-2.5 h-2.5" />}
+                {narrative.source === 'model' ? 'Gemini Insight' : 'Coach Synthesis'}
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+            {loadingNarrative && !narrative
+              ? 'Analyzing weekly adherence and trend metrics…'
+              : narrative?.story || review.reason}
+          </p>
+
+          {narrative?.recommendation && (
+            <div className="p-2.5 rounded-xl bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[11px] text-[var(--color-text)]">
+              <span className="font-bold text-[var(--color-accent)] block mb-0.5">Coach Recommendation:</span>
+              <span>{narrative.recommendation}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Data Confidence Explanation Bar */}
+        <div className="bg-[var(--color-surface-sunken)] rounded-2xl p-3 border border-[var(--color-border)] space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-[var(--color-text-muted)] font-medium">Algorithm Confidence</span>
+            <span className="font-bold text-[var(--color-accent)]">
+              {confidenceScore}% ({narrative?.confidenceBreakdown.level || (confidenceScore >= 70 ? 'High' : 'Moderate')})
+            </span>
+          </div>
+
+          {/* Visual Progress Bar */}
+          <div className="w-full h-2 rounded-full bg-[var(--color-surface-raised)] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-[var(--color-accent)] transition-all duration-500"
+              style={{ width: `${confidenceScore}%` }}
+            />
+          </div>
+
+          {/* Breakdown Factors Chips */}
+          {narrative?.confidenceBreakdown.factors && (
+            <div className="flex flex-wrap gap-1 pt-1">
+              {narrative.confidenceBreakdown.factors.map((factor, i) => (
+                <span
+                  key={i}
+                  className="text-[10px] px-2 py-0.5 rounded-md bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-subtle)]"
+                >
+                  ✓ {factor}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Weekly Metrics Matrix */}
+        <div className="bg-[var(--color-surface-sunken)] rounded-2xl p-3 border border-[var(--color-border)] space-y-2 text-xs">
+          <div className="flex justify-between items-center">
+            <span className="text-[var(--color-text-muted)]">Avg Daily Intake:</span>
             <span className="font-bold text-[var(--color-text)]">{review.avgCalorieIntake} kcal/day</span>
           </div>
-          <div className="flex justify-between items-center text-xs">
+          <div className="flex justify-between items-center">
             <span className="text-[var(--color-text-muted)]">Avg Protein Intake:</span>
             <span className="font-bold text-[var(--color-text)]">{review.avgProteinIntake} g/day</span>
           </div>
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-[var(--color-text-muted)]">7-Day Weight Trend Delta:</span>
+          <div className="flex justify-between items-center">
+            <span className="text-[var(--color-text-muted)]">7-Day Weight Delta:</span>
             <span className="font-bold text-[var(--color-accent)]">
-              {review.weightDeltaKg > 0 ? `+${review.weightDeltaKg}` : review.weightDeltaKg} kg/week
+              {review.weightDeltaKg > 0 ? `+${review.weightDeltaKg}` : review.weightDeltaKg} kg
             </span>
           </div>
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-[var(--color-text-muted)]">Estimated Expenditure (TDEE):</span>
+          <div className="flex justify-between items-center">
+            <span className="text-[var(--color-text-muted)]">Estimated TDEE:</span>
             <span className="font-bold text-[var(--color-text)]">{review.estimatedTdee} kcal/day</span>
           </div>
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-[var(--color-text-muted)]">Data Confidence Level:</span>
-            <span className="font-bold text-[var(--color-accent)]">
-              {Math.round(review.confidenceScore * 100)}% High
-            </span>
-          </div>
-
-          {/* Proposed Adjustment Highlight */}
-          <div className="pt-2.5 border-t border-[var(--color-border)] flex justify-between items-center">
-            <div>
-              <span className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider block">
-                Proposed New Target
-              </span>
-              <span className="text-xs text-[var(--color-text-subtle)]">
-                Current: {review.currentCalorieTarget} kcal
-              </span>
-            </div>
-            <div className="text-right">
-              <span className="text-base font-black text-[var(--color-accent)]">
-                {review.proposedCalorieTarget} kcal
-              </span>
-              <span className="text-[11px] font-semibold text-[var(--color-accent)] block">
-                ({deltaFormatted} kcal/day)
-              </span>
-            </div>
-          </div>
         </div>
 
-        {/* Transparent Rationale Explanation */}
-        <div className="space-y-1 text-xs text-[var(--color-text-muted)] leading-relaxed bg-[var(--color-surface)] p-3 rounded-xl border border-[var(--color-border)]">
-          <div className="font-semibold text-[var(--color-text)] mb-0.5">Algorithm Rationale</div>
-          <p>{review.reason}</p>
-        </div>
+        {/* Interactive Target Adjuster */}
+        {isPending && (
+          <div className="bg-[var(--color-surface)] rounded-2xl p-3 border border-[var(--color-border)] space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-[var(--color-text-muted)]">New Target Calibration:</span>
+              <span className="text-[11px] font-bold text-[var(--color-accent)]">
+                {currentDelta === 0 ? 'Holding Flat' : `${deltaFormatted} kcal/day vs current`}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between bg-[var(--color-surface-sunken)] p-2 rounded-xl border border-[var(--color-border)]">
+              <button
+                type="button"
+                onClick={() => handleStepTarget(-25)}
+                className="w-8 h-8 rounded-lg bg-[var(--color-surface-raised)] hover:bg-[var(--color-surface-raised)] flex items-center justify-center text-[var(--color-text)] active:scale-95 transition-all"
+                aria-label="Decrease target by 25 kcal"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+
+              <div className="text-center">
+                <span className="text-lg font-black text-[var(--color-accent)] block leading-none">
+                  {adjustedTarget}
+                </span>
+                <span className="text-[10px] text-[var(--color-text-subtle)]">kcal / day</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleStepTarget(25)}
+                className="w-8 h-8 rounded-lg bg-[var(--color-surface-raised)] hover:bg-[var(--color-surface-raised)] flex items-center justify-center text-[var(--color-text)] active:scale-95 transition-all"
+                aria-label="Increase target by 25 kcal"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Action Controls */}
         {isPending ? (
@@ -132,11 +250,11 @@ export function WeeklyReviewModal({
               Keep Current
             </button>
             <button
-              onClick={() => onAccept(review.id)}
+              onClick={() => onAccept(review.id, adjustedTarget)}
               className="min-h-[44px] py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-bold rounded-xl text-xs flex items-center justify-center gap-1 active:scale-95 transition-all shadow-sm"
             >
               <Check className="w-4 h-4 stroke-[3]" />
-              <span>Accept Adjustment</span>
+              <span>Apply {adjustedTarget} kcal</span>
             </button>
           </div>
         ) : (
