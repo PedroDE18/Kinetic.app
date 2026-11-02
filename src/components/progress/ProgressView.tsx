@@ -30,6 +30,7 @@ import {
   formatPace,
   formatDistance,
 } from '../../utils/engine';
+import { TrendChart } from '../common/TrendChart';
 
 interface ProgressViewProps {
   onOpenWeeklyReview: () => void;
@@ -586,167 +587,50 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
   );
 }
 
-// SVG Volume Progression Line/Bar Chart Component
+// SVG Volume Progression Line/Bar Chart Component using Tokenized TrendChart
 function VolumeProgressionChart({
   data,
 }: {
   data: { label: string; date: string; volume: number }[];
 }) {
-  if (data.length < 2) {
-    return (
-      <div className="h-full flex items-center justify-center text-[var(--color-text-subtle)] text-xs">
-        Log at least 2 sessions to see volume progression curves...
-      </div>
-    );
-  }
-
-  const volumes = data.map((d) => d.volume);
-  const min = Math.min(...volumes) * 0.9;
-  const max = Math.max(...volumes) * 1.05;
-  const range = max - min || 1;
-
-  const width = 340;
-  const height = 150;
-
-  const points = data.map((d, idx) => {
-    const x = (idx / (data.length - 1)) * (width - 30) + 15;
-    const y = height - ((d.volume - min) / range) * (height - 30) - 15;
-    return { x, y, volume: d.volume, label: d.label };
-  });
-
-  const polylineCoords = points.map((p) => `${p.x},${p.y}`).join(' ');
+  const chartData = data.map((d) => ({
+    xLabel: d.label,
+    primaryValue: d.volume,
+    unit: 'kg',
+  }));
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
-      {/* Background guideline */}
-      <line
-        x1="10"
-        y1={height * 0.3}
-        x2={width - 10}
-        y2={height * 0.3}
-        style={{ stroke: "var(--color-border)", strokeDasharray: "3 3" }}
-      />
-      <line
-        x1="10"
-        y1={height * 0.7}
-        x2={width - 10}
-        y2={height * 0.7}
-        style={{ stroke: "var(--color-border)", strokeDasharray: "3 3" }}
-      />
-
-      {/* Area gradient under line */}
-      <defs>
-        <linearGradient id="volGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" style={{ stopColor: "var(--color-accent)", stopOpacity: 0.25 }} />
-          <stop offset="100%" style={{ stopColor: "var(--color-accent)", stopOpacity: 0 }} />
-        </linearGradient>
-      </defs>
-
-      {/* Polygon fill under trend */}
-      <polygon
-        points={`${points[0].x},${height} ${polylineCoords} ${
-          points[points.length - 1].x
-        },${height}`}
-        fill="url(#volGrad)"
-      />
-
-      {/* Line */}
-      <polyline
-        fill="none"
-        strokeWidth="2.5"
-        style={{ stroke: "var(--color-accent)" }}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        points={polylineCoords}
-      />
-
-      {/* Data points */}
-      {points.map((p, idx) => (
-        <g key={idx}>
-          <circle cx={p.x} cy={p.y} r="4" strokeWidth="2"
-            style={{ fill: "var(--color-bg)", stroke: "var(--color-accent)" }} />
-          <text
-            x={p.x}
-            y={height - 2}
-            textAnchor="middle"
-            style={{ fill: "var(--color-text-subtle)" }}
-            fontSize="8"
-            fontWeight="bold"
-          >
-            {p.label}
-          </text>
-        </g>
-      ))}
-    </svg>
+    <TrendChart
+      title="Workout Volume Progression"
+      data={chartData}
+      primaryLabel="Volume"
+      emptyMessage="Log at least 2 sessions to see volume progression curves..."
+      height={150}
+    />
   );
 }
 
-// Dual Plot Weight Chart SVG Component (Scatter + Smooth Curve)
+// Dual Plot Weight Chart Component (Scatter + Smooth Curve) using Tokenized TrendChart
 function DualWeightChart({
   points,
 }: {
   points: { actualWeightKg: number; trendWeightKg: number; date: string }[];
 }) {
-  if (points.length < 2) {
-    return (
-      <div className="h-full flex items-center justify-center text-[var(--color-text-subtle)] text-xs">
-        Collecting more weigh-ins for chart...
-      </div>
-    );
-  }
-
-  const actuals = points.map((p) => p.actualWeightKg);
-  const trends = points.map((p) => p.trendWeightKg);
-  const allVals = [...actuals, ...trends];
-
-  const min = Math.min(...allVals) - 0.4;
-  const max = Math.max(...allVals) + 0.4;
-  const range = max - min || 1;
-
-  const width = 340;
-  const height = 150;
-
-  // Trend line points
-  const trendCoords = points.map((p, idx) => {
-    const x = (idx / (points.length - 1)) * width;
-    const y = height - ((p.trendWeightKg - min) / range) * (height - 24) - 12;
-    return `${x},${y}`;
-  });
+  const chartData = points.map((p) => ({
+    xLabel: p.date.length >= 10 ? p.date.slice(5) : p.date,
+    primaryValue: p.trendWeightKg,
+    secondaryValue: p.actualWeightKg,
+    unit: 'kg',
+  }));
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
-      {/* Horizontal guide lines */}
-      <line
-        x1="0"
-        y1={height * 0.25}
-        x2={width}
-        y2={height * 0.25}
-        style={{ stroke: "var(--color-border)", strokeDasharray: "3 3" }}
-      />
-      <line
-        x1="0"
-        y1={height * 0.75}
-        x2={width}
-        y2={height * 0.75}
-        style={{ stroke: "var(--color-border)", strokeDasharray: "3 3" }}
-      />
-
-      {/* Raw Scale Scatter Dots */}
-      {points.map((p, idx) => {
-        const x = (idx / (points.length - 1)) * width;
-        const y = height - ((p.actualWeightKg - min) / range) * (height - 24) - 12;
-        return <circle key={idx} cx={x} cy={y} r="2.5" opacity="0.6" style={{ fill: "var(--color-text-subtle)" }} />;
-      })}
-
-      {/* Smoothed EWMA Trend Curve */}
-      <polyline
-        fill="none"
-        strokeWidth="2.5"
-        style={{ stroke: "var(--color-accent)" }}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        points={trendCoords.join(' ')}
-      />
-    </svg>
+    <TrendChart
+      title="Scale Weight vs Trend"
+      data={chartData}
+      primaryLabel="Trend (EWMA)"
+      secondaryLabel="Raw Scale"
+      emptyMessage="Collecting more weigh-ins for chart..."
+      height={150}
+    />
   );
 }
