@@ -186,9 +186,6 @@ export function MindView() {
         <h1 className="stoic-title text-2xl font-bold tracking-tight text-[var(--color-text)]">
           {t.mind.title}
         </h1>
-        <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-          {t.mind.subtitle}
-        </p>
       </div>
 
       {/* Sub-tab Navigation */}
@@ -517,9 +514,6 @@ export function MindView() {
               <div className="text-base font-bold text-[var(--color-text)]">
                 {learningItems.filter((i) => i.status === 'in_progress').length} Works Currently in Study
               </div>
-              <p className="text-xs text-[var(--color-text-muted)] italic">
-                Literature, scientific inquiries, and philosophical treatises
-              </p>
             </div>
             <button
               onClick={() => {
@@ -633,9 +627,6 @@ export function MindView() {
               <div className="text-base font-bold text-[var(--color-text)]">
                 {relationships.length} Meaningful Connections
               </div>
-              <p className="text-xs text-[var(--color-text-muted)] italic">
-                Unhurried, intentional human bonds without transactional utility
-              </p>
             </div>
             <button
               onClick={() => {
@@ -752,14 +743,7 @@ export function MindView() {
                 <Compass className="w-4 h-4" />
                 <span>Socratic Systems Counsel</span>
               </div>
-              <span className="text-[10px] font-mono text-[var(--color-text-subtle)]">
-                Secular Heuristics • $0 Cost
-              </span>
             </div>
-
-            <p className="text-xs text-[var(--color-text-muted)] italic">
-              "No toxic positivity, no aggressive hustle. Just an objective audit of biological energy, behavioral friction, and deliberate living."
-            </p>
 
             <div className="p-4 bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-2xl space-y-2">
               <span className="text-[10px] uppercase font-bold text-[var(--color-accent)] tracking-wider block">

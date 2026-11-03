@@ -60,9 +60,6 @@ export function BodyView({
         <h1 className="stoic-title text-2xl font-bold tracking-tight text-[var(--color-text)]">
           {t.body.title}
         </h1>
-        <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-          {t.body.subtitle}
-        </p>
       </div>
 
       {/* Sub-tab Navigation */}

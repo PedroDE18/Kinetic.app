@@ -240,9 +240,6 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
         <h1 className="stoic-title text-2xl font-bold tracking-tight text-[var(--color-text)]">
           {t.progress.title}
         </h1>
-        <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-          {t.progress.subtitle}
-        </p>
       </div>
 
       {/* Primary Hub Tabs: Physical · Mind · Systems */}

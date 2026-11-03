@@ -100,9 +100,6 @@ export function SystemsView() {
         <h1 className="stoic-title text-2xl font-bold tracking-tight text-[var(--color-text)]">
           {t.systems.title}
         </h1>
-        <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-          {t.systems.subtitle}
-        </p>
       </div>
 
       {/* Systems Sub-navigation Switcher */}
@@ -158,9 +155,6 @@ export function SystemsView() {
               <div className="text-base font-bold text-[var(--color-text)]">
                 {completedHabitsToday} of {habits.length} Anchored Today
               </div>
-              <p className="text-xs text-[var(--color-text-muted)] font-serif italic">
-                "We are what we repeatedly do." — Aristotle
-              </p>
             </div>
             <button
               onClick={() => {
@@ -366,8 +360,8 @@ export function SystemsView() {
       {/* ========================================================================= */}
       {activeSubTab === 'friction' && (
         <div className="space-y-4">
-          {/* Header Explanation */}
-          <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-2.5 shadow-xs">
+          {/* Header */}
+          <section className="p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl shadow-xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--color-accent)]">
                 <Sliders className="w-4 h-4" />
@@ -384,11 +378,6 @@ export function SystemsView() {
                 <span>Engineer Intervention</span>
               </button>
             </div>
-            <p className="text-xs text-[var(--color-text)] leading-relaxed">
-              Willpower is an exhaustible biological resource. <strong>Friction Engineering</strong> alters your
-              environment: add friction to undesirable behaviors to weaken them, and eliminate friction from virtuous
-              actions so they occur by default.
-            </p>
           </section>
 
           {/* Category Filter Chips */}
