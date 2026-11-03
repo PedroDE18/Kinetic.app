@@ -1,12 +1,31 @@
 export type UnitSystem = 'metric' | 'imperial';
 export type FitnessGoal = 'fat_loss' | 'recomp' | 'maintenance' | 'muscle_gain';
 
+export interface MacroCyclingPlan {
+  enabled: boolean;
+  trainingDays: {
+    calories: number;
+    proteinGrams: number;
+    carbsGrams: number;
+    fatGrams: number;
+  };
+  restDays: {
+    calories: number;
+    proteinGrams: number;
+    carbsGrams: number;
+    fatGrams: number;
+  };
+}
+
 export interface MacroGoals {
   calories: number;
   proteinGrams: number;
   carbsGrams: number;
   fatGrams: number;
   waterMl: number;
+  fiberGrams?: number;
+  sodiumMg?: number;
+  cyclingPlan?: MacroCyclingPlan;
 }
 
 export interface RecipeIngredient {
@@ -33,6 +52,7 @@ export interface FoodItem {
   carbs: number;
   fat: number;
   fiber?: number;
+  sodiumMg?: number;
   source?: string; // e.g. "USDA FoodData Central SR Legacy"
   barcode?: string;
   isFavorite?: boolean;
@@ -55,7 +75,25 @@ export interface LoggedFood {
   carbs: number;
   fat: number;
   fiber?: number;
+  sodiumMg?: number;
   loggedAt: string; // ISO date string
+}
+
+export interface SavedMeal {
+  id: string;
+  name: string;
+  mealType: MealType;
+  items: Array<{
+    foodId: string;
+    servingCount: number;
+    servingSize: number;
+    servingUnit: string;
+  }>;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  createdAt: string;
 }
 
 export interface ParsedAiFoodItem {
@@ -90,6 +128,15 @@ export interface ExerciseSet {
   isCompleted: boolean;
   rpe?: number;
   setType?: SetType;
+}
+
+export interface ExerciseProgressionPoint {
+  date: string; // YYYY-MM-DD
+  workoutId: string;
+  topWeightKg: number;
+  topReps: number;
+  estimated1RMKg: number;
+  workingVolumeKg: number; // Volume derived only from working sets (normal, dropset, failure)
 }
 
 export interface ExerciseDefinition {
@@ -181,6 +228,41 @@ export interface CardioSession {
   notes?: string;
 }
 
+export type AffectiveWeather = 'radiant' | 'clear' | 'overcast' | 'turbulent' | 'stormy';
+export type AffectiveTag =
+  | 'sleep'
+  | 'body'
+  | 'deep_work'
+  | 'solitude'
+  | 'social'
+  | 'clarity'
+  | 'friction';
+
+export interface HolisticWeeklyReviewData {
+  mind: {
+    reflectionsCount: number;
+    dominantWeather: AffectiveWeather | 'unrecorded';
+    clarityScore?: number;
+  };
+  body: {
+    workoutsCompleted: number;
+    hypertrophicVolumeKg: number;
+    avgWeightTrendKg: number;
+    weightDeltaKg: number;
+    estimatedTdee: number;
+    proposedCalorieTarget: number;
+  };
+  systems: {
+    habitCompliancePct: number;
+    activeHabitsCount: number;
+    frictionInterventionsReviewed: number;
+  };
+  growth: {
+    philiaContactsCount: number;
+    learningProgressSummary?: string;
+  };
+}
+
 export interface WeeklyReviewRecord {
   id: string;
   weekEndDate: string;
@@ -195,6 +277,7 @@ export interface WeeklyReviewRecord {
   adjustmentDelta: number;
   reason: string;
   status: 'pending' | 'accepted' | 'rejected';
+  holisticData?: HolisticWeeklyReviewData;
 }
 
 export interface WeeklyRoutineDay {
@@ -253,6 +336,7 @@ export interface LifeGoal {
   metricTarget?: number;
   metricCurrent?: number;
   metricUnit?: string;
+  progressPercentage?: number;
   createdAt: string;
 }
 
@@ -265,6 +349,7 @@ export interface LifeProject {
   status: 'not_started' | 'in_progress' | 'completed' | 'on_hold';
   priority: 'low' | 'medium' | 'high';
   dueDate?: string;
+  progressPercentage?: number;
   createdAt: string;
 }
 
@@ -282,13 +367,16 @@ export interface LifeTask {
   createdAt: string;
 }
 
+export type HabitFrequency = 'daily' | 'weekdays' | 'weekends' | 'weekly_target' | 'specific_days';
+
 export interface EunoiaHabit {
   id: string;
   title: string;
   purpose: string; // The philosophical "Why"
   area: LifeArea;
-  frequency: 'daily' | 'weekdays' | 'weekends' | 'weekly_target';
+  frequency: HabitFrequency;
   targetDaysPerWeek?: number;
+  targetDaysOfWeek?: number[]; // [0 = Sunday, 1 = Monday, ..., 6 = Saturday]
   triggerCue: string; // e.g. "After morning tea"
   minimumViableAction: string; // "Read 1 page", "5 pushups"
   timeOfDay: 'morning' | 'afternoon' | 'evening' | 'anytime';
@@ -331,6 +419,25 @@ export interface SleepRecord {
 export type ReflectionType = 'morning' | 'evening' | 'freeform' | 'weekly_audit';
 export type EmotionalState = 'centered' | 'calm' | 'anxious' | 'scattered' | 'fatigued' | 'energized';
 
+export type BreathworkPatternType = 'box' | 'physiological_sigh' | 'relax_478';
+
+export interface BreathworkPhase {
+  name: 'Inhale' | 'Hold' | 'Exhale' | 'Hold (Empty)';
+  durationSeconds: number;
+}
+
+export interface DichotomyOfControlData {
+  withinControl: string[];
+  outsideControl: string[];
+  actionablePivot: string;
+}
+
+export interface PremeditatioMalorumData {
+  anticipatedObstacle: string;
+  preventativeAction: string;
+  internalAcceptance: string;
+}
+
 export interface ReflectionEntry {
   id: string;
   date: string; // YYYY-MM-DD
@@ -338,6 +445,11 @@ export interface ReflectionEntry {
   promptAnswers: Record<string, string>;
   freeformContent?: string;
   emotionalState?: EmotionalState;
+  affectiveWeather?: AffectiveWeather;
+  affectiveTags?: AffectiveTag[];
+  worksheetType?: 'dichotomy_of_control' | 'premeditatio_malorum' | 'view_from_above';
+  dichotomyData?: DichotomyOfControlData;
+  premeditatioData?: PremeditatioMalorumData;
   createdAt: string;
 }
 
