@@ -67,7 +67,7 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
               onClick={() => setSelectedMuscle(m)}
               className={`min-h-[32px] px-3 py-1 rounded-xl text-[10px] font-bold capitalize whitespace-nowrap transition-all border ${
                 selectedMuscle === m
-                  ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-accent)]'
+                  ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
                   : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)]'
               }`}
             >
@@ -92,7 +92,7 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
                 </div>
 
                 {ex.personalRecord && (
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[var(--color-accent)] border border-[var(--color-accent)] text-[10px] text-[var(--color-accent)] font-semibold">
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[10px] text-[var(--color-accent)] font-semibold">
                     <Award className="w-3 h-3" />
                     <span>
                       {ex.personalRecord.weightKg} kg × {ex.personalRecord.reps}
@@ -102,7 +102,7 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
               </div>
 
               {/* Muscle targeting breakdown */}
-              <div className="space-y-1.5 pt-1 border-t border-zinc-900">
+              <div className="space-y-1.5 pt-1 border-t border-[var(--color-border)]">
                 <div className="flex flex-wrap items-center gap-1.5 text-xs">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
                     Primary:
@@ -110,7 +110,7 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
                   {ex.primaryMuscles.map((m) => (
                     <span
                       key={m}
-                      className="px-2 py-0.5 rounded-md bg-[var(--color-accent)] border border-[var(--color-accent)] text-[var(--color-accent)] text-[11px] font-bold"
+                      className="px-2 py-0.5 rounded-md bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] text-[11px] font-bold"
                     >
                       {m}
                     </span>

@@ -110,7 +110,7 @@ function AppContent() {
 
   return (
     <div
-      className={`min-h-screen bg-[var(--color-surface-sunken)] text-[var(--color-text)] flex flex-col font-sans antialiased selection:bg-[var(--color-accent)] selection:text-[var(--color-on-accent)] transition-colors duration-200 ${
+      className={`min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex flex-col font-sans antialiased selection:bg-[var(--color-accent)] selection:text-[var(--color-on-accent)] transition-colors duration-200 ${
         isLight ? 'theme-light' : 'theme-dark'
       }`}
     >

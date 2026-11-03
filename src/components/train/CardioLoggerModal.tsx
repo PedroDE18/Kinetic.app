@@ -117,7 +117,7 @@ export function CardioLoggerModal({ onClose }: CardioLoggerModalProps) {
                   onClick={() => setActivity(act.type)}
                   className={`p-2 rounded-xl text-center border transition-all flex flex-col items-center justify-center gap-1 min-h-[58px] ${
                     activity === act.type
-                      ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-accent)]'
+                      ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
                       : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                   }`}
                 >
@@ -187,7 +187,7 @@ export function CardioLoggerModal({ onClose }: CardioLoggerModalProps) {
           {/* Calculated Pace Preview Badge */}
           <div className="bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-[var(--color-accent)] text-[var(--color-accent)] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center">
                 <Gauge className="w-4 h-4" />
               </div>
               <div>

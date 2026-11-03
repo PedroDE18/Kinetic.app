@@ -312,7 +312,7 @@ export function ProgramBuilderModal({ onClose, initialTemplate }: ProgramBuilder
               <button
                 type="button"
                 onClick={() => setShowPicker(true)}
-                className="min-h-[38px] px-3 py-1 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]/25 border border-[var(--color-accent)] text-[var(--color-accent)] font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all"
+                className="min-h-[38px] px-3 py-1 bg-[var(--color-accent-soft)] hover:bg-[var(--color-accent-soft)]/80 border border-[var(--color-accent)]/30 text-[var(--color-accent)] font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Exercise</span>
@@ -351,7 +351,7 @@ export function ProgramBuilderModal({ onClose, initialTemplate }: ProgramBuilder
                               {exDef.primaryMuscles.map((m) => (
                                 <span
                                   key={m}
-                                  className="px-1.5 py-0.5 rounded bg-[var(--color-accent)] border border-[var(--color-accent)] text-[var(--color-accent)] font-semibold"
+                                  className="px-1.5 py-0.5 rounded bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] font-semibold"
                                 >
                                   {m}
                                 </span>
@@ -405,7 +405,7 @@ export function ProgramBuilderModal({ onClose, initialTemplate }: ProgramBuilder
                       </div>
 
                       {/* Sets, Reps & RPE Config */}
-                      <div className="grid grid-cols-3 gap-2 pt-1 border-t border-zinc-900 text-center">
+                      <div className="grid grid-cols-3 gap-2 pt-1 border-t border-[var(--color-border)] text-center">
                         <div>
                           <label className="text-[10px] text-[var(--color-text-muted)] block mb-0.5">Sets</label>
                           <input
@@ -468,7 +468,7 @@ export function ProgramBuilderModal({ onClose, initialTemplate }: ProgramBuilder
             <button
               type="submit"
               disabled={selectedExercises.length === 0 || !name.trim()}
-              className="min-h-[44px] py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 text-zinc-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
+              className="min-h-[44px] py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 text-[var(--color-on-accent)] font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
             >
               <Check className="w-4 h-4 stroke-[3]" />
               <span>Save Routine</span>
@@ -512,7 +512,7 @@ export function ProgramBuilderModal({ onClose, initialTemplate }: ProgramBuilder
                     onClick={() => setFilterMuscle(group)}
                     className={`min-h-[32px] px-2.5 py-1 rounded-lg text-[10px] font-bold capitalize whitespace-nowrap transition-all border ${
                       filterMuscle === group
-                        ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-accent)]'
+                        ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
                         : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)]'
                     }`}
                   >
@@ -549,7 +549,7 @@ export function ProgramBuilderModal({ onClose, initialTemplate }: ProgramBuilder
                         {ex.primaryMuscles.map((m) => (
                           <span
                             key={m}
-                            className="px-1.5 py-0.5 rounded bg-[var(--color-accent)] border border-[var(--color-accent)] text-[var(--color-accent)] font-semibold"
+                            className="px-1.5 py-0.5 rounded bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] font-semibold"
                           >
                             {m}
                           </span>

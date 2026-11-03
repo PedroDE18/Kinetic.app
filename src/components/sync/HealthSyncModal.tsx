@@ -114,12 +114,12 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex px-4 pt-3 gap-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] ">
+        <div className="flex px-4 pt-3 gap-2 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
           <button
             onClick={() => { setActiveTab('upload'); setImportPreview(null); }}
             className={`flex-1 pb-2.5 text-xs font-medium border-b-2 transition-all flex items-center justify-center gap-1.5 ${
               activeTab === 'upload'
-                ? 'border-[#E07A5F] text-[var(--color-accent)] font-semibold'
+                ? 'border-[var(--color-accent)] text-[var(--color-accent)] font-semibold'
                 : 'border-transparent text-[var(--color-text-subtle)]'
             }`}
           >
@@ -130,7 +130,7 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
             onClick={() => { setActiveTab('shortcut'); setImportPreview(null); }}
             className={`flex-1 pb-2.5 text-xs font-medium border-b-2 transition-all flex items-center justify-center gap-1.5 ${
               activeTab === 'shortcut'
-                ? 'border-[#E07A5F] text-[var(--color-accent)] font-semibold'
+                ? 'border-[var(--color-accent)] text-[var(--color-accent)] font-semibold'
                 : 'border-transparent text-[var(--color-text-subtle)]'
             }`}
           >
@@ -141,7 +141,7 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
             onClick={() => { setActiveTab('simulate'); setImportPreview(null); }}
             className={`flex-1 pb-2.5 text-xs font-medium border-b-2 transition-all flex items-center justify-center gap-1.5 ${
               activeTab === 'simulate'
-                ? 'border-[#E07A5F] text-[var(--color-accent)] font-semibold'
+                ? 'border-[var(--color-accent)] text-[var(--color-accent)] font-semibold'
                 : 'border-transparent text-[var(--color-text-subtle)]'
             }`}
           >
@@ -165,7 +165,7 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
 
           {/* Error Banner */}
           {errorMsg && (
-            <div className="p-3 rounded-2xl bg-[#FCE8E4] dark:bg-[#341F1C] border border-[#F3C4BA] dark:border-[#522923] text-[#8C2C21] dark:text-[#F3A599] text-xs">
+            <div className="p-3 rounded-2xl bg-[var(--color-danger-soft)] border border-[var(--color-danger)]/30 text-[var(--color-danger)] text-xs">
               {errorMsg}
             </div>
           )}
@@ -186,8 +186,8 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
                 onClick={() => fileInputRef.current?.click()}
                 className={`p-6 border-2 border-dashed rounded-3xl text-center cursor-pointer transition-all ${
                   dragOver
-                    ? 'border-[#E07A5F] bg-[#FCEBE6] dark:bg-[#32231E]'
-                    : 'border-[#E0D7C9] dark:border-[#403730] bg-[var(--color-surface)]  hover:border-[var(--color-accent)]/60/60'
+                    ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]'
+                    : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-accent)]/60'
                 }`}
               >
                 <input
@@ -201,7 +201,7 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
                     }
                   }}
                 />
-                <div className="w-12 h-12 mx-auto rounded-2xl bg-[#F4EBE1] dark:bg-[#302822] text-[var(--color-accent)] flex items-center justify-center mb-2.5">
+                <div className="w-12 h-12 mx-auto rounded-2xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center mb-2.5">
                   <Upload className="w-6 h-6" />
                 </div>
                 <p className="text-sm font-medium text-[var(--color-text)]">
@@ -214,19 +214,19 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
 
               {/* Supported formats cards */}
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-3 rounded-2xl bg-[#EAF2F7] dark:bg-[#1D2B35] border border-[#D0E2EC] dark:border-[#2D4556] text-[#224A66] dark:text-[#A2C7E2]">
-                  <div className="font-semibold flex items-center gap-1.5">
+                <div className="p-3 rounded-2xl bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-text)]">
+                  <div className="font-semibold flex items-center gap-1.5 text-[var(--color-accent)]">
                     <Activity className="w-3.5 h-3.5" /> Garmin Connect
                   </div>
-                  <p className="mt-1 text-[11px] leading-tight text-[#416885] dark:text-[#8BB4D3]">
+                  <p className="mt-1 text-[11px] leading-tight text-[var(--color-text-muted)]">
                     Export any ride or run as TCX or GPX from garmin.com
                   </p>
                 </div>
-                <div className="p-3 rounded-2xl bg-[#FDF0EE] dark:bg-[#341F1C] border border-[#F6D0C8] dark:border-[#522923] text-[#8C342A] dark:text-[#F29F92]">
-                  <div className="font-semibold flex items-center gap-1.5">
+                <div className="p-3 rounded-2xl bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-text)]">
+                  <div className="font-semibold flex items-center gap-1.5 text-[var(--color-accent)]">
                     <Watch className="w-3.5 h-3.5" /> Apple Health
                   </div>
-                  <p className="mt-1 text-[11px] leading-tight text-[#9C4D42] dark:text-[#E2897C]">
+                  <p className="mt-1 text-[11px] leading-tight text-[var(--color-text-muted)]">
                     Apple Health App → Profile → Export All Health Data (XML)
                   </p>
                 </div>
@@ -236,25 +236,25 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
 
           {/* TAB 2: iOS Shortcut Auto-Sync */}
           {activeTab === 'shortcut' && (
-            <div className="space-y-3.5 text-xs text-[#52453B] dark:text-[#C5B7AA]">
-              <div className="p-3.5 rounded-2xl bg-[var(--color-surface)]  border border-[var(--color-border)]">
+            <div className="space-y-3.5 text-xs text-[var(--color-text-muted)]">
+              <div className="p-3.5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)]">
                 <h4 className="font-semibold text-sm text-[var(--color-text)] flex items-center gap-1.5 mb-1.5">
                   <Smartphone className="w-4 h-4 text-[var(--color-accent)]" />
                   Automatic iPhone Health Sync
                 </h4>
                 <p className="leading-relaxed">
-                  You can set up an iOS Shortcut that automatically triggers every time you finish a Garmin or Apple Watch workout, or whenever you open Kinetic on your iPhone:
+                  You can set up an iOS Shortcut that automatically triggers every time you finish a Garmin or Apple Watch workout, or whenever you open Eunoia on your iPhone:
                 </p>
 
-                <ol className="list-decimal list-inside space-y-1.5 mt-2.5 text-[11px] text-[#695B4F] dark:text-[#B7A99C]">
+                <ol className="list-decimal list-inside space-y-1.5 mt-2.5 text-[11px] text-[var(--color-text-subtle)]">
                   <li>Open Apple <strong>Shortcuts</strong> on your iPhone.</li>
                   <li>Add Action: <em>Find Workouts where Date is Today</em>.</li>
-                  <li>Add Action: <em>Get URLs from Input</em> or open Kinetic with query parameter:
-                    <code className="block p-1.5 mt-1 rounded bg-[#F4EBE1] dark:bg-[#1D1916] text-[#A64A2F] dark:text-[var(--color-accent)] break-all font-mono text-[10px]">
-                      {typeof window !== 'undefined' ? window.location.origin + window.location.pathname : 'https://kinetic.app/'}?health_sync=...
+                  <li>Add Action: <em>Get URLs from Input</em> or open Eunoia with query parameter:
+                    <code className="block p-1.5 mt-1 rounded bg-[var(--color-surface-sunken)] text-[var(--color-accent)] break-all font-mono text-[10px] border border-[var(--color-border)]">
+                      {typeof window !== 'undefined' ? window.location.origin + window.location.pathname : 'https://eunoia.app/'}?health_sync=...
                     </code>
                   </li>
-                  <li>Kinetic automatically ingests and displays your exercises on arrival!</li>
+                  <li>Eunoia automatically ingests and displays your exercises on arrival!</li>
                 </ol>
               </div>
 
@@ -262,13 +262,13 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
               <div className="space-y-2">
                 <label className="font-medium text-[var(--color-text)] flex items-center justify-between">
                   <span>Paste Shortcut JSON Output</span>
-                  <span className="text-[11px] text-[#8A7B6E]">Manual Paste</span>
+                  <span className="text-[11px] text-[var(--color-text-subtle)]">Manual Paste</span>
                 </label>
                 <textarea
                   value={clipboardText}
                   onChange={(e) => setClipboardText(e.target.value)}
                   placeholder={`[{"type": "running", "durationMinutes": 32, "distanceKm": 5.4, "calories": 410, "heartRate": 158}]`}
-                  className="w-full h-20 p-2.5 text-xs rounded-2xl bg-[var(--color-surface)]  border border-[var(--color-border)] text-[var(--color-text)] font-mono focus:outline-none focus:border-[#E07A5F]"
+                  className="w-full h-20 p-2.5 text-xs rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text)] font-mono focus:outline-none focus:border-[var(--color-accent)]"
                 />
                 <button
                   onClick={handlePasteClipboard}
@@ -292,11 +292,11 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
               {/* Apple Watch Ultra Sample */}
               <div 
                 onClick={() => handleSimulate('apple_watch')}
-                className="p-3.5 rounded-2xl bg-[var(--color-surface)]  border border-[var(--color-border)] hover:border-[var(--color-accent)]/60 cursor-pointer transition-all group"
+                className="p-3.5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]/60 cursor-pointer transition-all group"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-[#FDF0EE] dark:bg-[#341F1C] text-[#C85A32] dark:text-[var(--color-accent)] flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center">
                       <Watch className="w-5 h-5" />
                     </div>
                     <div>
@@ -308,18 +308,18 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
                       </p>
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-[#8A7B6E] group-hover:text-[var(--color-accent)] transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRight className="w-4 h-4 text-[var(--color-text-subtle)] group-hover:text-[var(--color-accent)] transition-transform group-hover:translate-x-0.5" />
                 </div>
               </div>
 
               {/* Garmin Forerunner Sample */}
               <div 
                 onClick={() => handleSimulate('garmin_forerunner')}
-                className="p-3.5 rounded-2xl bg-[var(--color-surface)]  border border-[var(--color-border)] hover:border-[var(--color-accent)]/60 cursor-pointer transition-all group"
+                className="p-3.5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]/60 cursor-pointer transition-all group"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-[#EAF2F7] dark:bg-[#1D2B35] text-[#2D6C96] dark:text-[#8ECAE6] flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center">
                       <Activity className="w-5 h-5" />
                     </div>
                     <div>
@@ -331,7 +331,7 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
                       </p>
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-[#8A7B6E] group-hover:text-[var(--color-accent)] transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRight className="w-4 h-4 text-[var(--color-text-subtle)] group-hover:text-[var(--color-accent)] transition-transform group-hover:translate-x-0.5" />
                 </div>
               </div>
             </div>
@@ -339,9 +339,9 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
 
           {/* Pending Import Confirmation Modal */}
           {importPreview && (
-            <div className="p-4 rounded-3xl bg-[#FEF6EE] dark:bg-[#2E221B] border-2 border-[#E07A5F]/40 space-y-3 animate-fade-in">
+            <div className="p-4 rounded-3xl bg-[var(--color-surface-raised)] border border-[var(--color-accent)]/40 space-y-3 animate-fade-in">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-[#A64A2F] dark:text-[var(--color-accent)] flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-[var(--color-accent)] flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
                   Ready to Ingest ({importPreview.sourceName})
                 </span>
@@ -350,14 +350,14 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
                 </span>
               </div>
 
-              <p className="text-xs text-[#52453B] dark:text-[#D1C3B7]">
+              <p className="text-xs text-[var(--color-text-muted)]">
                 {importPreview.summary}
               </p>
 
               {/* Preview Cards */}
               <div className="space-y-1.5 max-h-40 overflow-y-auto no-scrollbar">
                 {importPreview.cardio.map((c, i) => (
-                  <div key={i} className="p-2 rounded-xl bg-white/70 dark:bg-black/20 flex items-center justify-between text-xs">
+                  <div key={i} className="p-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-between text-xs">
                     <span className="font-medium capitalize">{c.name || c.type}</span>
                     <span className="text-[var(--color-text-subtle)] text-[11px]">
                       {c.distanceKm ? `${c.distanceKm} km • ` : ''}{c.durationMinutes}m • {c.caloriesBurned} kcal
@@ -365,7 +365,7 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
                   </div>
                 ))}
                 {importPreview.weights.map((w, i) => (
-                  <div key={i} className="p-2 rounded-xl bg-white/70 dark:bg-black/20 flex items-center justify-between text-xs">
+                  <div key={i} className="p-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-between text-xs">
                     <span className="font-medium flex items-center gap-1">
                       <Scale className="w-3 h-3 text-[var(--color-accent)]" /> Weight ({w.date})
                     </span>
@@ -377,7 +377,7 @@ export function HealthSyncModal({ isOpen, onClose }: HealthSyncModalProps) {
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => setImportPreview(null)}
-                  className="flex-1 py-2 rounded-xl bg-[#EBE3D7]/60 dark:bg-[#38302A] text-xs font-medium text-[var(--color-text-muted)]"
+                  className="flex-1 py-2 rounded-xl bg-[var(--color-surface-sunken)] hover:bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-xs font-medium text-[var(--color-text-muted)] transition-colors"
                 >
                   Cancel
                 </button>

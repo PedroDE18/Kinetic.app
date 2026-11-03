@@ -82,7 +82,7 @@ export function WeighInModal({ onClose }: WeighInModalProps) {
               type="date"
               value={entryDate}
               onChange={(e) => setEntryDate(e.target.value)}
-              className="min-h-[44px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-xs font-semibold text-[var(--color-text)] focus:outline-none focus:border-[#E07A5F]"
+              className="min-h-[44px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-xs font-semibold text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
             />
           </div>
 

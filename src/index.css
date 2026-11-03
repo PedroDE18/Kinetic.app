@@ -96,34 +96,34 @@
 
   /* Light theme overrides (Swiss International Editorial) */
   .theme-light {
-    --color-bg: #F4F2EC;
+    --color-bg: #F8F6F1;
     --color-bg-elevated: #FFFFFF;
     --color-surface: #FFFFFF;
-    --color-surface-raised: #EBE8DF;
-    --color-surface-sunken: #E5E1D6;
-    --color-border: #DDD8CB;
-    --color-border-subtle: #E8E4D8;
-    --color-text: #242722;
-    --color-text-muted: #6B6E64;
-    --color-text-subtle: #8E9186;
-    --color-accent: #526652;
-    --color-accent-hover: #435443;
-    --color-accent-soft: rgba(82, 102, 82, 0.12);
+    --color-surface-raised: #F1EFEA;
+    --color-surface-sunken: #EFECE5;
+    --color-border: #E2DDD3;
+    --color-border-subtle: #ECE8E0;
+    --color-text: #1E221E;
+    --color-text-muted: #5C6256;
+    --color-text-subtle: #848A7D;
+    --color-accent: #485E48;
+    --color-accent-hover: #3B4D3B;
+    --color-accent-soft: rgba(72, 94, 72, 0.10);
     --color-on-accent: #FFFFFF;
-    --color-secondary-accent: #A67C65;
-    --color-secondary-accent-soft: rgba(166, 124, 101, 0.12);
-    --color-success: #3D6E4A;
-    --color-success-soft: rgba(61, 110, 74, 0.10);
-    --color-warning: #946914;
-    --color-warning-soft: rgba(148, 105, 20, 0.10);
-    --color-danger: #A33A3A;
-    --color-danger-soft: rgba(163, 58, 58, 0.10);
+    --color-secondary-accent: #8E6852;
+    --color-secondary-accent-soft: rgba(142, 104, 82, 0.10);
+    --color-success: #356341;
+    --color-success-soft: rgba(53, 99, 65, 0.08);
+    --color-warning: #855C0E;
+    --color-warning-soft: rgba(133, 92, 14, 0.08);
+    --color-danger: #963535;
+    --color-danger-soft: rgba(150, 53, 53, 0.08);
     --color-info: #355F7D;
 
-    --shadow-xs: 0 1px 2px rgba(36, 39, 34, 0.03);
-    --shadow-sm: 0 2px 8px rgba(36, 39, 34, 0.05);
-    --shadow-md: 0 8px 24px rgba(36, 39, 34, 0.07);
-    --shadow-lg: 0 16px 48px rgba(36, 39, 34, 0.09);
+    --shadow-xs: 0 1px 2px rgba(30, 34, 30, 0.03);
+    --shadow-sm: 0 2px 6px rgba(30, 34, 30, 0.04);
+    --shadow-md: 0 6px 16px rgba(30, 34, 30, 0.06);
+    --shadow-lg: 0 12px 32px rgba(30, 34, 30, 0.08);
   }
 
   html {
@@ -297,7 +297,7 @@ body {
   border-color: var(--color-border) !important;
 }
 
-.theme-light .text-white,
+/* In light mode, map light zinc text to dark, but preserve explicit white text on dark buttons */
 .theme-light .text-zinc-100 {
   color: var(--color-text) !important;
 }
@@ -404,63 +404,4 @@ button, a {
   color: #fff;
 }
 
-/* ==========================================================
-   COZY PASTEL UTILITIES (preserved from prior design pass)
-   ========================================================== */
 
-.cozy-pink {
-  background-color: #FDE8E4 !important;
-  border-color: #F4C7BE !important;
-  color: #8A3127 !important;
-}
-.cozy-blue {
-  background-color: #E1ECF4 !important;
-  border-color: #BCD4E6 !important;
-  color: #1D4C6E !important;
-}
-.cozy-yellow {
-  background-color: #FEF4D6 !important;
-  border-color: #F1DE9F !important;
-  color: #7A5B0B !important;
-}
-.cozy-green {
-  background-color: #E5EDE4 !important;
-  border-color: #C4D9C2 !important;
-  color: #2A5835 !important;
-}
-.cozy-orange {
-  background-color: #FCE7DB !important;
-  border-color: #F5CEBC !important;
-  color: #8E3E1E !important;
-}
-
-.theme-dark .cozy-pink,
-:not(.theme-light) .cozy-pink {
-  background-color: #2E1E1C !important;
-  border-color: #4B2924 !important;
-  color: #F4A599 !important;
-}
-.theme-dark .cozy-blue,
-:not(.theme-light) .cozy-blue {
-  background-color: #1B2732 !important;
-  border-color: #2B4052 !important;
-  color: #9EC7E6 !important;
-}
-.theme-dark .cozy-yellow,
-:not(.theme-light) .cozy-yellow {
-  background-color: #2B2516 !important;
-  border-color: #493B1F !important;
-  color: #ECD28C !important;
-}
-.theme-dark .cozy-green,
-:not(.theme-light) .cozy-green {
-  background-color: #1C2A1E !important;
-  border-color: #2D4632 !important;
-  color: #9FD1A8 !important;
-}
-.theme-dark .cozy-orange,
-:not(.theme-light) .cozy-orange {
-  background-color: #2F201A !important;
-  border-color: #4F2E23 !important;
-  color: #F6AA94 !important;
-}

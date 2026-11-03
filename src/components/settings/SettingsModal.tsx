@@ -157,7 +157,7 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
                 onClick={() => setUnitSystem('metric')}
                 className={`min-h-[40px] py-2 rounded-xl text-xs font-semibold transition-all border ${
                   unitSystem === 'metric'
-                    ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-accent)]'
+                    ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
                     : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)]'
                 }`}
               >
@@ -168,7 +168,7 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
                 onClick={() => setUnitSystem('imperial')}
                 className={`min-h-[40px] py-2 rounded-xl text-xs font-semibold transition-all border ${
                   unitSystem === 'imperial'
-                    ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-accent)]'
+                    ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
                     : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)]'
                 }`}
               >
@@ -307,7 +307,7 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
               <Shield className="w-4 h-4 text-[var(--color-accent)]" />
               <span>Data Ownership & Exports</span>
             </div>
-            <span className="text-[10px] text-[var(--color-accent)] font-semibold bg-[var(--color-accent)] px-2 py-0.5 rounded-full border border-[var(--color-accent)]">
+            <span className="text-[10px] text-[var(--color-accent)] font-semibold bg-[var(--color-accent-soft)] px-2.5 py-0.5 rounded-full border border-[var(--color-accent)]/30">
               Zero Lock-in
             </span>
           </div>
@@ -370,7 +370,7 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
               <Watch className="w-4 h-4 text-[var(--color-accent)]" />
               <span>Apple Health & Garmin Sync</span>
             </div>
-            <span className="text-[10px] text-[var(--color-accent)] font-semibold bg-[var(--color-accent)] px-2 py-0.5 rounded-full border border-[var(--color-accent)]">
+            <span className="text-[10px] text-[var(--color-accent)] font-semibold bg-[var(--color-accent-soft)] px-2.5 py-0.5 rounded-full border border-[var(--color-accent)]/30">
               Active
             </span>
           </div>

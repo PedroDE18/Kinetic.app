@@ -325,7 +325,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
               </div>
 
               <div className="text-right">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[var(--color-accent)] text-[var(--color-accent)] border border-[var(--color-accent)]">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[var(--color-accent-soft)] text-[var(--color-accent)] border border-[var(--color-accent)]/30">
                   {completedWorkouts.length} Workouts Logged
                 </span>
               </div>
@@ -487,7 +487,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
               </div>
 
               <div className="text-right">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[var(--color-accent)] text-[var(--color-accent)] border border-[var(--color-accent)]">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[var(--color-accent-soft)] text-[var(--color-accent)] border border-[var(--color-accent)]/30">
                   {cardioStats.totalSessions} Sessions Logged
                 </span>
               </div>
@@ -556,7 +556,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
                         <span className="text-xs font-bold text-[var(--color-text)] capitalize">
                           {(session.activity || session.type).replace('_', ' ')}
                         </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-accent)] text-[var(--color-accent)] font-bold border border-[var(--color-accent)]">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)] font-bold border border-[var(--color-accent)]/30">
                           {session.avgPaceMinPerKm || (session.avgPaceSecPerKm ? formatPace(session.avgPaceSecPerKm, profile.unitSystem) : '--:--')}
                         </span>
                       </div>

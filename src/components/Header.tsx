@@ -23,13 +23,13 @@ export function Header({ onOpenSettings, onOpenProfile, onOpenHealthSync, onOpen
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-[var(--color-surface-sunken)] backdrop-blur-md border-b border-[var(--color-border)] px-4 notch-header-padding pb-2.5 flex items-center justify-between max-w-md mx-auto w-full transition-colors">
+    <header className="sticky top-0 z-30 bg-[color-mix(in_srgb,var(--color-bg)_94%,transparent)] backdrop-blur-md border-b border-[var(--color-border)] px-4 notch-header-padding pb-2.5 flex items-center justify-between max-w-md mx-auto w-full transition-colors">
       <button
         onClick={onOpenProfile}
-        className="flex items-center gap-2.5 text-left active:scale-[0.98] transition-all"
+        className="flex items-center gap-2.5 text-left active:scale-[0.98] transition-all group"
         title="View & Edit Life Profile"
       >
-        <div className="h-8 w-8 rounded-xl bg-[var(--color-accent)]/20 text-[var(--color-accent)] flex items-center justify-center font-serif font-black text-base border border-[var(--color-accent)]/30 shadow-xs">
+        <div className="h-8 w-8 rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center font-serif font-black text-base border border-[var(--color-accent)]/20 shadow-xs group-hover:border-[var(--color-accent)]/40 transition-colors">
           Ε
         </div>
         <div>
@@ -47,13 +47,23 @@ export function Header({ onOpenSettings, onOpenProfile, onOpenHealthSync, onOpen
         </div>
       </button>
 
-      <div className="flex items-center gap-0.5">
-        {/* Profile & Cloud Account Button */}
+      <div className="flex items-center gap-1">
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          aria-label={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-raised)] active:scale-95 transition-all"
+        >
+          {isLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+        </button>
+
+        {/* Profile / Account Button */}
         <button
           onClick={onOpenProfile}
           aria-label="Profile and Cloud Account"
           title={currentUser ? `Signed in as ${currentUser.email || 'Cloud'}` : 'Personal Profile'}
-          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-accent)] active:scale-95 transition-all relative"
+          className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-surface-raised)] active:scale-95 transition-all relative"
         >
           {currentUser ? (
             <div className="relative">
@@ -65,44 +75,12 @@ export function Header({ onOpenSettings, onOpenProfile, onOpenHealthSync, onOpen
           )}
         </button>
 
-        {/* Health & Wearables Sync */}
-        {onOpenHealthSync && (
-          <button
-            onClick={onOpenHealthSync}
-            aria-label="Health & Wearables Sync"
-            title="Sync Apple Health & Garmin"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-accent)] active:scale-95 transition-all"
-          >
-            <Watch className="w-4 h-4" />
-          </button>
-        )}
-
-        {/* Install PWA Guide */}
-        {onOpenInstallPwa && (
-          <button
-            onClick={onOpenInstallPwa}
-            aria-label="Install App"
-            title="Install App"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-text)] active:scale-95 transition-all"
-          >
-            <Smartphone className="w-4 h-4" />
-          </button>
-        )}
-
-        {/* Theme Toggle */}
-        <button
-          onClick={toggleTheme}
-          aria-label={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-text)] active:scale-95 transition-all"
-        >
-          {isLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-        </button>
-
         {/* Settings */}
         <button
           onClick={onOpenSettings}
           aria-label="Open Settings"
-          className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-text)] active:scale-95 transition-all"
+          title="Settings & Data Management"
+          className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-raised)] active:scale-95 transition-all"
         >
           <Settings className="w-4 h-4" />
         </button>

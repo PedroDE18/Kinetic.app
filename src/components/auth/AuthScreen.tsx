@@ -76,20 +76,20 @@ export function AuthScreen({ onSuccess }: AuthScreenProps) {
       <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-[var(--color-accent)] rounded-full blur-2xl pointer-events-none" />
 
       <div className="w-full max-w-sm relative z-10 space-y-6">
-        {/* Kinetic Header / Branding */}
+        {/* Eunoia Header / Branding */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-[#E07A5F] to-[#C85A32] text-[var(--color-text)] font-black text-2xl shadow-xl shadow-[#E07A5F]/20 mb-1">
-            K
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] font-serif font-black text-2xl shadow-xs border border-[var(--color-accent)]/20 mb-1">
+            Ε
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text)] flex items-center justify-center gap-2">
-            Kinetic
-            <span className="text-xs font-semibold px-2 py-0.5 bg-[var(--color-surface-raised)] dark:bg-[#2C241E] text-[#C85A32] dark:text-[var(--color-accent)] rounded-full border border-[var(--color-border)] dark:border-[#42362C]">
+            Eunoia
+            <span className="text-xs font-semibold px-2 py-0.5 bg-[var(--color-surface-raised)] text-[var(--color-accent)] rounded-full border border-[var(--color-border)]">
               Cloud
             </span>
           </h1>
           <p className="text-xs text-[var(--color-text-muted)] max-w-xs mx-auto">
-            {mode === 'signin' && 'Sign in to access your workouts, nutrition targets, and progress synced across devices.'}
-            {mode === 'signup' && 'Create your account to start tracking nutrition, training volume, and body composition.'}
+            {mode === 'signin' && 'Sign in to access your flourishing practices, reflections, and health metrics synced across devices.'}
+            {mode === 'signup' && 'Create your account to synchronize your habits, contemplative journals, and physical training.'}
             {mode === 'forgot' && 'Enter your email to receive a password reset link.'}
           </p>
         </div>
@@ -108,7 +108,7 @@ export function AuthScreen({ onSuccess }: AuthScreenProps) {
                 }}
                 className={`py-2 rounded-xl transition-all ${
                   mode === 'signin'
-                    ? 'bg-[var(--color-accent)] text-[var(--color-text)] shadow-sm font-semibold'
+                    ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-sm font-semibold'
                     : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                 }`}
               >
@@ -123,7 +123,7 @@ export function AuthScreen({ onSuccess }: AuthScreenProps) {
                 }}
                 className={`py-2 rounded-xl transition-all ${
                   mode === 'signup'
-                    ? 'bg-[var(--color-accent)] text-[var(--color-text)] shadow-sm font-semibold'
+                    ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-sm font-semibold'
                     : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                 }`}
               >
@@ -162,7 +162,7 @@ export function AuthScreen({ onSuccess }: AuthScreenProps) {
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="Alex"
                     autoComplete="name"
-                    className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl pl-10 pr-3 py-2.5 text-xs text-[var(--color-text)] placeholder-zinc-500 focus:outline-none focus:border-[#E07A5F] transition-colors"
+                    className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl pl-10 pr-3 py-2.5 text-xs text-[var(--color-text)] placeholder-[var(--color-text-subtle)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
                   />
                 </div>
               </div>
@@ -180,7 +180,7 @@ export function AuthScreen({ onSuccess }: AuthScreenProps) {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="alex@example.com"
                   autoComplete="email"
-                  className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl pl-10 pr-3 py-2.5 text-xs text-[var(--color-text)] placeholder-zinc-500 focus:outline-none focus:border-[#E07A5F] transition-colors"
+                  className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl pl-10 pr-3 py-2.5 text-xs text-[var(--color-text)] placeholder-[var(--color-text-subtle)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
                 />
               </div>
             </div>
@@ -213,7 +213,7 @@ export function AuthScreen({ onSuccess }: AuthScreenProps) {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-                    className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl pl-10 pr-10 py-2.5 text-xs text-[var(--color-text)] placeholder-zinc-500 focus:outline-none focus:border-[#E07A5F] transition-colors"
+                    className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl pl-10 pr-10 py-2.5 text-xs text-[var(--color-text)] placeholder-[var(--color-text-subtle)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
                   />
                   <button
                     type="button"
@@ -230,7 +230,7 @@ export function AuthScreen({ onSuccess }: AuthScreenProps) {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full min-h-[44px] mt-2 bg-[var(--color-accent)] hover:bg-[#d66e53] text-[var(--color-text)] font-semibold text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-[#E07A5F]/20 active:scale-[0.99] transition-all disabled:opacity-60"
+              className="w-full min-h-[44px] mt-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition-all disabled:opacity-60"
             >
               {submitting ? (
                 <>

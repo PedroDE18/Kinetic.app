@@ -143,13 +143,13 @@ export function QuickLogBar() {
   const getActionIcon = (type: QuickLogAction['type']) => {
     switch (type) {
       case 'water':
-        return <Droplets className="w-3.5 h-3.5 text-blue-400" />;
+        return <Droplets className="w-3.5 h-3.5 text-[var(--color-info)]" />;
       case 'weight':
-        return <Scale className="w-3.5 h-3.5 text-amber-400" />;
+        return <Scale className="w-3.5 h-3.5 text-[var(--color-accent)]" />;
       case 'cardio':
-        return <Activity className="w-3.5 h-3.5 text-emerald-400" />;
+        return <Activity className="w-3.5 h-3.5 text-[var(--color-success)]" />;
       case 'food':
-        return <Utensils className="w-3.5 h-3.5 text-orange-400" />;
+        return <Utensils className="w-3.5 h-3.5 text-[var(--color-secondary-accent)]" />;
     }
   };
 

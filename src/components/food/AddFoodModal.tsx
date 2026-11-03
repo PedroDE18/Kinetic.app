@@ -520,7 +520,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                           onClick={() => setServingMultiplier(step)}
                           className={`min-h-[36px] flex-1 py-1 text-xs font-semibold rounded-lg border transition-all ${
                             servingMultiplier === step
-                              ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-accent)]'
+                              ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
                               : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)]'
                           }`}
                         >
