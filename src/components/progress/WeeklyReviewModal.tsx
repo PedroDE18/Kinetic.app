@@ -8,6 +8,9 @@ import {
   Minus,
   Plus,
   Compass,
+  Brain,
+  Dumbbell,
+  Sliders,
 } from 'lucide-react';
 import { WeeklyReviewRecord } from '../../types';
 import { useFitness } from '../../context/FitnessContext';
@@ -60,6 +63,52 @@ export function WeeklyReviewModal({
         setLoadingNarrative(false);
       });
   }, [review, state.profile, state.completedWorkouts.length, state.waterMlToday]);
+
+  const holistic = React.useMemo(() => {
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+
+    // Mind
+    const weekReflections = state.reflections.filter((r) => r.date >= weekAgoStr);
+    const weatherCounts: Record<string, number> = {};
+    for (const r of weekReflections) {
+      if (r.affectiveWeather) {
+        weatherCounts[r.affectiveWeather] = (weatherCounts[r.affectiveWeather] || 0) + 1;
+      }
+    }
+    const dominantWeather = Object.entries(weatherCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'clear';
+
+    // Body
+    const weekWorkouts = state.completedWorkouts.filter((w) => w.startTime >= weekAgoStr);
+    const totalVolume = weekWorkouts.reduce((acc, w) => acc + (w.totalVolumeKg || 0), 0);
+
+    // Systems
+    const activeHabits = state.habits.filter((h) => !h.archived);
+    const totalPossible = activeHabits.length * 7;
+    let completedCount = 0;
+    for (const h of activeHabits) {
+      for (const d of h.completedDates) {
+        if (d >= weekAgoStr) completedCount++;
+      }
+    }
+    const habitPct = totalPossible > 0 ? Math.round((completedCount / totalPossible) * 100) : 100;
+
+    return {
+      mind: {
+        reflectionsCount: weekReflections.length,
+        dominantWeather,
+      },
+      body: {
+        workoutsCount: weekWorkouts.length,
+        totalVolumeKg: totalVolume,
+      },
+      systems: {
+        habitCompliancePct: habitPct,
+        activeHabitsCount: activeHabits.length,
+      },
+    };
+  }, [state.reflections, state.completedWorkouts, state.habits]);
 
   if (!review) return null;
 
@@ -117,6 +166,45 @@ export function WeeklyReviewModal({
             </span>
           </div>
         )}
+
+        {/* Holistic 360° Synthesis Matrix */}
+        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+          <div className="bg-[var(--color-surface)] p-2.5 rounded-2xl border border-[var(--color-border)]">
+            <span className="text-[10px] text-[var(--color-accent)] font-bold uppercase tracking-wider flex items-center justify-center gap-1">
+              <Brain className="w-3 h-3" /> Mind
+            </span>
+            <span className="font-bold text-xs text-[var(--color-text)] block mt-0.5">
+              {holistic.mind.reflectionsCount} logs
+            </span>
+            <span className="text-[10px] text-[var(--color-text-muted)] capitalize">
+              {holistic.mind.dominantWeather}
+            </span>
+          </div>
+
+          <div className="bg-[var(--color-surface)] p-2.5 rounded-2xl border border-[var(--color-border)]">
+            <span className="text-[10px] text-[var(--color-accent)] font-bold uppercase tracking-wider flex items-center justify-center gap-1">
+              <Dumbbell className="w-3 h-3" /> Body
+            </span>
+            <span className="font-bold text-xs text-[var(--color-text)] block mt-0.5">
+              {holistic.body.workoutsCount} sessions
+            </span>
+            <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums">
+              {holistic.body.totalVolumeKg > 0 ? `${(holistic.body.totalVolumeKg / 1000).toFixed(1)}t vol` : '0 vol'}
+            </span>
+          </div>
+
+          <div className="bg-[var(--color-surface)] p-2.5 rounded-2xl border border-[var(--color-border)]">
+            <span className="text-[10px] text-[var(--color-accent)] font-bold uppercase tracking-wider flex items-center justify-center gap-1">
+              <Sliders className="w-3 h-3" /> Systems
+            </span>
+            <span className="font-bold text-xs text-[var(--color-text)] block mt-0.5 tabular-nums">
+              {holistic.systems.habitCompliancePct}%
+            </span>
+            <span className="text-[10px] text-[var(--color-text-muted)]">
+              {holistic.systems.activeHabitsCount} habits
+            </span>
+          </div>
+        </div>
 
         {/* Narrative Athletic Coaching Insight */}
         <div className="bg-[var(--color-surface)] rounded-2xl p-3.5 border border-[var(--color-border)] space-y-2">

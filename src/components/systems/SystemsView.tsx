@@ -651,9 +651,59 @@ export function SystemsView() {
             )}
           </section>
 
-          {/* Active Projects & Goals Overview */}
+          {/* Telos & Core Goals Rollup */}
+          {goals.length > 0 && (
+            <section className="space-y-2 pt-1">
+              <span className="k-section-title px-1">Telos & Core Intentions</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {goals.map((g) => {
+                  const goalProjects = projects.filter((p) => p.goalId === g.id);
+                  const goalTasks = tasks.filter(
+                    (t) => t.goalId === g.id || goalProjects.some((p) => p.id === t.projectId)
+                  );
+                  const completedTasksCount = goalTasks.filter((t) => t.isCompleted).length;
+                  const rollupPct =
+                    goalTasks.length > 0
+                      ? Math.round((completedTasksCount / goalTasks.length) * 100)
+                      : (g.progressPercentage ?? 0);
+
+                  return (
+                    <div
+                      key={g.id}
+                      className="p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-2 shadow-xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="px-2 py-0.5 bg-[var(--color-surface-raised)] text-[var(--color-accent)] rounded-md text-[10px] font-bold capitalize">
+                          {g.area.replace('_', ' ')}
+                        </span>
+                        <span className="text-[10px] font-bold text-[var(--color-accent)] tabular-nums">
+                          {rollupPct}%
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-bold text-[var(--color-text)]">{g.title}</h4>
+                      {g.description && (
+                        <p className="text-[11px] text-[var(--color-text-muted)] line-clamp-2">{g.description}</p>
+                      )}
+                      <div className="w-full h-1.5 bg-[var(--color-surface-sunken)] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[var(--color-accent)] transition-all duration-300"
+                          style={{ width: `${rollupPct}%` }}
+                        />
+                      </div>
+                      <div className="text-[10px] text-[var(--color-text-muted)] flex justify-between pt-0.5">
+                        <span>{goalProjects.length} Projects</span>
+                        <span>{completedTasksCount}/{goalTasks.length} Tasks</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Active Projects Overview */}
           <section className="space-y-2 pt-2">
-            <span className="k-section-title px-1">Active Projects & Telos</span>
+            <span className="k-section-title px-1">Active Projects</span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {projects.map((proj) => {
                 const projTasks = tasks.filter((t) => t.projectId === proj.id);
@@ -680,6 +730,9 @@ export function SystemsView() {
                         className="h-full bg-[var(--color-accent)] transition-all duration-300"
                         style={{ width: `${progressPct}%` }}
                       />
+                    </div>
+                    <div className="text-[10px] text-[var(--color-text-muted)] text-right pt-0.5">
+                      <span>{doneCount}/{projTasks.length} Tasks</span>
                     </div>
                   </div>
                 );
