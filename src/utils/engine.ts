@@ -1,4 +1,4 @@
-import { WeightRecord, LoggedFood, UnitSystem, CompletedWorkout, CardioSession, CardioActivityType } from '../types';
+import { WeightRecord, LoggedFood, UnitSystem, CompletedWorkout, CardioSession, CardioActivityType, SetType } from '../types';
 
 export interface SmoothedWeightPoint {
   date: string;
@@ -259,12 +259,14 @@ export function calculate1RM(weightKg: number, reps: number): number {
 
 /**
  * Calculate total training volume in kg for completed sets.
+ * By default, excludes warmup sets ('warmup') to deliver true effective working volume.
  */
 export function calculateWorkoutVolume(
-  exercises: { sets: { actualWeightKg: number; actualReps: number; isCompleted: boolean }[] }[]
+  exercises: { sets: { actualWeightKg: number; actualReps: number; isCompleted: boolean; setType?: SetType }[] }[],
+  includeWarmups = false
 ): number {
   return exercises.reduce((acc, ex) => {
-    const completedSets = ex.sets.filter((s) => s.isCompleted);
+    const completedSets = ex.sets.filter((s) => s.isCompleted && (includeWarmups || s.setType !== 'warmup'));
     const exVolume = completedSets.reduce(
       (setAcc, s) => setAcc + s.actualWeightKg * s.actualReps,
       0

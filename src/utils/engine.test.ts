@@ -114,6 +114,25 @@ test('calculateWorkoutVolume sums only completed sets', () => {
   assert.equal(volume, 800 + 640 + 500); // 1940
 });
 
+test('calculateWorkoutVolume excludes warmup sets from effective volume by default', () => {
+  const exercises = [
+    {
+      sets: [
+        { actualWeightKg: 20, actualReps: 15, isCompleted: true, setType: 'warmup' as const }, // 300 warmup
+        { actualWeightKg: 60, actualReps: 10, isCompleted: true, setType: 'warmup' as const }, // 600 warmup
+        { actualWeightKg: 100, actualReps: 5, isCompleted: true, setType: 'normal' as const }, // 500 working
+        { actualWeightKg: 100, actualReps: 5, isCompleted: true, setType: 'failure' as const }, // 500 working
+      ],
+    },
+  ];
+
+  const effectiveVolume = calculateWorkoutVolume(exercises);
+  assert.equal(effectiveVolume, 1000); // Only normal + failure
+
+  const grossVolume = calculateWorkoutVolume(exercises, true);
+  assert.equal(grossVolume, 1900); // All completed sets
+});
+
 test('routine volume history groups volume correctly by routine', () => {
   const workouts: CompletedWorkout[] = [
     {

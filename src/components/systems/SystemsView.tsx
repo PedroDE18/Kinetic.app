@@ -49,12 +49,28 @@ export function SystemsView() {
 
   // Filters
   const [areaFilter, setAreaFilter] = useState<LifeArea | 'all'>('all');
+  const [timeFilter, setTimeFilter] = useState<'all' | 'morning' | 'afternoon' | 'evening' | 'anytime'>('all');
   const [frictionCategoryFilter, setFrictionCategoryFilter] = useState<FrictionCategory | 'all'>('all');
+
+  // Last 28 days for habit consistency dot matrix
+  const recent28Days = useMemo(() => {
+    const days: string[] = [];
+    for (let i = 27; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(getLocalDateString(d));
+    }
+    return days;
+  }, []);
 
   // Habits calculations
   const filteredHabits = useMemo(() => {
-    return habits.filter((h) => (areaFilter === 'all' ? true : h.area === areaFilter));
-  }, [habits, areaFilter]);
+    return habits.filter((h) => {
+      const matchArea = areaFilter === 'all' ? true : h.area === areaFilter;
+      const matchTime = timeFilter === 'all' ? true : (h.timeOfDay || 'anytime') === timeFilter;
+      return matchArea && matchTime;
+    });
+  }, [habits, areaFilter, timeFilter]);
 
   const completedHabitsToday = useMemo(() => {
     return habits.filter((h) => h.completedDates.includes(todayStr)).length;
@@ -158,43 +174,73 @@ export function SystemsView() {
             </button>
           </div>
 
-          {/* Area Filter Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-            <button
-              onClick={() => setAreaFilter('all')}
-              className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold shrink-0 transition-all ${
-                areaFilter === 'all'
-                  ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
-                  : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)]'
-              }`}
-            >
-              All Areas
-            </button>
-            {LIFE_AREAS.map((a) => (
+          {/* Area & Time Filter Chips */}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
               <button
-                key={a.id}
-                onClick={() => setAreaFilter(a.id)}
+                onClick={() => setAreaFilter('all')}
                 className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold shrink-0 transition-all ${
-                  areaFilter === a.id
+                  areaFilter === 'all'
                     ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
                     : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)]'
                 }`}
               >
-                {a.label}
+                All Areas
               </button>
-            ))}
+              {LIFE_AREAS.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => setAreaFilter(a.id)}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold shrink-0 transition-all ${
+                    areaFilter === a.id
+                      ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+                      : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)]'
+                  }`}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              {(['all', 'morning', 'afternoon', 'evening', 'anytime'] as const).map((time) => (
+                <button
+                  key={time}
+                  onClick={() => setTimeFilter(time)}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold shrink-0 capitalize transition-all ${
+                    timeFilter === time
+                      ? 'bg-[var(--color-surface-raised)] text-[var(--color-accent)] border border-[var(--color-accent)]/40 font-bold'
+                      : 'text-[var(--color-text-subtle)] hover:text-[var(--color-text-muted)]'
+                  }`}
+                >
+                  {time === 'all' ? 'All Times' : time}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Habits List */}
           <div className="space-y-2.5">
             {filteredHabits.length === 0 ? (
               <div className="p-8 text-center bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl text-xs text-[var(--color-text-muted)]">
-                No habits configured in this domain. Anchor a new deliberate practice above.
+                No habits configured in this filter.
               </div>
             ) : (
               filteredHabits.map((habit) => {
                 const isCompletedToday = habit.completedDates.includes(todayStr);
                 const streak = habit.completedDates.length;
+                const dayOfWeek = new Date().getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                const isScheduledToday =
+                  habit.frequency === 'daily'
+                    ? true
+                    : habit.frequency === 'weekdays'
+                    ? !isWeekend
+                    : habit.frequency === 'weekends'
+                    ? isWeekend
+                    : true;
+                const habit28Count = recent28Days.filter((d) => habit.completedDates.includes(d)).length;
+                const habit28Pct = Math.round((habit28Count / 28) * 100);
 
                 return (
                   <div
@@ -230,13 +276,18 @@ export function SystemsView() {
                             >
                               {habit.title}
                             </span>
+                            {!isScheduledToday && (
+                              <span className="px-1.5 py-0.5 bg-[var(--color-surface-raised)] text-[var(--color-text-subtle)] rounded-md text-[9px] font-semibold">
+                                Off Day ({habit.frequency})
+                              </span>
+                            )}
                             {habit.isNonNegotiable && (
                               <span className="px-1.5 py-0.5 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-md text-[9px] font-bold uppercase tracking-wider">
                                 Non-Negotiable
                               </span>
                             )}
                             <span className="px-1.5 py-0.5 bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] rounded-md text-[9px] font-semibold capitalize">
-                              {habit.area.replace('_', ' ')}
+                              {habit.timeOfDay || 'anytime'}
                             </span>
                           </div>
 
@@ -244,13 +295,6 @@ export function SystemsView() {
                             <p className="text-xs text-[var(--color-text-muted)] font-serif italic">
                               "{habit.purpose}"
                             </p>
-                          )}
-
-                          {habit.triggerCue && (
-                            <div className="text-[11px] text-[var(--color-text-muted)] flex items-center gap-1">
-                              <span className="font-semibold text-[var(--color-text-subtle)]">Cue:</span>
-                              <span>{habit.triggerCue}</span>
-                            </div>
                           )}
 
                           {habit.minimumViableAction && (
@@ -282,6 +326,32 @@ export function SystemsView() {
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
+                    </div>
+
+                    {/* 28-Day Consistency Dot Matrix / Heatmap */}
+                    <div className="pt-2.5 mt-2.5 border-t border-[var(--color-border)] flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        {recent28Days.map((d) => {
+                          const done = habit.completedDates.includes(d);
+                          const isToday = d === todayStr;
+                          return (
+                            <div
+                              key={d}
+                              title={`${d}: ${done ? 'Completed' : 'Missed'}`}
+                              className={`w-2 h-2 rounded-[2px] transition-colors ${
+                                done
+                                  ? 'bg-[var(--color-accent)]'
+                                  : isToday
+                                  ? 'bg-transparent border border-[var(--color-accent)]'
+                                  : 'bg-[var(--color-surface-raised)] border border-[var(--color-border)]'
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+                      <span className="text-[10px] text-[var(--color-text-subtle)] font-medium tabular-nums">
+                        {habit28Pct}% 28d
+                      </span>
                     </div>
                   </div>
                 );

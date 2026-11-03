@@ -24,7 +24,7 @@ interface FoodViewProps {
 }
 
 export function FoodView({ onOpenAddModal }: FoodViewProps) {
-  const { state, removeLoggedFood, duplicateLoggedFood, updateLoggedFood, toggleFoodFavorite } = useFitness();
+  const { state, addLoggedFood, removeLoggedFood, duplicateLoggedFood, updateLoggedFood, toggleFoodFavorite } = useFitness();
   const { loggedFoods, profile } = state;
 
   const todayStr = useMemo(() => getLocalDateString(), []);
@@ -37,6 +37,43 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
     () => loggedFoods.filter((f) => f.loggedAt.startsWith(selectedDate)),
     [loggedFoods, selectedDate]
   );
+
+  const yesterdayStr = useMemo(() => {
+    const d = new Date(selectedDate + 'T12:00:00');
+    d.setDate(d.getDate() - 1);
+    return getLocalDateString(d);
+  }, [selectedDate]);
+
+  const yesterdayFoods = useMemo(
+    () => loggedFoods.filter((f) => f.loggedAt.startsWith(yesterdayStr)),
+    [loggedFoods, yesterdayStr]
+  );
+
+  const handleCopyDay = (sourceDate: string, targetDate: string) => {
+    const sourceFoods = loggedFoods.filter((f) => f.loggedAt.startsWith(sourceDate));
+    if (sourceFoods.length === 0) return;
+    sourceFoods.forEach((item, idx) => {
+      addLoggedFood({
+        ...item,
+        id: `copy-day-${Date.now()}-${idx}`,
+        loggedAt: `${targetDate}T${item.loggedAt.split('T')[1] || '12:00:00.000Z'}`,
+      });
+    });
+  };
+
+  const handleCopyMeal = (mealType: MealType, sourceDate: string, targetDate: string) => {
+    const sourceFoods = loggedFoods.filter(
+      (f) => f.loggedAt.startsWith(sourceDate) && f.mealType === mealType
+    );
+    if (sourceFoods.length === 0) return;
+    sourceFoods.forEach((item, idx) => {
+      addLoggedFood({
+        ...item,
+        id: `copy-meal-${Date.now()}-${idx}`,
+        loggedAt: `${targetDate}T${item.loggedAt.split('T')[1] || '12:00:00.000Z'}`,
+      });
+    });
+  };
 
   const [editingItem, setEditingItem] = useState<LoggedFood | null>(null);
   const [editServingCount, setEditServingCount] = useState<number>(1);
@@ -203,6 +240,17 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {yesterdayFoods.length > 0 && selectedFoods.length === 0 && (
+              <button
+                onClick={() => handleCopyDay(yesterdayStr, selectedDate)}
+                className="min-h-[44px] px-3.5 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] hover:bg-[var(--color-surface-raised)]/80 text-[var(--color-text)] font-semibold rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition-all"
+                title="Copy all yesterday's meals into today"
+              >
+                <Copy className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+                <span className="hidden sm:inline">{lang === 'pt-BR' ? 'Copiar Ontem' : 'Copy Yesterday'}</span>
+              </button>
+            )}
+
             <button
               onClick={() => setShowRecipeModal(true)}
               className="min-h-[44px] px-3.5 py-2 bg-[var(--color-surface-raised)] border border-[var(--color-border)] hover:bg-[var(--color-surface-raised)]/80 text-[var(--color-text)] font-semibold rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition-all"
@@ -274,13 +322,25 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => onOpenAddModal(key, selectedDate)}
-                  aria-label={`Add food to ${title}`}
-                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] active:scale-95 transition-all"
-                >
-                  <Plus className="w-4 h-4 stroke-[2.5]" />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  {items.length === 0 && yesterdayFoods.some((f) => f.mealType === key) && (
+                    <button
+                      onClick={() => handleCopyMeal(key, yesterdayStr, selectedDate)}
+                      title={`Copy yesterday's ${title} into this slot`}
+                      className="h-8 px-2.5 rounded-lg bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-[11px] font-semibold flex items-center gap-1 active:scale-95 transition-all"
+                    >
+                      <Copy className="w-3 h-3 text-[var(--color-accent)]" />
+                      <span className="hidden sm:inline">{lang === 'pt-BR' ? 'Repetir' : 'Copy'}</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onOpenAddModal(key, selectedDate)}
+                    aria-label={`Add food to ${title}`}
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] active:scale-95 transition-all"
+                  >
+                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
               </div>
 
               {/* Items List */}
