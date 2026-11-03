@@ -7,7 +7,7 @@ import { TodayView } from './components/today/TodayView';
 import { SystemsView } from './components/systems/SystemsView';
 import { BodyView } from './components/body/BodyView';
 import { MindView } from './components/mind/MindView';
-import { GrowthView } from './components/growth/GrowthView';
+import { ProgressView } from './components/progress/ProgressView';
 import { AddFoodModal } from './components/food/AddFoodModal';
 import { WeighInModal } from './components/weighin/WeighInModal';
 import { WeeklyReviewModal } from './components/progress/WeeklyReviewModal';
@@ -132,6 +132,15 @@ function AppContent() {
 
       {/* Main Viewport Container */}
       <main className="flex-1 pb-32 px-4 pt-3.5 max-w-md mx-auto w-full overflow-x-hidden">
+        {activeTab === 'progress' && (
+          <ProgressView
+            onOpenWeeklyReview={() => setShowWeeklyReviewModal(true)}
+            onOpenWeighInModal={() => setShowWeighInModal(true)}
+          />
+        )}
+
+        {activeTab === 'systems' && <SystemsView />}
+
         {activeTab === 'today' && (
           <TodayView
             onOpenFoodModal={() => handleOpenAddFood('breakfast')}
@@ -144,8 +153,6 @@ function AppContent() {
           />
         )}
 
-        {activeTab === 'systems' && <SystemsView />}
-
         {activeTab === 'body' && (
           <BodyView
             onOpenAddFoodModal={(mealType, targetDate) => handleOpenAddFood(mealType, targetDate)}
@@ -155,8 +162,6 @@ function AppContent() {
         )}
 
         {activeTab === 'mind' && <MindView />}
-
-        {activeTab === 'growth' && <GrowthView />}
       </main>
 
       {/* Floating Active Workout Pill (if working out while on another tab) */}

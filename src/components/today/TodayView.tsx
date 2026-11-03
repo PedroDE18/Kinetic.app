@@ -34,7 +34,7 @@ interface TodayViewProps {
   onOpenWeighInModal: () => void;
   onOpenWeeklyReview: () => void;
   onOpenProfile?: () => void;
-  onNavigateTab: (tab: 'systems' | 'body' | 'mind' | 'growth') => void;
+  onNavigateTab: (tab: 'progress' | 'systems' | 'today' | 'body' | 'mind') => void;
   onOpenSleepModal?: () => void;
   onOpenReflectionModal?: () => void;
 }
@@ -192,17 +192,17 @@ export function TodayView({
   return (
     <div className="space-y-4 pb-6 animate-in fade-in duration-200">
       {/* Editorial Header */}
-      <header className="pt-2 pb-1">
-        <p className="text-xs font-serif italic text-[var(--color-text-subtle)]">
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-        </p>
-        <h1 className="eunoia-editorial text-2xl sm:text-3xl font-bold text-[var(--color-text)] mt-0.5 tracking-tight">
-          {greeting}, {profile.name?.split(' ')[0] || 'Friend'}
+      <header className="px-1 pt-1 pb-0.5">
+        <h1 className="stoic-title text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text)]">
+          today.
         </h1>
+        <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} • {greeting.toLowerCase()}, {profile.name?.split(' ')[0] || 'friend'}.
+        </p>
       </header>
 
       {/* Daily Intention Card (Grounding in Deliberate Action) */}
-      <section className="p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-xs transition-all space-y-2">
+      <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl shadow-xs transition-all space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--color-accent)] flex items-center gap-1.5">
             <Compass className="w-3.5 h-3.5" />
@@ -339,7 +339,7 @@ export function TodayView({
 
       {/* TODAY'S DISCIPLINES (HABITS & PRIORITY TASKS) */}
       {(todayHabits.length > 0 || highPriorityTasks.length > 0) && (
-        <section className="p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl space-y-3 shadow-xs">
+        <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="k-section-title flex items-center gap-1.5">
               <Repeat className="w-3.5 h-3.5 text-[var(--color-accent)]" />

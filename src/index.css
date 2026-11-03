@@ -8,34 +8,34 @@
 
 @layer base {
   :root {
-    /* --- Eunoia Dark Theme (Serene Forest / Obsidian Slate) --- */
-    --color-bg: #1B1E1B;
-    --color-bg-elevated: #242823;
-    --color-surface: #222621;
-    --color-surface-raised: #2B302A;
-    --color-surface-sunken: #141714;
-    --color-border: #353B33;
-    --color-border-subtle: #292E27;
-    --color-text: #ECEAE1;
-    --color-text-muted: #A3A69A;
-    --color-text-subtle: #797C72;
-    --color-accent: #8FA88F;
-    --color-accent-hover: #A1BAA1;
-    --color-accent-soft: rgba(143, 168, 143, 0.16);
-    --color-on-accent: #131713;
-    --color-secondary-accent: #C49E87;
-    --color-secondary-accent-soft: rgba(196, 158, 135, 0.16);
-    --color-success: #8FC3A4;
-    --color-success-soft: rgba(143, 195, 164, 0.14);
-    --color-warning: #E2B366;
-    --color-warning-soft: rgba(226, 179, 102, 0.14);
-    --color-danger: #D97373;
-    --color-danger-soft: rgba(217, 115, 115, 0.14);
-    --color-info: #8AAEC7;
+    /* --- Eunoia Dark Theme (Stoic Monochromatic Obsidian) --- */
+    --color-bg: #151619;
+    --color-bg-elevated: #202125;
+    --color-surface: #202125;
+    --color-surface-raised: #292A2F;
+    --color-surface-sunken: #191A1E;
+    --color-border: #323338;
+    --color-border-subtle: #26272C;
+    --color-text: #F4F4F5;
+    --color-text-muted: #A6A6AC;
+    --color-text-subtle: #707178;
+    --color-accent: #FFFFFF;
+    --color-accent-hover: #E4E4E7;
+    --color-accent-soft: rgba(255, 255, 255, 0.08);
+    --color-on-accent: #151619;
+    --color-secondary-accent: #9A9DA5;
+    --color-secondary-accent-soft: rgba(154, 157, 165, 0.12);
+    --color-success: #68B388;
+    --color-success-soft: rgba(104, 179, 136, 0.12);
+    --color-warning: #D9A05B;
+    --color-warning-soft: rgba(217, 160, 91, 0.12);
+    --color-danger: #D96565;
+    --color-danger-soft: rgba(217, 101, 101, 0.12);
+    --color-info: #6E94B8;
 
     /* --- Typography --- */
     --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Geist", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Geist", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Geist", "Segoe UI", sans-serif;
     --font-serif: "Newsreader", "Charter", "Georgia", "Iowan Old Style", "Palatino", serif;
     --font-mono: "SF Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
 
@@ -51,10 +51,10 @@
     --leading-tight: 1.15;
     --leading-snug: 1.3;
     --leading-normal: 1.5;
-    --tracking-tight: -0.02em;
+    --tracking-tight: -0.025em;
     --tracking-normal: 0;
-    --tracking-wide: 0.06em;
-    --tracking-wider: 0.1em;
+    --tracking-wide: 0.04em;
+    --tracking-wider: 0.08em;
 
     /* --- Spacing scale --- */
     --space-1: 0.25rem;
@@ -67,20 +67,21 @@
     --space-10: 2.5rem;
     --space-12: 3rem;
 
-    /* --- Radii --- */
-    --radius-sm: 0.5rem;
-    --radius-md: 0.75rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.25rem;
-    --radius-2xl: 1.5rem;
-    --radius-3xl: 1.75rem;
+    /* --- Radii (Stoic Tactile Curves) --- */
+    --radius-sm: 0.625rem;   /* 10px */
+    --radius-md: 0.875rem;   /* 14px */
+    --radius-lg: 1.125rem;   /* 18px */
+    --radius-xl: 1.375rem;   /* 22px */
+    --radius-2xl: 1.625rem;  /* 26px */
+    --radius-3xl: 1.875rem;  /* 30px */
     --radius-full: 9999px;
 
     /* --- Shadows --- */
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.18);
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.16);
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.22);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.28);
     --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.36);
+    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.35);
 
     /* --- Motion --- */
     --ease-standard: cubic-bezier(0.2, 0, 0, 1);
@@ -94,36 +95,37 @@
     --safe-bottom: env(safe-area-inset-bottom, 16px);
   }
 
-  /* Light theme overrides (Swiss International Editorial) */
+  /* Light theme overrides (Stoic Monochromatic Paper) */
   .theme-light {
-    --color-bg: #F8F6F1;
+    --color-bg: #F2F3F5;
     --color-bg-elevated: #FFFFFF;
     --color-surface: #FFFFFF;
-    --color-surface-raised: #F1EFEA;
-    --color-surface-sunken: #EFECE5;
-    --color-border: #E2DDD3;
-    --color-border-subtle: #ECE8E0;
-    --color-text: #1E221E;
-    --color-text-muted: #5C6256;
-    --color-text-subtle: #848A7D;
-    --color-accent: #485E48;
-    --color-accent-hover: #3B4D3B;
-    --color-accent-soft: rgba(72, 94, 72, 0.10);
+    --color-surface-raised: #E9EAEF;
+    --color-surface-sunken: #EAEBEE;
+    --color-border: #E5E6EA;
+    --color-border-subtle: #ECEEF2;
+    --color-text: #151515;
+    --color-text-muted: #77787D;
+    --color-text-subtle: #A2A3A7;
+    --color-accent: #111111;
+    --color-accent-hover: #262626;
+    --color-accent-soft: rgba(17, 17, 17, 0.06);
     --color-on-accent: #FFFFFF;
-    --color-secondary-accent: #8E6852;
-    --color-secondary-accent-soft: rgba(142, 104, 82, 0.10);
-    --color-success: #356341;
-    --color-success-soft: rgba(53, 99, 65, 0.08);
-    --color-warning: #855C0E;
-    --color-warning-soft: rgba(133, 92, 14, 0.08);
-    --color-danger: #963535;
-    --color-danger-soft: rgba(150, 53, 53, 0.08);
-    --color-info: #355F7D;
+    --color-secondary-accent: #606269;
+    --color-secondary-accent-soft: rgba(96, 98, 105, 0.08);
+    --color-success: #2E724A;
+    --color-success-soft: rgba(46, 114, 74, 0.08);
+    --color-warning: #94681E;
+    --color-warning-soft: rgba(148, 104, 30, 0.08);
+    --color-danger: #A33A3A;
+    --color-danger-soft: rgba(163, 58, 58, 0.08);
+    --color-info: #356285;
 
-    --shadow-xs: 0 1px 2px rgba(30, 34, 30, 0.03);
-    --shadow-sm: 0 2px 6px rgba(30, 34, 30, 0.04);
-    --shadow-md: 0 6px 16px rgba(30, 34, 30, 0.06);
-    --shadow-lg: 0 12px 32px rgba(30, 34, 30, 0.08);
+    --shadow-xs: 0 1px 2px rgba(21, 21, 21, 0.03);
+    --shadow-sm: 0 2px 8px rgba(21, 21, 21, 0.04);
+    --shadow-md: 0 8px 24px rgba(21, 21, 21, 0.05);
+    --shadow-lg: 0 16px 40px rgba(21, 21, 21, 0.07);
+    --shadow-glass: 0 12px 36px rgba(21, 21, 21, 0.06);
   }
 
   html {
@@ -182,20 +184,74 @@
 }
 
 /* ==========================================================
-   COMPONENT PRIMITIVES
+   COMPONENT PRIMITIVES & STOIC DESIGN LANGUAGE
    ========================================================== */
 
 .k-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-3xl);
   box-shadow: var(--shadow-xs);
+  transition: border-color var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard);
 }
 
 .k-card-raised {
   background-color: var(--color-surface-raised);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-2xl);
+}
+
+.stoic-glass {
+  background-color: color-mix(in srgb, var(--color-surface) 84%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  box-shadow: var(--shadow-glass);
+}
+
+.stoic-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.stoic-capsule-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  padding: 0.625rem 1.25rem;
+  transition: transform var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard),
+    opacity var(--duration-base) var(--ease-standard);
+}
+
+.stoic-capsule-btn:active {
+  transform: scale(0.97);
+}
+
+.stoic-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  padding: 0.5rem 1rem;
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.stoic-pill-btn:active {
+  transform: scale(0.97);
 }
 
 .k-divider {
@@ -220,8 +276,15 @@
 }
 
 .eunoia-editorial {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+.eunoia-quote {
   font-family: var(--font-serif);
   letter-spacing: -0.01em;
+  line-height: 1.5;
 }
 
 .k-numeric {
@@ -237,7 +300,7 @@
 }
 
 .nav-safe-bottom {
-  padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);
+  padding-bottom: max(env(safe-area-inset-bottom, 16px), 24px);
 }
 
 .no-scrollbar::-webkit-scrollbar {

@@ -18,6 +18,11 @@ import {
   Gauge,
   MapPin,
   BarChart2,
+  Feather,
+  Repeat,
+  Compass,
+  CheckSquare,
+  Zap,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import {
@@ -29,6 +34,7 @@ import {
   calculateCardioStats,
   formatPace,
   formatDistance,
+  getLocalDateString,
 } from '../../utils/engine';
 import { TrendChart } from '../common/TrendChart';
 
@@ -37,13 +43,31 @@ interface ProgressViewProps {
   onOpenWeighInModal: () => void;
 }
 
+type ProgressHubTab = 'physical' | 'mind' | 'systems';
+
 export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: ProgressViewProps) {
   const { state } = useFitness();
-  const { weights, loggedFoods, profile, reviews, completedWorkouts, cardioSessions, templates } =
-    state;
+  const {
+    weights,
+    loggedFoods,
+    profile,
+    reviews,
+    completedWorkouts,
+    cardioSessions,
+    templates,
+    habits,
+    tasks,
+    reflections,
+    frictionInterventions,
+  } = state;
 
-  // Top sub-tab selector
-  const [activeCategory, setActiveCategory] = useState<'metabolic' | 'strength' | 'cardio'>(
+  const todayStr = useMemo(() => getLocalDateString(), []);
+
+  // Main Top-level Hub Tab
+  const [hubTab, setHubTab] = useState<ProgressHubTab>('physical');
+
+  // Physical Category Navigation: metabolic | strength | cardio
+  const [physicalCategory, setPhysicalCategory] = useState<'metabolic' | 'strength' | 'cardio'>(
     'metabolic'
   );
 
@@ -112,474 +136,693 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
     [cardioSessions, profile.unitSystem]
   );
 
+  // Mind Analytics
+  const mindStats = useMemo(() => {
+    const morningCount = reflections.filter((r) => r.type === 'morning').length;
+    const eveningCount = reflections.filter((r) => r.type === 'evening').length;
+    const freeformCount = reflections.filter((r) => r.type === 'freeform').length;
+
+    // Last 30 days reflection dates
+    const uniqueDates = new Set(reflections.map((r) => r.date));
+    const now = new Date();
+    let daysReflectedPast30 = 0;
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const ds = getLocalDateString(d);
+      if (uniqueDates.has(ds)) {
+        daysReflectedPast30++;
+      }
+    }
+
+    const consistencyRate = Math.round((daysReflectedPast30 / 30) * 100);
+
+    return {
+      total: reflections.length,
+      morningCount,
+      eveningCount,
+      freeformCount,
+      daysReflectedPast30,
+      consistencyRate,
+    };
+  }, [reflections]);
+
+  // Systems & Habits Analytics
+  const systemsStats = useMemo(() => {
+    const totalHabits = habits.length;
+    const now = new Date();
+
+    // 7-day completion rate across all habits
+    let totalChecksPossible = totalHabits * 7;
+    let actualChecks = 0;
+
+    const last7Days: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      last7Days.push(getLocalDateString(d));
+    }
+
+    habits.forEach((h) => {
+      last7Days.forEach((dateStr) => {
+        if (h.completedDates.includes(dateStr)) {
+          actualChecks++;
+        }
+      });
+    });
+
+    const weeklyRate =
+      totalChecksPossible > 0 ? Math.round((actualChecks / totalChecksPossible) * 100) : 0;
+
+    // Longest current streak
+    let bestCurrentStreak = 0;
+    habits.forEach((h) => {
+      let streak = 0;
+      let checkDate = new Date(now);
+      while (true) {
+        const ds = getLocalDateString(checkDate);
+        if (h.completedDates.includes(ds)) {
+          streak++;
+          checkDate = new Date(checkDate.getTime() - 24 * 60 * 60 * 1000);
+        } else {
+          break;
+        }
+      }
+      if (streak > bestCurrentStreak) bestCurrentStreak = streak;
+    });
+
+    // Friction interventions
+    const activeFriction = frictionInterventions.filter(
+      (f) => f.status === 'active' || f.status === 'experimenting'
+    ).length;
+    const completedFriction = frictionInterventions.filter((f) => f.status === 'mastered').length;
+
+    // Tasks throughput
+    const completedTasks = tasks.filter((t) => t.isCompleted).length;
+    const pendingTasks = tasks.filter((t) => !t.isCompleted).length;
+
+    return {
+      weeklyRate,
+      bestCurrentStreak,
+      activeFriction,
+      completedFriction,
+      completedTasks,
+      pendingTasks,
+    };
+  }, [habits, frictionInterventions, tasks]);
+
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
-      {/* Category Navigation Pills */}
-      <div className="grid grid-cols-3 bg-[var(--color-surface)] p-1 rounded-2xl border border-[var(--color-border)]">
+      {/* Editorial Header */}
+      <div className="px-1 pt-1 pb-0.5">
+        <h1 className="stoic-title text-2xl font-bold tracking-tight text-[var(--color-text)]">
+          progress.
+        </h1>
+        <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+          trajectory, somatic evolution & systemic consistency.
+        </p>
+      </div>
+
+      {/* Primary Hub Tabs: Physical · Mind · Systems */}
+      <div className="grid grid-cols-3 gap-1 p-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-xs">
         <button
-          onClick={() => setActiveCategory('metabolic')}
-          className={`min-h-[40px] py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-            activeCategory === 'metabolic'
-              ? 'bg-[var(--color-surface-raised)] text-[var(--color-accent)] shadow-sm'
+          onClick={() => setHubTab('physical')}
+          className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+            hubTab === 'physical'
+              ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-xs'
               : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
           }`}
         >
           <Scale className="w-3.5 h-3.5" />
-          <span>Weight & TDEE</span>
+          <span>Physical</span>
         </button>
 
         <button
-          onClick={() => setActiveCategory('strength')}
-          className={`min-h-[40px] py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-            activeCategory === 'strength'
-              ? 'bg-[var(--color-surface-raised)] text-[var(--color-accent)] shadow-sm'
+          onClick={() => setHubTab('mind')}
+          className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+            hubTab === 'mind'
+              ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-xs'
               : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
           }`}
         >
-          <Dumbbell className="w-3.5 h-3.5" />
-          <span>Strength Volume</span>
+          <Feather className="w-3.5 h-3.5" />
+          <span>Contemplative</span>
         </button>
 
         <button
-          onClick={() => setActiveCategory('cardio')}
-          className={`min-h-[40px] py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-            activeCategory === 'cardio'
-              ? 'bg-[var(--color-surface-raised)] text-[var(--color-accent)] shadow-sm'
+          onClick={() => setHubTab('systems')}
+          className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+            hubTab === 'systems'
+              ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-xs'
               : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
           }`}
         >
-          <Timer className="w-3.5 h-3.5" />
-          <span>Cardio Stats</span>
+          <Repeat className="w-3.5 h-3.5" />
+          <span>Systems</span>
         </button>
       </div>
 
-      {/* ======================================================== */}
-      {/* 1. METABOLIC & WEIGHT TREND TAB */}
-      {/* ======================================================== */}
-      {activeCategory === 'metabolic' && (
+      {/* ========================================================================= */}
+      {/* 1. PHYSICAL TRAJECTORY HUB */}
+      {/* ========================================================================= */}
+      {hubTab === 'physical' && (
         <div className="space-y-4">
-          {/* Adaptive Expenditure (TDEE) Hero Card */}
-          <section className="bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-3xl p-5 shadow-sm">
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <div className="flex items-center gap-1.5 text-[var(--color-text-subtle)] text-[10px] font-semibold uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--color-accent)]" />
-                  <span>Adaptive Expenditure</span>
-                </div>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-black text-[var(--color-text)]">{tdeeData.estimatedTdee}</span>
-                  <span className="text-xs font-semibold text-[var(--color-text-muted)]">kcal / day (TDEE)</span>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[var(--color-accent-soft)] text-[var(--color-accent)] border border-[var(--color-accent)]/30">
-                  <Sparkles className="w-3 h-3" />
-                  Estimate · {Math.round(tdeeData.confidenceScore * 100)}% confidence
-                </span>
-              </div>
-            </div>
-
-            {/* Metabolic Comparison Metrics */}
-            <div className="grid grid-cols-2 gap-2 text-xs bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] mb-3">
-              <div>
-                <span className="text-[var(--color-text-subtle)] block text-[10px] uppercase font-semibold">
-                  Current Intake Target
-                </span>
-                <span className="font-bold text-[var(--color-text)]">{profile.targets.calories} kcal/day</span>
-              </div>
-              <div>
-                <span className="text-[var(--color-text-subtle)] block text-[10px] uppercase font-semibold">
-                  Logged Daily Avg
-                </span>
-                <span className="font-bold text-[var(--color-text)]">{tdeeData.avgDailyIntake} kcal/day</span>
-              </div>
-            </div>
-
-            <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-              Calculated via metabolic mass balance using real logged intake vs. smoothed scale
-              trend. Current weekly rate is{' '}
-              <span className="font-semibold text-[var(--color-text)]">
-                {tdeeData.weeklyTrendDeltaKg > 0
-                  ? `+${tdeeData.weeklyTrendDeltaKg}`
-                  : tdeeData.weeklyTrendDeltaKg}{' '}
-                kg/week
-              </span>
-              .
-            </p>
-
-            {/* Open Weekly Review Action */}
+          {/* Physical Sub-category Pills */}
+          <div className="grid grid-cols-3 bg-[var(--color-surface)] p-1 rounded-2xl border border-[var(--color-border)] shadow-xs">
             <button
-              onClick={onOpenWeeklyReview}
-              className="min-h-[44px] mt-4 w-full py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-sm"
+              onClick={() => setPhysicalCategory('metabolic')}
+              className={`min-h-[38px] py-2 px-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                physicalCategory === 'metabolic'
+                  ? 'bg-[var(--color-surface-raised)] text-[var(--color-text)] shadow-xs font-bold'
+                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+              }`}
             >
-              <span>
-                {pendingReview ? 'Review Proposed Calorie Target' : 'View Latest Weekly Check-In'}
-              </span>
-              <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+              <Scale className="w-3.5 h-3.5" />
+              <span>Weight & TDEE</span>
             </button>
-          </section>
-
-          {/* Weight Trend & Scale Readings Dual Plot */}
-          <section className="k-card p-5">
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <span className="k-section-title">
-                  Body weight & trend
-                </span>
-                <div className="flex items-baseline gap-2 mt-0.5">
-                  <span className="k-display text-xl text-[var(--color-text)] tabular-nums">
-                    {latestTrend
-                      ? formatWeight(latestTrend.trendWeightKg, profile.unitSystem)
-                      : '--'}
-                  </span>
-                  <span className="text-xs text-[var(--color-text-muted)]">
-                    ({deltaPeriodKg > 0 ? `+${deltaPeriodKg}` : deltaPeriodKg} kg in period)
-                  </span>
-                </div>
-              </div>
-
-              {/* Time Range Selector */}
-              <div className="flex bg-[var(--color-surface-sunken)] rounded-xl p-1 border border-[var(--color-border)] text-[10px] font-bold">
-                {(['1M', '3M', '6M', 'All'] as const).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setTimeRange(r)}
-                    className={`min-h-[28px] px-2.5 py-0.5 rounded-lg transition-all ${
-                      timeRange === r ? 'bg-[var(--color-surface-raised)] text-[var(--color-accent)] shadow-sm' : 'text-[var(--color-text-subtle)]'
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Dual Chart Canvas */}
-            <div className="h-48 w-full pt-2">
-              <DualWeightChart points={filteredPoints} />
-            </div>
-
-            {/* Chart Legend */}
-            <div className="mt-3 flex items-center justify-center gap-6 text-[11px] text-[var(--color-text-muted)] pt-2 border-t border-[var(--color-border)]">
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-1 rounded-full bg-[var(--color-accent)] inline-block" />
-                <span>Smoothed Trend (EWMA)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-zinc-500 inline-block" />
-                <span>Scale Readings</span>
-              </div>
-            </div>
 
             <button
-              onClick={onOpenWeighInModal}
-              className="min-h-[38px] w-full mt-3 py-1.5 bg-[var(--color-surface-sunken)] hover:bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-accent)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1 transition-all"
+              onClick={() => setPhysicalCategory('strength')}
+              className={`min-h-[38px] py-2 px-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                physicalCategory === 'strength'
+                  ? 'bg-[var(--color-surface-raised)] text-[var(--color-text)] shadow-xs font-bold'
+                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+              }`}
             >
-              + Record New Weigh-in
+              <Dumbbell className="w-3.5 h-3.5" />
+              <span>Strength</span>
             </button>
-          </section>
 
-          {/* Waist & Body Composition Section */}
-          <section className="k-card p-5 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="k-section-title">
-                Waist circumference
-              </span>
-              <span className="text-xs font-bold text-[var(--color-accent)]">
-                {latestTrend?.waistCm ? `${latestTrend.waistCm} cm` : '--'}
-              </span>
-            </div>
+            <button
+              onClick={() => setPhysicalCategory('cardio')}
+              className={`min-h-[38px] py-2 px-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                physicalCategory === 'cardio'
+                  ? 'bg-[var(--color-surface-raised)] text-[var(--color-text)] shadow-xs font-bold'
+                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+              }`}
+            >
+              <Timer className="w-3.5 h-3.5" />
+              <span>Cardio</span>
+            </button>
+          </div>
 
-            <div className="p-3 bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-2xl flex items-start gap-2.5">
-              <Info className="w-4 h-4 text-[var(--color-accent)] shrink-0 mt-0.5" />
-              <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
-                Body composition calculations are estimates derived from weight changes and waist
-                metrics. Water retention and muscle glycogen fluctuate daily and should not be
-                confused with fat shifts.
-              </p>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* 2. STRENGTH VOLUME & ROUTINE PROGRESSION TAB */}
-      {/* ======================================================== */}
-      {activeCategory === 'strength' && (
-        <div className="space-y-4">
-          {/* Global Volume Hero Banner */}
-          <section className="bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-3xl p-5 shadow-sm space-y-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-1.5 text-[var(--color-text-subtle)] text-[10px] font-semibold uppercase tracking-wider">
-                  <BarChart2 className="w-3.5 h-3.5 text-[var(--color-accent)]" />
-                  <span>Global Training Volume</span>
-                </div>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-black text-[var(--color-text)]">
-                    {totalGlobalVolumeKg.toLocaleString()}
-                  </span>
-                  <span className="text-xs font-semibold text-[var(--color-text-muted)]">kg total lifted</span>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[var(--color-accent-soft)] text-[var(--color-accent)] border border-[var(--color-accent)]/30">
-                  {completedWorkouts.length} Workouts Logged
-                </span>
-              </div>
-            </div>
-
-            <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-              Progressive overload is tracked across all sessions. Consistent global volume growth
-              drives hypertrophy and neurological strength adaptations.
-            </p>
-
-            {/* Global Volume Evolution Chart */}
-            <div className="h-44 w-full pt-2">
-              <VolumeProgressionChart
-                data={globalVolumeData.map((d) => ({
-                  label: d.workoutName.replace('Hypertrophy ', 'H-').replace('Strength ', 'S-'),
-                  date: d.date,
-                  volume: d.volumeKg,
-                }))}
-              />
-            </div>
-          </section>
-
-          {/* Routine-Specific Progression Selector */}
-          <section className="k-card p-5 space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <div>
-                <span className="k-section-title">
-                  Volume evolution per routine
-                </span>
-                <span className="text-xs text-[var(--color-text-muted)]">
-                  Compare specific splits (e.g. Upper A vs Lower B)
-                </span>
-              </div>
-
-              {/* Routine Select Dropdown */}
-              <select
-                value={selectedRoutine}
-                onChange={(e) => setSelectedRoutine(e.target.value)}
-                className="min-h-[40px] bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl px-3 py-1.5 text-xs font-bold text-[var(--color-accent)] focus:outline-none focus:border-[var(--color-accent)]"
-              >
-                <option value="all">Compare All Routines</option>
-                {availableRoutineNames.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Individual Routine View or Multi-Routine Comparison */}
-            {selectedRoutine !== 'all' && activeRoutineData && (
-              <div className="space-y-3">
-                <div className="bg-[var(--color-surface-sunken)] p-4 rounded-2xl border border-[var(--color-border)] flex justify-between items-center gap-3">
-                  <div className="min-w-0">
-                    <span className="text-[10px] font-bold text-[var(--color-accent)] uppercase tracking-wider block">
-                      Routine Focus
-                    </span>
-                    <h4 className="text-sm font-bold text-[var(--color-text)] truncate">{selectedRoutine}</h4>
+          {/* ======================================================== */}
+          {/* METABOLIC & WEIGHT TREND */}
+          {/* ======================================================== */}
+          {physicalCategory === 'metabolic' && (
+            <div className="space-y-4">
+              {/* Adaptive Expenditure (TDEE) Hero Card */}
+              <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl p-5 shadow-xs">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-[var(--color-accent)] text-[10px] font-bold uppercase tracking-wider">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Adaptive Expenditure</span>
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-3xl font-black text-[var(--color-text)]">
+                        {tdeeData.estimatedTdee}
+                      </span>
+                      <span className="text-xs font-semibold text-[var(--color-text-muted)]">
+                        kcal / day (TDEE)
+                      </span>
+                    </div>
                   </div>
+
                   <div className="text-right">
-                    <span className="text-[10px] text-[var(--color-text-muted)] uppercase font-semibold block">
-                      Latest Volume
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[var(--color-surface-raised)] text-[var(--color-text)] border border-[var(--color-border)]">
+                      <Sparkles className="w-3 h-3 text-[var(--color-accent)]" />
+                      {Math.round(tdeeData.confidenceScore * 100)}% confidence
                     </span>
-                    <span className="text-base font-extrabold text-[var(--color-accent)]">
-                      {activeRoutineData.length > 0
-                        ? `${activeRoutineData[
-                            activeRoutineData.length - 1
-                          ].volumeKg.toLocaleString()} kg`
+                  </div>
+                </div>
+
+                {/* Metabolic Comparison Metrics */}
+                <div className="grid grid-cols-2 gap-2 text-xs bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] mb-3">
+                  <div>
+                    <span className="text-[var(--color-text-subtle)] block text-[10px] uppercase font-semibold">
+                      Current Intake Target
+                    </span>
+                    <span className="font-bold text-[var(--color-text)]">
+                      {profile.targets.calories} kcal/day
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[var(--color-text-subtle)] block text-[10px] uppercase font-semibold">
+                      Logged Daily Avg
+                    </span>
+                    <span className="font-bold text-[var(--color-text)]">
+                      {tdeeData.avgDailyIntake} kcal/day
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                  Calculated via metabolic mass balance using real logged intake vs. smoothed scale
+                  trend. Current weekly rate is{' '}
+                  <span className="font-semibold text-[var(--color-text)]">
+                    {tdeeData.weeklyTrendDeltaKg > 0
+                      ? `+${tdeeData.weeklyTrendDeltaKg}`
+                      : tdeeData.weeklyTrendDeltaKg}{' '}
+                    kg/week
+                  </span>
+                  .
+                </p>
+
+                {/* Open Weekly Review Action */}
+                <button
+                  onClick={onOpenWeeklyReview}
+                  className="min-h-[44px] mt-4 w-full py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-bold rounded-2xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-xs"
+                >
+                  <span>
+                    {pendingReview ? 'Review Proposed Calorie Target' : 'View Latest Weekly Check-In'}
+                  </span>
+                  <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+                </button>
+              </section>
+
+              {/* Weight Trend & Scale Readings Dual Plot */}
+              <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
+                <div className="flex justify-between items-center mb-1">
+                  <div>
+                    <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
+                      Body weight & trend
+                    </span>
+                    <div className="flex items-baseline gap-2 mt-0.5">
+                      <span className="text-xl font-black text-[var(--color-text)] tabular-nums">
+                        {latestTrend
+                          ? formatWeight(latestTrend.trendWeightKg, profile.unitSystem)
+                          : '--'}
+                      </span>
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        ({deltaPeriodKg > 0 ? `+${deltaPeriodKg}` : deltaPeriodKg} kg in period)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Time Range Selector */}
+                  <div className="flex bg-[var(--color-surface-sunken)] rounded-xl p-1 border border-[var(--color-border)] text-[10px] font-bold">
+                    {(['1M', '3M', '6M', 'All'] as const).map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setTimeRange(r)}
+                        className={`min-h-[28px] px-2.5 py-0.5 rounded-lg transition-all ${
+                          timeRange === r
+                            ? 'bg-[var(--color-surface-raised)] text-[var(--color-accent)] shadow-xs'
+                            : 'text-[var(--color-text-subtle)]'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <DualWeightChart points={filteredPoints} />
+
+                <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center gap-3 text-[11px] text-[var(--color-text-muted)]">
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent)] inline-block" />
+                      EWMA Trend
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-text-muted)] opacity-50 inline-block" />
+                      Raw Scale
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={onOpenWeighInModal}
+                    className="text-xs text-[var(--color-accent)] font-semibold hover:underline"
+                  >
+                    + Record Weigh-in
+                  </button>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* STRENGTH VOLUME PROGRESSION */}
+          {/* ======================================================== */}
+          {physicalCategory === 'strength' && (
+            <div className="space-y-4">
+              <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
+                    Strength Volume Progression
+                  </span>
+                  <span className="text-xs font-bold text-[var(--color-accent)]">
+                    {totalGlobalVolumeKg.toLocaleString()} kg lifted all-time
+                  </span>
+                </div>
+
+                {availableRoutineNames.length > 0 && (
+                  <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+                    <button
+                      onClick={() => setSelectedRoutine('all')}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold shrink-0 transition-all ${
+                        selectedRoutine === 'all'
+                          ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+                          : 'bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)] border border-[var(--color-border)]'
+                      }`}
+                    >
+                      All Sessions ({completedWorkouts.length})
+                    </button>
+                    {availableRoutineNames.map((name) => (
+                      <button
+                        key={name}
+                        onClick={() => setSelectedRoutine(name)}
+                        className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold shrink-0 transition-all ${
+                          selectedRoutine === name
+                            ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
+                            : 'bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)] border border-[var(--color-border)]'
+                        }`}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <VolumeProgressionChart
+                  data={selectedRoutine === 'all' ? globalVolumeData : activeRoutineData || []}
+                />
+              </section>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* CARDIO STATS */}
+          {/* ======================================================== */}
+          {physicalCategory === 'cardio' && (
+            <div className="space-y-4">
+              <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
+                    Cardio Performance PRs
+                  </span>
+                  <span className="text-xs font-bold text-[var(--color-accent)]">
+                    {cardioStats.totalSessions} sessions logged
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] text-center">
+                    <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
+                      Longest Dist
+                    </span>
+                    <span className="text-sm font-black text-[var(--color-text)] block">
+                      {cardioStats.longestDistanceKm > 0
+                        ? formatDistance(cardioStats.longestDistanceKm, profile.unitSystem)
+                        : '--'}
+                    </span>
+                  </div>
+
+                  <div className="bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] text-center">
+                    <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
+                      Best Pace
+                    </span>
+                    <span className="text-sm font-black text-[var(--color-text)] block">
+                      {cardioStats.bestPaceMinPerKm !== '--:--'
+                        ? `${cardioStats.bestPaceMinPerKm} /km`
+                        : '--'}
+                    </span>
+                  </div>
+
+                  <div className="bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] text-center">
+                    <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
+                      Longest Time
+                    </span>
+                    <span className="text-sm font-black text-[var(--color-text)] block">
+                      {cardioStats.longestDurationMinutes > 0
+                        ? `${cardioStats.longestDurationMinutes}m`
                         : '--'}
                     </span>
                   </div>
                 </div>
+              </section>
 
-                {activeRoutineData.length > 0 ? (
-                  <div className="h-40 w-full pt-2">
-                    <VolumeProgressionChart
-                      data={activeRoutineData.map((d) => ({
-                        label: d.date.slice(5),
-                        date: d.date,
-                        volume: d.volumeKg,
-                      }))}
-                    />
+              {/* Sessions List */}
+              <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
+                <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
+                  Cardio History
+                </span>
+
+                {cardioSessions.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)] rounded-2xl">
+                    No cardio sessions logged yet. Log runs, walks, or cycling in the Body tab.
                   </div>
                 ) : (
-                  <div className="py-8 text-center text-xs text-[var(--color-text-subtle)] border border-dashed border-[var(--color-border)] rounded-2xl">
-                    No sessions logged for {selectedRoutine} yet. Start a session from the Train tab
-                    to see volume progression!
+                  <div className="divide-y divide-[var(--color-border)]">
+                    {cardioSessions.map((session) => (
+                      <div key={session.id} className="py-3 flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-[var(--color-text)] capitalize">
+                              {(session.activity || session.type).replace('_', ' ')}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-surface-raised)] text-[var(--color-text)] font-semibold border border-[var(--color-border)]">
+                              {session.avgPaceMinPerKm ||
+                                (session.avgPaceSecPerKm
+                                  ? formatPace(session.avgPaceSecPerKm, profile.unitSystem)
+                                  : '--:--')}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+                            {session.date} • {formatDistance(session.distanceKm || 0, profile.unitSystem)} in{' '}
+                            {session.durationMinutes} mins
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <div className="text-xs font-bold text-[var(--color-text)]">
+                            {session.caloriesBurned} kcal
+                          </div>
+                          {session.avgHeartRateBpm && (
+                            <span className="text-[10px] text-red-500 font-medium">
+                              {session.avgHeartRateBpm} bpm
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
+              </section>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 2. CONTEMPLATIVE CONSISTENCY HUB */}
+      {/* ========================================================================= */}
+      {hubTab === 'mind' && (
+        <div className="space-y-4">
+          {/* Consistency Overview Card */}
+          <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3.5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--color-accent)]">
+                <Feather className="w-4 h-4" />
+                <span>Contemplative Cadence</span>
               </div>
-            )}
+              <span className="text-xs font-bold text-[var(--color-text)]">
+                {mindStats.consistencyRate}% last 30d
+              </span>
+            </div>
 
-            {/* Multi-routine summary cards */}
-            {selectedRoutine === 'all' && (
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="p-3 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)]">
+                <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
+                  Morning Intentions
+                </span>
+                <span className="text-lg font-black text-[var(--color-text)] block">
+                  {mindStats.morningCount}
+                </span>
+                <span className="text-[9px] text-[var(--color-text-muted)] block">Logged</span>
+              </div>
+
+              <div className="p-3 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)]">
+                <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
+                  Evening Audits
+                </span>
+                <span className="text-lg font-black text-[var(--color-text)] block">
+                  {mindStats.eveningCount}
+                </span>
+                <span className="text-[9px] text-[var(--color-text-muted)] block">Logged</span>
+              </div>
+
+              <div className="p-3 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)]">
+                <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
+                  Active Days
+                </span>
+                <span className="text-lg font-black text-[var(--color-text)] block">
+                  {mindStats.daysReflectedPast30} / 30
+                </span>
+                <span className="text-[9px] text-[var(--color-text-muted)] block">Days</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+              In Stoic psychology, consistent evening review without guilt is the single highest leverage
+              mechanism for cognitive clarity and self-command.
+            </p>
+          </section>
+
+          {/* Recent Contemplative Extracts */}
+          <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
+            <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
+              Recent Reflection Insights
+            </span>
+
+            {reflections.length === 0 ? (
+              <div className="p-6 text-center text-xs text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)] rounded-2xl">
+                No reflections logged yet. Visit the Mind tab to begin your first morning reflection.
+              </div>
+            ) : (
               <div className="space-y-2.5">
-                {availableRoutineNames.map((name) => {
-                  const history = routineVolumeMap[name] || [];
-                  const latest = history[history.length - 1];
-                  const previous = history[history.length - 2];
-                  const delta =
-                    latest && previous ? Math.round(latest.volumeKg - previous.volumeKg) : 0;
-
-                  return (
-                    <div
-                      key={name}
-                      onClick={() => setSelectedRoutine(name)}
-                      className="bg-[var(--color-surface-sunken)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-3.5 flex items-center justify-between transition-all cursor-pointer"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-[var(--color-text)] truncate">{name}</div>
-                        <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-                          {history.length} sessions logged
-                          {latest ? ` • Last: ${latest.date}` : ''}
-                        </div>
-                      </div>
-
-                      <div className="text-right shrink-0">
-                        <div className="text-xs font-black text-[var(--color-accent)]">
-                          {latest ? `${latest.volumeKg.toLocaleString()} kg` : '--'}
-                        </div>
-                        {delta !== 0 && (
-                          <span
-                            className={`text-[10px] font-bold ${
-                              delta > 0 ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-subtle)]'
-                            }`}
-                          >
-                            {delta > 0 ? `+${delta} kg` : `${delta} kg`}
-                          </span>
-                        )}
-                      </div>
+                {reflections.slice(0, 4).map((r) => (
+                  <div
+                    key={r.id}
+                    className="p-3.5 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)] space-y-1"
+                  >
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-[var(--color-text)] capitalize">
+                        {r.type} Reflection
+                      </span>
+                      <span className="text-[var(--color-text-muted)]">{r.date}</span>
                     </div>
-                  );
-                })}
+                    {r.freeformContent ? (
+                      <p className="text-xs text-[var(--color-text)] line-clamp-2 italic">
+                        "{r.freeformContent}"
+                      </p>
+                    ) : r.promptAnswers ? (
+                      <p className="text-xs text-[var(--color-text)] line-clamp-2 italic">
+                        "{Object.values(r.promptAnswers)[0] || 'Reflective entry'}"
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
               </div>
             )}
           </section>
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* 3. CARDIO PROGRESSION TAB */}
-      {/* ======================================================== */}
-      {activeCategory === 'cardio' && (
+      {/* ========================================================================= */}
+      {/* 3. SYSTEMS & HABITS CONSISTENCY HUB */}
+      {/* ========================================================================= */}
+      {hubTab === 'systems' && (
         <div className="space-y-4">
-          {/* Cardio Personal Best Records */}
-          <section className="bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-3xl p-5 shadow-sm space-y-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-1.5 text-[var(--color-text-subtle)] text-[10px] font-semibold uppercase tracking-wider">
-                  <Award className="w-3.5 h-3.5 text-[var(--color-accent)]" />
-                  <span>Endurance PRs & Records</span>
-                </div>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-black text-[var(--color-text)]">
-                    {formatDistance(cardioStats.totalDistanceKm, profile.unitSystem)}
-                  </span>
-                  <span className="text-xs font-semibold text-[var(--color-text-muted)]">lifetime distance</span>
-                </div>
+          {/* Habits Consistency Overview Card */}
+          <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3.5 shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--color-accent)]">
+                <Repeat className="w-4 h-4" />
+                <span>Habit Systems Execution</span>
+              </div>
+              <span className="text-xs font-bold text-[var(--color-text)]">
+                {systemsStats.weeklyRate}% 7d completion
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="p-3 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)]">
+                <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
+                  Active Habits
+                </span>
+                <span className="text-lg font-black text-[var(--color-text)] block">
+                  {habits.length}
+                </span>
+                <span className="text-[9px] text-[var(--color-text-muted)] block">Configured</span>
               </div>
 
-              <div className="text-right">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[var(--color-accent-soft)] text-[var(--color-accent)] border border-[var(--color-accent)]/30">
-                  {cardioStats.totalSessions} Sessions Logged
+              <div className="p-3 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)]">
+                <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
+                  Peak Streak
+                </span>
+                <span className="text-lg font-black text-[var(--color-text)] block">
+                  {systemsStats.bestCurrentStreak}d
+                </span>
+                <span className="text-[9px] text-[var(--color-text-muted)] block">Unbroken</span>
+              </div>
+
+              <div className="p-3 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)]">
+                <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
+                  Tasks Done
+                </span>
+                <span className="text-lg font-black text-[var(--color-text)] block">
+                  {systemsStats.completedTasks}
+                </span>
+                <span className="text-[9px] text-[var(--color-text-muted)] block">
+                  {systemsStats.pendingTasks} pending
                 </span>
               </div>
             </div>
 
-            {/* 3 Key PR Cards */}
-            <div className="grid grid-cols-3 gap-2 pt-1">
-              <div className="bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] text-center">
-                <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
-                  Longest Dist
-                </span>
-                <span className="text-sm font-black text-[var(--color-accent)] block">
-                  {cardioStats.longestDistanceKm > 0
-                    ? formatDistance(cardioStats.longestDistanceKm, profile.unitSystem)
-                    : '--'}
-                </span>
-                <span className="text-[9px] text-[var(--color-text-muted)] capitalize truncate block">
-                  {cardioStats.longestDistanceActivity || 'No data'}
-                </span>
-              </div>
-
-              <div className="bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] text-center">
-                <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
-                  Best Pace
-                </span>
-                <span className="text-sm font-black text-[var(--color-accent)] block">
-                  {cardioStats.bestPaceMinPerKm !== '--:--'
-                    ? `${cardioStats.bestPaceMinPerKm} /km`
-                    : '--'}
-                </span>
-                <span className="text-[9px] text-[var(--color-text-muted)] capitalize truncate block">
-                  {cardioStats.bestPaceActivity || 'No data'}
-                </span>
-              </div>
-
-              <div className="bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] text-center">
-                <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
-                  Longest Time
-                </span>
-                <span className="text-sm font-black text-[var(--color-accent)] block">
-                  {cardioStats.longestDurationMinutes > 0
-                    ? `${cardioStats.longestDurationMinutes}m`
-                    : '--'}
-                </span>
-                <span className="text-[9px] text-[var(--color-text-muted)] block">Endurance</span>
-              </div>
+            {/* Individual Habit Streaks */}
+            <div className="space-y-2 pt-1 border-t border-[var(--color-border)]">
+              {habits.map((h) => {
+                const isDoneToday = h.completedDates.includes(todayStr);
+                return (
+                  <div
+                    key={h.id}
+                    className="p-3 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)] flex items-center justify-between text-xs"
+                  >
+                    <div>
+                      <div className="font-bold text-[var(--color-text)]">{h.title}</div>
+                      <div className="text-[10px] text-[var(--color-text-muted)]">
+                        {h.completedDates.length} total completions • {h.area}
+                      </div>
+                    </div>
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        isDoneToday
+                          ? 'bg-[var(--color-success-soft)] text-[var(--color-success)]'
+                          : 'bg-[var(--color-surface-raised)] text-[var(--color-text-muted)]'
+                      }`}
+                    >
+                      {isDoneToday ? 'Done Today' : 'Pending'}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
-          {/* Cardio History Breakdown by Activity */}
-          <section className="k-card p-5 space-y-3">
-            <span className="k-section-title">
-              Cardio sessions history
-            </span>
+          {/* Friction Engineering Status */}
+          <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)] flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+                <span>Behavioral Friction Interventions</span>
+              </span>
+              <span className="text-xs font-bold text-[var(--color-text)]">
+                {systemsStats.activeFriction} Active
+              </span>
+            </div>
 
-            {cardioSessions.length === 0 ? (
-              <div className="py-8 text-center text-xs text-[var(--color-text-subtle)] border border-dashed border-[var(--color-border)] rounded-2xl">
-                No cardio sessions logged yet. Log runs, walks, or cycling in the Train tab.
-              </div>
-            ) : (
-              <div className="divide-y divide-[var(--color-border)]">
-                {cardioSessions.map((session) => (
-                  <div key={session.id} className="py-3 flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-[var(--color-text)] capitalize">
-                          {(session.activity || session.type).replace('_', ' ')}
-                        </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)] font-bold border border-[var(--color-accent)]/30">
-                          {session.avgPaceMinPerKm || (session.avgPaceSecPerKm ? formatPace(session.avgPaceSecPerKm, profile.unitSystem) : '--:--')}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-                        {session.date} • {formatDistance(session.distanceKm || 0, profile.unitSystem)} in{' '}
-                        {session.durationMinutes} mins
-                      </div>
-                    </div>
+            <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+              Environment design is superior to willpower. Reducing friction makes desirable virtues
+              inevitable; adding deliberate friction neutralizes reactive impulses.
+            </p>
 
-                    <div className="text-right">
-                      <div className="text-xs font-bold text-[var(--color-text)]">
-                        {session.caloriesBurned} kcal
-                      </div>
-                      {session.avgHeartRateBpm && (
-                        <span className="text-[10px] text-[var(--color-danger)] font-medium">
-                          {session.avgHeartRateBpm} bpm
-                        </span>
-                      )}
-                    </div>
+            <div className="space-y-2">
+              {frictionInterventions.map((f) => (
+                <div
+                  key={f.id}
+                  className="p-3 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)] space-y-1 text-xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[var(--color-text)]">{f.targetBehavior}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] capitalize">
+                      {f.actionType.replace('_', ' ')}
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
+                  <p className="text-[11px] text-[var(--color-text-muted)]">{f.mechanism}</p>
+                </div>
+              ))}
+            </div>
           </section>
         </div>
       )}
@@ -591,11 +834,11 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
 function VolumeProgressionChart({
   data,
 }: {
-  data: { label: string; date: string; volume: number }[];
+  data: { date: string; volumeKg: number; workoutName?: string }[];
 }) {
   const chartData = data.map((d) => ({
-    xLabel: d.label,
-    primaryValue: d.volume,
+    xLabel: d.date.length >= 10 ? d.date.slice(5) : d.date,
+    primaryValue: d.volumeKg,
     unit: 'kg',
   }));
 

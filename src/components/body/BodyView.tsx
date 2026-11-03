@@ -3,7 +3,6 @@ import {
   Utensils,
   Dumbbell,
   Moon,
-  TrendingUp,
   Plus,
   BatteryCharging,
   Clock,
@@ -16,17 +15,16 @@ import { useFitness } from '../../context/FitnessContext';
 import { MealType } from '../../types';
 import { FoodView } from '../food/FoodView';
 import { TrainView } from '../train/TrainView';
-import { ProgressView } from '../progress/ProgressView';
 import { SleepModal } from '../recovery/SleepModal';
 import { getLocalDateString } from '../../utils/engine';
 
-export type BodySubTab = 'nutrition' | 'training' | 'recovery' | 'progress';
+export type BodySubTab = 'nutrition' | 'training' | 'recovery';
 
 interface BodyViewProps {
   initialSubTab?: BodySubTab;
   onOpenAddFoodModal: (mealType?: MealType, targetDate?: string) => void;
-  onOpenWeighInModal: () => void;
-  onOpenWeeklyReview: () => void;
+  onOpenWeighInModal?: () => void;
+  onOpenWeeklyReview?: () => void;
 }
 
 export function BodyView({
@@ -53,8 +51,18 @@ export function BodyView({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
+      {/* Editorial Header */}
+      <div className="px-1 pt-1 pb-0.5">
+        <h1 className="stoic-title text-2xl font-bold tracking-tight text-[var(--color-text)]">
+          body.
+        </h1>
+        <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+          the physical vessel — nourishment, athletic training & restorative sleep.
+        </p>
+      </div>
+
       {/* Sub-tab Navigation */}
-      <div className="grid grid-cols-4 gap-1 p-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-xs">
+      <div className="grid grid-cols-3 gap-1 p-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-xs">
         <button
           onClick={() => setActiveSubTab('nutrition')}
           className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all ${
@@ -93,18 +101,6 @@ export function BodyView({
           <Moon className="w-3.5 h-3.5" />
           <span>Recovery</span>
         </button>
-
-        <button
-          onClick={() => setActiveSubTab('progress')}
-          className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all ${
-            activeSubTab === 'progress'
-              ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-xs'
-              : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-          }`}
-        >
-          <TrendingUp className="w-3.5 h-3.5" />
-          <span>Progress</span>
-        </button>
       </div>
 
       {/* RENDER ACTIVE SUB-TAB CONTENT */}
@@ -113,13 +109,6 @@ export function BodyView({
       )}
 
       {activeSubTab === 'training' && <TrainView />}
-
-      {activeSubTab === 'progress' && (
-        <ProgressView
-          onOpenWeeklyReview={onOpenWeeklyReview}
-          onOpenWeighInModal={onOpenWeighInModal}
-        />
-      )}
 
       {activeSubTab === 'recovery' && (
         <div className="space-y-4">

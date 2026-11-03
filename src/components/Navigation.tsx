@@ -1,7 +1,7 @@
 import React from 'react';
-import { Compass, Sliders, Activity, Feather, Sparkles } from 'lucide-react';
+import { TrendingUp, Sliders, Compass, Activity, Feather } from 'lucide-react';
 
-export type TabType = 'today' | 'systems' | 'body' | 'mind' | 'growth';
+export type TabType = 'progress' | 'systems' | 'today' | 'body' | 'mind';
 
 interface NavigationProps {
   activeTab: TabType;
@@ -19,40 +19,58 @@ export function Navigation({
   return (
     <nav
       aria-label="Eunoia Navigation"
-      className="fixed bottom-0 left-0 right-0 z-30 bg-[color-mix(in_srgb,var(--color-surface)_95%,transparent)] backdrop-blur-xl border-t border-[var(--color-border)] px-2 pb-[max(env(safe-area-inset-bottom,16px),20px)] pt-1.5 max-w-md mx-auto shadow-lg transition-colors"
+      className="fixed bottom-4 sm:bottom-6 left-3 right-3 z-40 max-w-md mx-auto stoic-glass rounded-full p-1.5 shadow-lg transition-all select-none"
     >
-      <div className="grid grid-cols-5 gap-0.5">
+      <div className="flex items-center justify-between">
+        {/* 1. Progress (Leftmost tab) */}
         <NavButton
-          active={activeTab === 'today'}
-          onClick={() => onSelectTab('today')}
-          label="Today"
-          icon={<Compass className="w-5 h-5" />}
+          active={activeTab === 'progress'}
+          onClick={() => onSelectTab('progress')}
+          label="progress"
+          icon={<TrendingUp className="w-4 h-4" />}
+          badge={hasPendingReview ? '!' : undefined}
+          badgeColor="bg-[var(--color-accent)] text-[var(--color-on-accent)]"
         />
+
+        {/* 2. Systems */}
         <NavButton
           active={activeTab === 'systems'}
           onClick={() => onSelectTab('systems')}
-          label="Systems"
-          icon={<Sliders className="w-5 h-5" />}
+          label="systems"
+          icon={<Sliders className="w-4 h-4" />}
         />
+
+        {/* 3. Today (Center Hero Pill) */}
+        <button
+          onClick={() => onSelectTab('today')}
+          aria-label="Today Dashboard"
+          aria-current={activeTab === 'today' ? 'page' : undefined}
+          className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-full transition-all active:scale-95 ${
+            activeTab === 'today'
+              ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] font-bold shadow-sm'
+              : 'text-[var(--color-text)] hover:bg-[var(--color-surface-raised)] font-medium'
+          }`}
+        >
+          <Compass className="w-4 h-4" />
+          <span className="text-xs tracking-tight">today</span>
+        </button>
+
+        {/* 4. Body */}
         <NavButton
           active={activeTab === 'body'}
           onClick={() => onSelectTab('body')}
-          label="Body"
-          icon={<Activity className="w-5 h-5" />}
-          badge={hasActiveWorkout ? '•' : hasPendingReview ? '!' : undefined}
-          badgeColor="bg-[var(--color-accent)]"
+          label="body"
+          icon={<Activity className="w-4 h-4" />}
+          badge={hasActiveWorkout ? '•' : undefined}
+          badgeColor="bg-emerald-500 text-white"
         />
+
+        {/* 5. Mind (Merged Mind & Growth) */}
         <NavButton
           active={activeTab === 'mind'}
           onClick={() => onSelectTab('mind')}
-          label="Mind"
-          icon={<Feather className="w-5 h-5" />}
-        />
-        <NavButton
-          active={activeTab === 'growth'}
-          onClick={() => onSelectTab('growth')}
-          label="Growth"
-          icon={<Sparkles className="w-5 h-5" />}
+          label="mind"
+          icon={<Feather className="w-4 h-4" />}
         />
       </div>
     </nav>
@@ -65,7 +83,7 @@ function NavButton({
   label,
   icon,
   badge,
-  badgeColor = 'bg-[var(--color-accent)]',
+  badgeColor = 'bg-[var(--color-accent)] text-[var(--color-on-accent)]',
 }: {
   active: boolean;
   onClick: () => void;
@@ -79,27 +97,27 @@ function NavButton({
       onClick={onClick}
       aria-label={label}
       aria-current={active ? 'page' : undefined}
-      className={`min-h-[44px] relative flex flex-col items-center justify-center py-1 rounded-2xl transition-all ${
+      className={`min-h-[40px] px-2.5 py-1.5 relative flex flex-col items-center justify-center rounded-full transition-all active:scale-95 ${
         active
-          ? 'text-[var(--color-accent)] font-bold'
+          ? 'text-[var(--color-text)] font-semibold'
           : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] font-medium'
       }`}
     >
       <div
-        className={`relative flex items-center justify-center px-2.5 py-1 rounded-2xl transition-all ${
-          active ? 'bg-[var(--color-accent)]/15' : ''
+        className={`relative flex items-center justify-center p-1 rounded-full transition-all ${
+          active ? 'bg-[var(--color-accent-soft)]' : ''
         }`}
       >
         {icon}
         {badge && (
           <span
-            className={`absolute -top-0.5 -right-1 px-1 min-w-[14px] h-3.5 flex items-center justify-center text-[10px] font-black text-[var(--color-on-accent)] rounded-full shadow-xs ${badgeColor}`}
+            className={`absolute -top-1 -right-1 px-1 min-w-[12px] h-3 flex items-center justify-center text-[9px] font-black rounded-full shadow-xs ${badgeColor}`}
           >
             {badge}
           </span>
         )}
       </div>
-      <span className="text-[10px] mt-0.5 tracking-tight leading-none">{label}</span>
+      <span className="text-[10px] tracking-tight leading-none mt-0.5">{label}</span>
     </button>
   );
 }

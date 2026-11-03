@@ -76,6 +76,16 @@ export function SystemsView() {
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
+      {/* Editorial Header */}
+      <div className="px-1 pt-1 pb-0.5">
+        <h1 className="stoic-title text-2xl font-bold tracking-tight text-[var(--color-text)]">
+          systems.
+        </h1>
+        <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+          habits, behavioral friction engineering & daily operational architecture.
+        </p>
+      </div>
+
       {/* Systems Sub-navigation Switcher */}
       <div className="flex items-center p-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-xs">
         <button
