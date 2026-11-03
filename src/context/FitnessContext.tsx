@@ -43,8 +43,38 @@ import {
 import { calculateWorkoutVolume, calculate1RM, getLocalDateString, getPreferredTheme } from '../utils/engine';
 import { sanitizeLoadedActiveWorkout } from '../utils/workoutSession';
 
-const STORAGE_KEY = 'eunoia_os_v1';
-const LEGACY_STORAGE_KEY = 'kinetic_fitness_app_v3';
+export const STORAGE_KEY = 'eunoia_os_v1';
+export const LEGACY_STORAGE_KEYS = [
+  'eunoia_os_v1',
+  'kinetic_fitness_app_v3',
+  'kinetic_fitness_app_v2',
+  'kinetic_fitness_app_v1',
+  'kinetic_fitness_app',
+];
+
+/**
+ * Merges system default library items non-destructively into the user's library:
+ * - Preserves all user-created items (custom foods, custom exercises, custom templates).
+ * - Preserves any user modifications to existing items.
+ * - Appends any newly introduced system default items that the user doesn't already have.
+ */
+export function mergeLibraries<T extends { id: string; name: string }>(
+  userItems: T[] | undefined,
+  defaultItems: T[]
+): T[] {
+  if (!userItems || !Array.isArray(userItems) || userItems.length === 0) {
+    return [...defaultItems];
+  }
+
+  const existingIds = new Set(userItems.map((item) => item.id));
+  const existingNames = new Set(userItems.map((item) => item.name.trim().toLowerCase()));
+
+  const newDefaultsToAdd = defaultItems.filter(
+    (item) => !existingIds.has(item.id) && !existingNames.has(item.name.trim().toLowerCase())
+  );
+
+  return [...userItems, ...newDefaultsToAdd];
+}
 
 export interface FitnessState {
   profile: UserProfile;
@@ -150,39 +180,61 @@ const FitnessContext = createContext<FitnessContextType | null>(null);
 function loadInitialFitnessState(): FitnessState {
   const todayStr = getLocalDateString();
   try {
-    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    let raw: string | null = null;
+    let foundKey: string | null = null;
+
+    for (const key of LEGACY_STORAGE_KEYS) {
+      const data = localStorage.getItem(key);
+      if (data) {
+        raw = data;
+        foundKey = key;
+        break;
+      }
+    }
+
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.profile && Array.isArray(parsed.weights)) {
         const hydration = parsed.hydrationLogs || { [todayStr]: parsed.waterMlToday || 0 };
-        return {
+        const migratedState: FitnessState = {
           ...parsed,
-          foodLibrary: parsed.foodLibrary && parsed.foodLibrary.length > 0 ? parsed.foodLibrary : mockFoodLibrary,
-          exercises: parsed.exercises && parsed.exercises.length > 0 ? parsed.exercises : mockExercises,
-          templates: parsed.templates && parsed.templates.length >= 3 ? parsed.templates : mockTemplates,
-          cardioSessions: parsed.cardioSessions || [],
+          foodLibrary: mergeLibraries(parsed.foodLibrary, mockFoodLibrary),
+          exercises: mergeLibraries(parsed.exercises, mockExercises),
+          templates: Array.isArray(parsed.templates) && parsed.templates.length >= 3 ? parsed.templates : mockTemplates,
+          cardioSessions: Array.isArray(parsed.cardioSessions) ? parsed.cardioSessions : [],
           hydrationLogs: hydration,
           waterMlToday: hydration[todayStr] ?? (parsed.waterMlToday || 0),
           weeklySchedule: parsed.weeklySchedule || defaultWeeklySchedule,
           activeWorkout: sanitizeLoadedActiveWorkout(parsed.activeWorkout).session,
 
-          // Ensure Eunoia domains exist
-          goals: parsed.goals && parsed.goals.length > 0 ? parsed.goals : defaultStarterGoals,
-          projects: parsed.projects && parsed.projects.length > 0 ? parsed.projects : defaultStarterProjects,
-          tasks: parsed.tasks && parsed.tasks.length > 0 ? parsed.tasks : defaultStarterTasks,
-          habits: parsed.habits && parsed.habits.length > 0 ? parsed.habits : defaultStarterHabits,
-          frictionInterventions: parsed.frictionInterventions && parsed.frictionInterventions.length > 0
+          // Ensure Eunoia domains exist while strictly preserving any existing user records
+          goals: Array.isArray(parsed.goals) && parsed.goals.length > 0 ? parsed.goals : defaultStarterGoals,
+          projects: Array.isArray(parsed.projects) && parsed.projects.length > 0 ? parsed.projects : defaultStarterProjects,
+          tasks: Array.isArray(parsed.tasks) && parsed.tasks.length > 0 ? parsed.tasks : defaultStarterTasks,
+          habits: Array.isArray(parsed.habits) && parsed.habits.length > 0 ? parsed.habits : defaultStarterHabits,
+          frictionInterventions: Array.isArray(parsed.frictionInterventions) && parsed.frictionInterventions.length > 0
             ? parsed.frictionInterventions
             : defaultStarterFrictionInterventions,
-          sleepRecords: parsed.sleepRecords || [],
-          reflections: parsed.reflections || [],
-          relationships: parsed.relationships && parsed.relationships.length > 0
+          sleepRecords: Array.isArray(parsed.sleepRecords) ? parsed.sleepRecords : [],
+          reflections: Array.isArray(parsed.reflections) ? parsed.reflections : [],
+          relationships: Array.isArray(parsed.relationships) && parsed.relationships.length > 0
             ? parsed.relationships
             : defaultStarterRelationships,
-          learningItems: parsed.learningItems && parsed.learningItems.length > 0
+          learningItems: Array.isArray(parsed.learningItems) && parsed.learningItems.length > 0
             ? parsed.learningItems
             : defaultStarterLearning,
         };
+
+        // If data was loaded from a legacy key, migrate to the current key
+        if (foundKey && foundKey !== STORAGE_KEY) {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedState));
+          } catch (e) {
+            console.warn('Failed writing migrated state to STORAGE_KEY', e);
+          }
+        }
+
+        return migratedState;
       }
     }
   } catch (e) {
@@ -721,8 +773,8 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
         profile: parsed.profile,
         weights: parsed.weights,
         loggedFoods: Array.isArray(parsed.loggedFoods) ? parsed.loggedFoods : [],
-        foodLibrary: Array.isArray(parsed.foodLibrary) ? parsed.foodLibrary : mockFoodLibrary,
-        exercises: Array.isArray(parsed.exercises) ? parsed.exercises : mockExercises,
+        foodLibrary: mergeLibraries(parsed.foodLibrary, mockFoodLibrary),
+        exercises: mergeLibraries(parsed.exercises, mockExercises),
         templates: Array.isArray(parsed.templates) && parsed.templates.length ? parsed.templates : mockTemplates,
         completedWorkouts: Array.isArray(parsed.completedWorkouts) ? parsed.completedWorkouts : [],
         cardioSessions: Array.isArray(parsed.cardioSessions) ? parsed.cardioSessions : [],
