@@ -153,6 +153,7 @@ function AppContent() {
           <ProgressView
             onOpenWeeklyReview={() => setShowWeeklyReviewModal(true)}
             onOpenWeighInModal={() => setShowWeighInModal(true)}
+            onOpenHealthSync={() => setShowHealthSyncModal(true)}
           />
         )}
 

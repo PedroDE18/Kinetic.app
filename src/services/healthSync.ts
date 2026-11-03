@@ -1,9 +1,11 @@
-import { CardioSession, CardioActivityType, CompletedWorkout, WeightRecord } from '../types';
+import { CardioSession, CardioActivityType, CompletedWorkout, SleepRecord, WeightRecord } from '../types';
+import { parseAppleHealthFile, parseAppleHealthXmlString } from './appleHealth/appleHealthManager';
 
 export interface HealthImportResult {
   cardio: CardioSession[];
   workouts: CompletedWorkout[];
   weights: WeightRecord[];
+  sleep?: SleepRecord[];
   sourceName: string;
   summary: string;
 }
@@ -96,110 +98,17 @@ function parseXmlDocument(xmlContent: string) {
 }
 
 /**
- * Parses Apple Health XML export string (or fragment)
+ * Parses Apple Health XML export string (or fragment) using streaming parser
  */
 export function parseAppleHealthXml(xmlContent: string): HealthImportResult {
-  const doc = parseXmlDocument(xmlContent);
-  const cardio: CardioSession[] = [];
-  const workouts: CompletedWorkout[] = [];
-  const weights: WeightRecord[] = [];
-
-  // Parse Workouts
-  const workoutNodes = doc.querySelectorAll('Workout');
-  workoutNodes.forEach((node: Element, idx: number) => {
-    const rawType = node.getAttribute('workoutActivityType') || '';
-    const duration = parseFloat(node.getAttribute('duration') || '0');
-    const durationUnit = node.getAttribute('durationUnit') || 'sec';
-    const totalDistance = parseFloat(node.getAttribute('totalDistance') || '0');
-    const totalDistanceUnit = node.getAttribute('totalDistanceUnit') || 'km';
-    const totalEnergy = parseFloat(node.getAttribute('totalEnergyBurned') || '0');
-    const creationDate = node.getAttribute('creationDate') || node.getAttribute('startDate') || new Date().toISOString();
-
-    const durationMinutes = durationUnit === 'min' ? Math.round(duration) : Math.round(duration / 60);
-    const distanceKm = totalDistanceUnit === 'm' ? totalDistance / 1000 : (totalDistanceUnit === 'mi' ? totalDistance * 1.60934 : totalDistance);
-
-    // Detect if cardio or strength
-    if (rawType.includes('Strength') || rawType.includes('WeightTraining')) {
-      workouts.push({
-        id: `apple-strength-${Date.now()}-${idx}`,
-        name: 'Apple Health Strength Workout',
-        startTime: creationDate,
-        endTime: new Date(new Date(creationDate).getTime() + (durationMinutes * 60000)).toISOString(),
-        durationSeconds: durationMinutes * 60,
-        exercises: [],
-        totalVolumeKg: 0,
-        notes: `Imported from Apple Health (${Math.round(totalEnergy)} kcal)`,
-      });
-    } else {
-      let activityType: CardioActivityType = 'running';
-      let title = 'Apple Health Workout';
-
-      if (rawType.includes('Running')) {
-        activityType = 'running';
-        title = 'Apple Watch Run';
-      } else if (rawType.includes('Cycling')) {
-        activityType = 'cycling';
-        title = 'Apple Watch Outdoor Cycle';
-      } else if (rawType.includes('Walking')) {
-        activityType = 'walking';
-        title = 'Apple Health Walk';
-      } else if (rawType.includes('Swimming')) {
-        activityType = 'swimming';
-        title = 'Apple Watch Swim';
-      } else if (rawType.includes('Rowing')) {
-        activityType = 'rowing';
-        title = 'Apple Watch Rowing';
-      } else if (rawType.includes('Elliptical')) {
-        activityType = 'elliptical';
-        title = 'Apple Watch Elliptical';
-      }
-
-      let paceMinPerKm: string | undefined;
-      if (distanceKm > 0 && durationMinutes > 0) {
-        const paceDec = durationMinutes / distanceKm;
-        const mins = Math.floor(paceDec);
-        const secs = Math.round((paceDec - mins) * 60);
-        paceMinPerKm = `${mins}:${secs.toString().padStart(2, '0')}`;
-      }
-
-      cardio.push({
-        id: `apple-cardio-${Date.now()}-${idx}`,
-        type: activityType,
-        activity: activityType,
-        name: title,
-        date: creationDate,
-        durationMinutes: Math.max(1, durationMinutes),
-        distanceKm: distanceKm > 0 ? parseFloat(distanceKm.toFixed(2)) : undefined,
-        caloriesBurned: Math.round(totalEnergy) || Math.round(durationMinutes * 8.5),
-        avgPaceMinPerKm: paceMinPerKm,
-        notes: 'Synced from Apple Health',
-      });
-    }
-  });
-
-  // Parse BodyMass Records (Weights)
-  const weightNodes = doc.querySelectorAll('Record[type="HKQuantityTypeIdentifierBodyMass"]');
-  weightNodes.forEach((node: Element) => {
-    const rawVal = parseFloat(node.getAttribute('value') || '0');
-    const unit = node.getAttribute('unit') || 'kg';
-    const dateStr = (node.getAttribute('startDate') || node.getAttribute('creationDate') || '').slice(0, 10);
-    
-    if (rawVal > 0 && dateStr) {
-      const weightKg = unit === 'lbs' || unit === 'lb' ? rawVal * 0.453592 : rawVal;
-      weights.push({
-        date: dateStr,
-        weightKg: parseFloat(weightKg.toFixed(2)),
-        notes: 'Synced from Apple Health scale',
-      });
-    }
-  });
-
+  const normalized = parseAppleHealthXmlString(xmlContent);
   return {
-    cardio,
-    workouts,
-    weights,
-    sourceName: 'Apple Health',
-    summary: `Found ${cardio.length} cardio sessions, ${workouts.length} strength workouts, and ${weights.length} weigh-in logs.`,
+    cardio: normalized.cardioSessions,
+    workouts: normalized.workouts,
+    weights: normalized.weights,
+    sleep: normalized.sleepRecords,
+    sourceName: normalized.sourceNames[0] || 'Apple Health',
+    summary: `Found ${normalized.cardioSessions.length} cardio sessions, ${normalized.workouts.length} strength workouts, ${normalized.weights.length} weigh-in logs, and ${normalized.sleepRecords.length} sleep records.`,
   };
 }
 
@@ -453,8 +362,22 @@ export function parseFitnessCsv(csvContent: string): HealthImportResult {
  * Universal dispatcher for dropped/selected files
  */
 export async function parseHealthFile(file: File): Promise<HealthImportResult> {
-  const text = await file.text();
   const lowerName = file.name.toLowerCase();
+
+  // If Apple Health ZIP archive or large XML file (>2MB), stream without loading into RAM
+  if (lowerName.endsWith('.zip') || (lowerName.endsWith('.xml') && file.size > 2 * 1024 * 1024)) {
+    const normalized = await parseAppleHealthFile(file);
+    return {
+      cardio: normalized.cardioSessions,
+      workouts: normalized.workouts,
+      weights: normalized.weights,
+      sleep: normalized.sleepRecords,
+      sourceName: normalized.sourceNames[0] || 'Apple Health Export',
+      summary: `Streamed ${normalized.totalRecordsProcessed.toLocaleString()} records from Apple Health export (${normalized.dateRange.start || ''} - ${normalized.dateRange.end || ''})`,
+    };
+  }
+
+  const text = await file.text();
 
   if (lowerName.endsWith('.tcx')) {
     return parseGarminTcx(text);
@@ -486,6 +409,7 @@ export async function parseHealthFile(file: File): Promise<HealthImportResult> {
           cardio: data.cardio || [],
           workouts: data.workouts || [],
           weights: data.weights || [],
+          sleep: data.sleep || [],
           sourceName: data.source || 'JSON Import',
           summary: `Loaded ${data.cardio?.length || 0} cardio, ${data.workouts?.length || 0} workouts.`,
         };

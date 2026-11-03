@@ -130,7 +130,8 @@ export interface FitnessContextType {
     cardio?: CardioSession[];
     workouts?: CompletedWorkout[];
     weights?: WeightRecord[];
-  }) => { addedCardio: number; addedWorkouts: number; addedWeights: number };
+    sleep?: SleepRecord[];
+  }) => { addedCardio: number; addedWorkouts: number; addedWeights: number; addedSleep: number };
   resolveReview: (
     reviewId: string,
     decision: 'accepted' | 'rejected',
@@ -556,10 +557,12 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
     cardio?: CardioSession[];
     workouts?: CompletedWorkout[];
     weights?: WeightRecord[];
+    sleep?: SleepRecord[];
   }) => {
     let addedCardio = 0;
     let addedWorkouts = 0;
     let addedWeights = 0;
+    let addedSleep = 0;
 
     setState((prev) => {
       // De-duplicate cardio by ID and timestamp/name
@@ -582,15 +585,31 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
       );
 
+      // De-duplicate sleep by date or ID
+      const existingSleepDates = new Set((prev.sleepRecords || []).map((s) => s.date));
+      const existingSleepIds = new Set((prev.sleepRecords || []).map((s) => s.id));
+      const newSleep = (batch.sleep || []).filter(
+        (s) => !existingSleepDates.has(s.date) && !existingSleepIds.has(s.id)
+      );
+      addedSleep = newSleep.length;
+
+      // Safeguard against localStorage quota exhaustion (keep top recent 500 records in state, while IndexedDB has all)
+      const mergedWorkouts = [...newWorkouts, ...prev.completedWorkouts].slice(0, 500);
+      const mergedCardio = [...newCardio, ...prev.cardioSessions].slice(0, 500);
+      const mergedSleep = [...newSleep, ...(prev.sleepRecords || [])]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 500);
+
       return {
         ...prev,
-        cardioSessions: [...newCardio, ...prev.cardioSessions],
-        completedWorkouts: [...newWorkouts, ...prev.completedWorkouts],
+        cardioSessions: mergedCardio,
+        completedWorkouts: mergedWorkouts,
         weights: sortedWeights,
+        sleepRecords: mergedSleep,
       };
     });
 
-    return { addedCardio, addedWorkouts, addedWeights };
+    return { addedCardio, addedWorkouts, addedWeights, addedSleep };
   };
 
   const resolveReview = (
