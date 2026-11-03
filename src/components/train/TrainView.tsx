@@ -20,9 +20,10 @@ import {
   BookOpen,
   Watch,
   Disc,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
-import { ActiveWorkoutSession, CompletedWorkout, WorkoutTemplate, ExerciseSet, SetType } from '../../types';
+import { ActiveWorkoutSession, CompletedWorkout, WorkoutTemplate, ExerciseSet, SetType, ExerciseDefinition } from '../../types';
 import {
   computeRestRemainingSeconds,
   extendRestTimer,
@@ -92,6 +93,29 @@ export function TrainView() {
     setIdx: number;
     weight: number;
   } | null>(null);
+
+  // Exercise Swap state
+  const [swappingExerciseIndex, setSwappingExerciseIndex] = useState<number | null>(null);
+  const [swapSearchQuery, setSwapSearchQuery] = useState('');
+
+  const handleSwapExercise = (exIdx: number, newDef: ExerciseDefinition) => {
+    if (!activeWorkout) return;
+    const updated: ActiveWorkoutSession = {
+      ...activeWorkout,
+      exercises: activeWorkout.exercises.map((ex, idx) => {
+        if (idx !== exIdx) return ex;
+        return {
+          ...ex,
+          exerciseId: newDef.id,
+          exerciseName: newDef.name,
+        };
+      }),
+    };
+    persistSession(updated, {});
+    setSwappingExerciseIndex(null);
+    setSwapSearchQuery('');
+    triggerHapticFeedback([40]);
+  };
 
   // Interaction state: expand a routine card, open a past session
   const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
@@ -503,6 +527,17 @@ export function TrainView() {
                         </span>
                       </div>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() => setSwappingExerciseIndex(exIdx)}
+                      aria-label={`Swap exercise ${exercise.exerciseName}`}
+                      className="min-h-[32px] px-2.5 py-1 bg-[var(--color-surface-sunken)] hover:bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] rounded-full text-[10px] font-medium flex items-center gap-1 shrink-0 active:scale-95 transition-all"
+                      title="Substitute with another exercise from same muscle group"
+                    >
+                      <ArrowLeftRight className="w-3 h-3 text-[var(--color-accent)]" />
+                      <span>Swap</span>
+                    </button>
 
                     {/* Keyboard navigation: jump to the next exercise card. */}
                     {(
@@ -1183,6 +1218,96 @@ export function TrainView() {
             setPlateCalcTarget(null);
           }}
         />
+      )}
+
+      {/* Exercise Swap Modal */}
+      {swappingExerciseIndex !== null && activeWorkout && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-md w-full p-6 space-y-4 max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)] block">
+                  Substitute Exercise
+                </span>
+                <h3 className="text-sm font-bold text-[var(--color-text)] mt-0.5">
+                  Replacing: {activeWorkout.exercises[swappingExerciseIndex]?.exerciseName}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSwappingExerciseIndex(null);
+                  setSwapSearchQuery('');
+                }}
+                className="p-1 rounded-xl text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search replacement exercise..."
+                value={swapSearchQuery}
+                onChange={(e) => setSwapSearchQuery(e.target.value)}
+                className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
+              />
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+              {(() => {
+                const currentEx = activeWorkout.exercises[swappingExerciseIndex];
+                const currentDef = exercises.find((x) => x.id === currentEx?.exerciseId);
+                const candidates = exercises
+                  .filter((ex) => ex.id !== currentEx?.exerciseId)
+                  .filter((ex) => {
+                    if (!swapSearchQuery.trim()) return true;
+                    const q = swapSearchQuery.toLowerCase();
+                    return (
+                      ex.name.toLowerCase().includes(q) ||
+                      ex.muscleGroup.toLowerCase().includes(q) ||
+                      ex.equipment.toLowerCase().includes(q)
+                    );
+                  })
+                  .sort((a, b) => {
+                    const aMatches = currentDef && a.muscleGroup === currentDef.muscleGroup ? 1 : 0;
+                    const bMatches = currentDef && b.muscleGroup === currentDef.muscleGroup ? 1 : 0;
+                    return bMatches - aMatches;
+                  });
+
+                return candidates.map((cand) => {
+                  const isSameGroup = currentDef && cand.muscleGroup === currentDef.muscleGroup;
+                  return (
+                    <button
+                      key={cand.id}
+                      type="button"
+                      onClick={() => handleSwapExercise(swappingExerciseIndex, cand)}
+                      className="w-full text-left p-3 rounded-2xl bg-[var(--color-surface-sunken)] hover:bg-[var(--color-surface-raised)] border border-[var(--color-border)] transition-all flex items-center justify-between group active:scale-[0.99]"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-xs text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
+                            {cand.name}
+                          </span>
+                          {isSameGroup && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)] font-bold">
+                              Same Muscle
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-[var(--color-text-muted)] block mt-0.5">
+                          {cand.muscleGroup} • {cand.equipment}
+                        </span>
+                      </div>
+                      <ArrowLeftRight className="w-3.5 h-3.5 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors" />
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

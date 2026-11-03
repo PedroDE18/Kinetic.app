@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { X, Search, Award, Dumbbell, Sparkles } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { X, Search, Award, Dumbbell, Sparkles, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
+import { calculate1RM } from '../../utils/engine';
 
 interface ExerciseAtlasModalProps {
   onClose: () => void;
@@ -14,8 +15,50 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
 
   const [search, setSearch] = useState('');
   const [selectedMuscle, setSelectedMuscle] = useState<string>('all');
+  const [expandedExId, setExpandedExId] = useState<string | null>(null);
 
   const muscles = ['all', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms'];
+
+  const getProgression = (exId: string, exName: string) => {
+    const points: { date: string; max1RM: number; volumeKg: number; bestSet: string }[] = [];
+    const sorted = [...state.completedWorkouts].sort(
+      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    );
+
+    for (const w of sorted) {
+      const foundEx = w.exercises.find(
+        (e) => e.exerciseId === exId || e.exerciseName.toLowerCase() === exName.toLowerCase()
+      );
+      if (foundEx) {
+        let max1RM = 0;
+        let volume = 0;
+        let bestWeight = 0;
+        let bestReps = 0;
+        for (const s of foundEx.sets) {
+          if (s.isCompleted && s.actualReps > 0 && s.actualWeightKg > 0) {
+            if (s.setType !== 'warmup') {
+              volume += s.actualWeightKg * s.actualReps;
+            }
+            const e1rm = calculate1RM(s.actualWeightKg, s.actualReps);
+            if (e1rm > max1RM) {
+              max1RM = e1rm;
+              bestWeight = s.actualWeightKg;
+              bestReps = s.actualReps;
+            }
+          }
+        }
+        if (max1RM > 0) {
+          points.push({
+            date: w.startTime.split('T')[0],
+            max1RM,
+            volumeKg: volume,
+            bestSet: `${bestWeight}kg × ${bestReps}`,
+          });
+        }
+      }
+    }
+    return points;
+  };
 
   const filtered = exercises.filter((ex) => {
     const matchesSearch =
@@ -78,63 +121,142 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
 
         {/* Cards List */}
         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-          {filtered.map((ex) => (
-            <div
-              key={ex.id}
-              className="bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-2xl p-4 space-y-2.5"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="text-sm font-bold text-[var(--color-text)]">{ex.name}</h4>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-subtle)]">
-                    {ex.muscleGroup} • {ex.equipment}
-                  </span>
-                </div>
+          {filtered.map((ex) => {
+            const isExpanded = expandedExId === ex.id;
+            const history = isExpanded ? getProgression(ex.id, ex.name) : [];
+            const bestAllTime1RM = history.length > 0 ? Math.max(...history.map((h) => h.max1RM)) : 0;
+            const totalVolumeLogged = history.reduce((acc, h) => acc + h.volumeKg, 0);
 
-                {ex.personalRecord && (
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[10px] text-[var(--color-accent)] font-semibold">
-                    <Award className="w-3 h-3" />
-                    <span>
-                      {ex.personalRecord.weightKg} kg × {ex.personalRecord.reps}
+            return (
+              <div
+                key={ex.id}
+                className="bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-2xl p-4 space-y-2.5 transition-all"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="text-sm font-bold text-[var(--color-text)]">{ex.name}</h4>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-subtle)]">
+                      {ex.muscleGroup} • {ex.equipment}
                     </span>
                   </div>
-                )}
-              </div>
 
-              {/* Muscle targeting breakdown */}
-              <div className="space-y-1.5 pt-1 border-t border-[var(--color-border)]">
-                <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
-                    Primary:
-                  </span>
-                  {ex.primaryMuscles.map((m) => (
-                    <span
-                      key={m}
-                      className="px-2 py-0.5 rounded-md bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] text-[11px] font-bold"
+                  <div className="flex items-center gap-1.5">
+                    {ex.personalRecord && (
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[10px] text-[var(--color-accent)] font-semibold">
+                        <Award className="w-3 h-3" />
+                        <span>
+                          {ex.personalRecord.weightKg} kg × {ex.personalRecord.reps}
+                        </span>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setExpandedExId(isExpanded ? null : ex.id)}
+                      className="p-1 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface)] transition-colors"
+                      title={isExpanded ? 'Hide Progression' : 'View 1RM & Volume Progression'}
                     >
-                      {m}
-                    </span>
-                  ))}
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
-                {ex.secondaryMuscles && ex.secondaryMuscles.length > 0 && (
+                {/* Muscle targeting breakdown */}
+                <div className="space-y-1.5 pt-1 border-t border-[var(--color-border)]">
                   <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-subtle)]">
-                      Secondary:
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
+                      Primary:
                     </span>
-                    {ex.secondaryMuscles.map((m) => (
+                    {ex.primaryMuscles.map((m) => (
                       <span
                         key={m}
-                        className="px-2 py-0.5 rounded-md bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] text-[11px]"
+                        className="px-2 py-0.5 rounded-md bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] text-[11px] font-bold"
                       >
                         {m}
                       </span>
                     ))}
                   </div>
+
+                  {ex.secondaryMuscles && ex.secondaryMuscles.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-subtle)]">
+                        Secondary:
+                      </span>
+                      {ex.secondaryMuscles.map((m) => (
+                        <span
+                          key={m}
+                          className="px-2 py-0.5 rounded-md bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] text-[11px]"
+                        >
+                          {m}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 1RM & Volume Progression Section (Expandable) */}
+                {isExpanded && (
+                  <div className="pt-2 border-t border-[var(--color-border)] space-y-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-[var(--color-text)] flex items-center gap-1">
+                        <TrendingUp className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+                        <span>Progression History</span>
+                      </span>
+                      {bestAllTime1RM > 0 && (
+                        <span className="text-[10px] font-semibold text-[var(--color-accent)]">
+                          Est. 1RM Best: {bestAllTime1RM} kg
+                        </span>
+                      )}
+                    </div>
+
+                    {history.length > 0 ? (
+                      <div className="space-y-2">
+                        {/* Mini Metrics Bar */}
+                        <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                          <div className="bg-[var(--color-surface)] p-2 rounded-xl border border-[var(--color-border)]">
+                            <span className="text-[10px] text-[var(--color-text-muted)] block">Total Volume</span>
+                            <span className="font-bold text-[var(--color-text)] tabular-nums">
+                              {totalVolumeLogged.toLocaleString()} kg
+                            </span>
+                          </div>
+                          <div className="bg-[var(--color-surface)] p-2 rounded-xl border border-[var(--color-border)]">
+                            <span className="text-[10px] text-[var(--color-text-muted)] block">Sessions Logged</span>
+                            <span className="font-bold text-[var(--color-text)] tabular-nums">{history.length}</span>
+                          </div>
+                        </div>
+
+                        {/* Recent Sessions List */}
+                        <div className="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar">
+                          {history.slice(-5).reverse().map((h, idx) => (
+                            <div
+                              key={idx}
+                              className="bg-[var(--color-surface)] p-2 rounded-xl border border-[var(--color-border)] flex items-center justify-between text-xs"
+                            >
+                              <div>
+                                <span className="font-semibold text-[var(--color-text)]">{h.bestSet}</span>
+                                <span className="text-[10px] text-[var(--color-text-muted)] block">{h.date}</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="font-bold text-[var(--color-accent)] tabular-nums">
+                                  {h.max1RM} kg 1RM
+                                </span>
+                                <span className="text-[10px] text-[var(--color-text-muted)] block tabular-nums">
+                                  {h.volumeKg} kg vol
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-[var(--color-text-subtle)] italic py-1">
+                        No completed sets recorded for this exercise yet.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
