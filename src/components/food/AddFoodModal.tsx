@@ -19,10 +19,12 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
+  Clock,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { FoodItem, LoggedFood, MealType, ParsedAiFoodItem } from '../../types';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
+import { triggerHapticFeedback } from '../../utils/audioHaptics';
 import { estimateMealWithAi, estimateMealOffline } from '../../services/aiFoodEstimation';
 import { lookupBarcodeOpenFoodFacts, BarcodeFoodItem } from '../../services/barcodeService';
 
@@ -83,6 +85,57 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
   const [customProtein, setCustomProtein] = useState('20');
   const [customCarbs, setCustomCarbs] = useState('15');
   const [customFat, setCustomFat] = useState('5');
+  const [quickAddedMsg, setQuickAddedMsg] = useState<string | null>(null);
+
+  // Recent unique foods logged by the user
+  const recentFoods = useMemo(() => {
+    const seen = new Set<string>();
+    const list: FoodItem[] = [];
+    for (let i = state.loggedFoods.length - 1; i >= 0 && list.length < 8; i--) {
+      const entry = state.loggedFoods[i];
+      if (!seen.has(entry.name)) {
+        seen.add(entry.name);
+        const match = state.foodLibrary.find((f) => f.id === entry.foodId || f.name === entry.name);
+        if (match) {
+          list.push(match);
+        } else {
+          list.push({
+            id: entry.foodId,
+            name: entry.name,
+            servingSize: entry.servingCount,
+            servingUnit: entry.servingUnit,
+            calories: Math.round(entry.calories / (entry.servingCount || 1)),
+            protein: Number((entry.protein / (entry.servingCount || 1)).toFixed(1)),
+            carbs: Number((entry.carbs / (entry.servingCount || 1)).toFixed(1)),
+            fat: Number((entry.fat / (entry.servingCount || 1)).toFixed(1)),
+            category: 'Meals',
+          });
+        }
+      }
+    }
+    return list;
+  }, [state.loggedFoods, state.foodLibrary]);
+
+  const handleQuickAddRecent = (food: FoodItem) => {
+    triggerHapticFeedback([40]);
+    const newEntry: LoggedFood = {
+      id: `food-quick-${Date.now()}`,
+      foodId: food.id,
+      mealType: selectedMeal,
+      name: food.name,
+      servingCount: 1,
+      servingSize: food.servingSize,
+      servingUnit: food.servingUnit,
+      calories: Math.round(food.calories),
+      protein: Number(food.protein.toFixed(1)),
+      carbs: Number(food.carbs.toFixed(1)),
+      fat: Number(food.fat.toFixed(1)),
+      loggedAt: getLogTimestamp(),
+    };
+    addLoggedFood(newEntry);
+    setQuickAddedMsg(`+ Added ${food.name}`);
+    setTimeout(() => setQuickAddedMsg(null), 2200);
+  };
 
   // Filtered foods
   const filteredFoods = useMemo(() => {
@@ -605,6 +658,40 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                       className="min-h-[44px] w-full pl-9 pr-3 py-2 bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
                     />
                   </div>
+
+                  {/* 1-Tap Quick Add Recent Foods */}
+                  {recentFoods.length > 0 && !searchQuery && (
+                    <div className="space-y-1.5 pt-0.5">
+                      <div className="flex items-center justify-between text-[11px] text-[var(--color-text-muted)] font-medium">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-[var(--color-accent)]" />
+                          <span>Recent (1-Tap)</span>
+                        </span>
+                        {quickAddedMsg && (
+                          <span className="text-[10px] text-[var(--color-success)] font-semibold animate-in fade-in">
+                            {quickAddedMsg}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                        {recentFoods.map((rf) => (
+                          <button
+                            key={rf.id}
+                            type="button"
+                            onClick={() => handleQuickAddRecent(rf)}
+                            className="min-h-[34px] px-3 py-1 rounded-xl bg-[var(--color-surface-sunken)] border border-[var(--color-border)] hover:border-[var(--color-accent)]/50 active:scale-95 transition-all flex items-center gap-1.5 shrink-0 text-left"
+                            title={`Quick add 1 serving of ${rf.name}`}
+                          >
+                            <Plus className="w-3 h-3 text-[var(--color-accent)] shrink-0" />
+                            <span className="font-medium text-[var(--color-text)] truncate max-w-[110px]">{rf.name}</span>
+                            <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums shrink-0">
+                              {rf.calories} kcal
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Category Pills */}
                   <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
