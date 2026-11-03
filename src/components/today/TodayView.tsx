@@ -28,6 +28,7 @@ import {
 import { useFitness } from '../../context/FitnessContext';
 import { calculateWeightTrend, formatWeight, getLocalDateString, getRecentDateStrings } from '../../utils/engine';
 import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
+import { getEffectiveDailyTargets } from '../../utils/profileCalculator';
 import { QuickLogBar } from './QuickLogBar';
 
 interface TodayViewProps {
@@ -129,12 +130,6 @@ export function TodayView({
     ? Number((latestWeight.trendWeightKg - previousWeight.trendWeightKg).toFixed(2))
     : 0;
 
-  const remainingCals = profile.targets.calories - consumed.calories;
-  const isOverTarget = remainingCals < 0;
-  const calPercent = Math.min(Math.round((consumed.calories / profile.targets.calories) * 100), 100);
-
-  const pendingReview = reviews.find((r) => r.status === 'pending');
-
   // Today's scheduled routine
   const scheduledDay = useMemo(() => getScheduledDayForDate(todayStr), [getScheduledDayForDate, todayStr]);
   const recentDates = useMemo(() => getRecentDateStrings(5), []);
@@ -145,6 +140,17 @@ export function TodayView({
   );
 
   const lastCompletedWorkout = completedWorkouts[0];
+  const isTodayTraining = isTrainingDay || completedWorkouts.some((w) => w.startTime.startsWith(todayStr));
+
+  const effectiveTargets = useMemo(() => {
+    return getEffectiveDailyTargets(profile.targets, profile.macroCycling, isTodayTraining);
+  }, [profile.targets, profile.macroCycling, isTodayTraining]);
+
+  const remainingCals = effectiveTargets.calories - consumed.calories;
+  const isOverTarget = remainingCals < 0;
+  const calPercent = Math.min(Math.round((consumed.calories / effectiveTargets.calories) * 100), 100);
+
+  const pendingReview = reviews.find((r) => r.status === 'pending');
   const latestCardio = cardioSessions[0];
 
   // Sleep and reflection signals for Today
@@ -309,7 +315,7 @@ export function TodayView({
             <span>{isOverTarget ? 'Over' : `${remainingCals} left`}</span>
           </div>
           <div className="text-xs font-bold text-[var(--color-text)] truncate">
-            {consumed.calories} / {profile.targets.calories} kcal
+            {consumed.calories} / {effectiveTargets.calories} kcal
           </div>
         </button>
       </section>
@@ -579,7 +585,12 @@ export function TodayView({
             </span>
             <div className="flex items-baseline gap-1.5 mt-1">
               <span className="k-display text-3xl text-[var(--color-text)] tabular-nums">{consumed.calories}</span>
-              <span className="text-xs text-[var(--color-text-muted)] tabular-nums">/ {profile.targets.calories} kcal</span>
+              <span className="text-xs text-[var(--color-text-muted)] tabular-nums">/ {effectiveTargets.calories} kcal</span>
+              {profile.macroCycling?.enabled && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-text-muted)] font-medium ml-1">
+                  {isTodayTraining ? (lang === 'pt-BR' ? 'Treino' : 'Training') : (lang === 'pt-BR' ? 'Descanso' : 'Rest')}
+                </span>
+              )}
             </div>
           </div>
           <div
@@ -601,9 +612,9 @@ export function TodayView({
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          <MacroBar label="Protein" current={consumed.protein} target={profile.targets.proteinGrams} barColor="bg-[var(--color-secondary-accent)]" unit="g" />
-          <MacroBar label="Carbs" current={consumed.carbs} target={profile.targets.carbsGrams} barColor="bg-[var(--color-warning)]" unit="g" />
-          <MacroBar label="Fat" current={consumed.fat} target={profile.targets.fatGrams} barColor="bg-[var(--color-accent)]" unit="g" />
+          <MacroBar label="Protein" current={consumed.protein} target={effectiveTargets.proteinGrams} barColor="bg-[var(--color-secondary-accent)]" unit="g" />
+          <MacroBar label="Carbs" current={consumed.carbs} target={effectiveTargets.carbsGrams} barColor="bg-[var(--color-warning)]" unit="g" />
+          <MacroBar label="Fat" current={consumed.fat} target={effectiveTargets.fatGrams} barColor="bg-[var(--color-accent)]" unit="g" />
         </div>
 
         {/* Hydration */}

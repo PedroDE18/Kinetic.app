@@ -17,6 +17,7 @@ import { useFitness } from '../../context/FitnessContext';
 import { LoggedFood, MealType } from '../../types';
 import { getLocalDateString, formatDisplayDate, getRecentDateStrings } from '../../utils/engine';
 import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
+import { getEffectiveDailyTargets } from '../../utils/profileCalculator';
 import { RecipeBuilderModal } from './RecipeBuilderModal';
 
 interface FoodViewProps {
@@ -110,6 +111,14 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
       { calories: 0, protein: 0, carbs: 0, fat: 0 }
     );
   }, [selectedFoods]);
+
+  const isTrainingDay = useMemo(() => {
+    return state.completedWorkouts.some((w) => w.startTime.startsWith(selectedDate));
+  }, [state.completedWorkouts, selectedDate]);
+
+  const effectiveTargets = useMemo(() => {
+    return getEffectiveDailyTargets(profile.targets, profile.macroCycling, isTrainingDay);
+  }, [profile.targets, profile.macroCycling, isTrainingDay]);
 
   const meals: { key: MealType; title: string }[] = [
     { key: 'breakfast', title: t.body.breakfast },
@@ -235,7 +244,12 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
             </span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="k-display text-2xl text-[var(--color-text)] tabular-nums">{totalNutrition.calories}</span>
-              <span className="text-xs text-[var(--color-text-muted)] tabular-nums">/ {profile.targets.calories} kcal</span>
+              <span className="text-xs text-[var(--color-text-muted)] tabular-nums">/ {effectiveTargets.calories} kcal</span>
+              {profile.macroCycling?.enabled && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-text-muted)] font-medium ml-1">
+                  {isTrainingDay ? (lang === 'pt-BR' ? 'Treino' : 'Training') : (lang === 'pt-BR' ? 'Descanso' : 'Rest')}
+                </span>
+              )}
             </div>
           </div>
 
@@ -275,19 +289,19 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
           <div className="bg-[var(--color-surface-raised)] py-2 rounded-xl">
             <span className="text-[10px] text-[var(--color-success)] font-semibold block uppercase tracking-wide">Protein</span>
             <span className="font-bold text-[var(--color-text)] tabular-nums">
-              {totalNutrition.protein.toFixed(0)} / {profile.targets.proteinGrams}g
+              {totalNutrition.protein.toFixed(0)} / {effectiveTargets.proteinGrams}g
             </span>
           </div>
           <div className="bg-[var(--color-surface-raised)] py-2 rounded-xl">
             <span className="text-[10px] text-[var(--color-warning)] font-semibold block uppercase tracking-wide">Carbs</span>
             <span className="font-bold text-[var(--color-text)] tabular-nums">
-              {totalNutrition.carbs.toFixed(0)} / {profile.targets.carbsGrams}g
+              {totalNutrition.carbs.toFixed(0)} / {effectiveTargets.carbsGrams}g
             </span>
           </div>
           <div className="bg-[var(--color-surface-raised)] py-2 rounded-xl">
             <span className="text-[10px] text-[var(--color-danger)] font-semibold block uppercase tracking-wide">Fat</span>
             <span className="font-bold text-[var(--color-text)] tabular-nums">
-              {totalNutrition.fat.toFixed(0)} / {profile.targets.fatGrams}g
+              {totalNutrition.fat.toFixed(0)} / {effectiveTargets.fatGrams}g
             </span>
           </div>
         </div>

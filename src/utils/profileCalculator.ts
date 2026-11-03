@@ -108,3 +108,32 @@ export function calculateRecommendedNutrition(params: ProfileCalculationParams):
     },
   };
 }
+
+/**
+ * Calculates effective daily macro targets considering calorie & macro cycling.
+ * On training days with cycling enabled, calories shift by trainingDaysOffsetCalories (e.g. +200 kcal).
+ * On rest days with cycling enabled, calories shift by restDaysOffsetCalories (e.g. -200 kcal).
+ */
+export function getEffectiveDailyTargets(
+  baseMacros: MacroGoals,
+  macroCycling?: { enabled: boolean; trainingDaysOffsetCalories: number; restDaysOffsetCalories: number },
+  isTrainingDay: boolean = false
+): MacroGoals {
+  if (!macroCycling || !macroCycling.enabled) {
+    return baseMacros;
+  }
+
+  const offset = isTrainingDay
+    ? macroCycling.trainingDaysOffsetCalories
+    : macroCycling.restDaysOffsetCalories;
+
+  const adjustedCalories = Math.max(1200, baseMacros.calories + offset);
+  const carbDeltaGrams = Math.round(offset / 4);
+  const adjustedCarbs = Math.max(30, baseMacros.carbsGrams + carbDeltaGrams);
+
+  return {
+    ...baseMacros,
+    calories: adjustedCalories,
+    carbsGrams: adjustedCarbs,
+  };
+}

@@ -65,6 +65,9 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
   const [fat, setFat] = useState<number>(profile.targets.fatGrams);
   const [waterMl, setWaterMl] = useState<number>(profile.targets.waterMl);
   const [geminiApiKey, setGeminiApiKey] = useState<string>(profile.geminiApiKey || '');
+  const [macroCyclingEnabled, setMacroCyclingEnabled] = useState<boolean>(profile.macroCycling?.enabled ?? false);
+  const [trainingOffset, setTrainingOffset] = useState<number>(profile.macroCycling?.trainingDaysOffsetCalories ?? 250);
+  const [restOffset, setRestOffset] = useState<number>(profile.macroCycling?.restDaysOffsetCalories ?? -250);
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -130,6 +133,11 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
         carbsGrams: carbs,
         fatGrams: fat,
         waterMl,
+      },
+      macroCycling: {
+        enabled: macroCyclingEnabled,
+        trainingDaysOffsetCalories: trainingOffset,
+        restDaysOffsetCalories: restOffset,
       },
     });
     setSaveSuccess(true);
@@ -343,6 +351,75 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
                 className="w-20 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-1 text-center font-bold text-[var(--color-text)] focus:outline-none"
               />
             </div>
+          </div>
+
+          {/* Calorie & Macro Cycling */}
+          <div className="bg-[var(--color-surface-sunken)] p-3.5 rounded-2xl border border-[var(--color-border)] space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)] block">
+                  {language === 'pt-BR' ? 'Ciclagem de Calorias & Macros' : 'Calorie & Macro Cycling'}
+                </span>
+                <span className="text-[11px] text-[var(--color-text-muted)]">
+                  {language === 'pt-BR' ? 'Ajusta calorias em dias de treino vs descanso' : 'Dynamic fuel for training vs rest days'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMacroCyclingEnabled(!macroCyclingEnabled)}
+                className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
+                  macroCyclingEnabled ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-border)]'
+                }`}
+              >
+                <div
+                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                    macroCyclingEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {macroCyclingEnabled && (
+              <div className="grid grid-cols-2 gap-3 pt-1 border-t border-[var(--color-border)]">
+                <div>
+                  <label className="text-[10px] text-[var(--color-text-muted)] font-medium block">
+                    {language === 'pt-BR' ? 'Dias de Treino' : 'Training Days'}
+                  </label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-xs text-[var(--color-success)] font-bold">+</span>
+                    <input
+                      type="number"
+                      step="50"
+                      min="0"
+                      max="1000"
+                      value={trainingOffset}
+                      onChange={(e) => setTrainingOffset(Math.abs(parseInt(e.target.value) || 0))}
+                      className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-1.5 text-center text-xs font-bold text-[var(--color-text)] focus:outline-none"
+                    />
+                    <span className="text-[10px] text-[var(--color-text-muted)]">kcal</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-[var(--color-text-muted)] font-medium block">
+                    {language === 'pt-BR' ? 'Dias de Descanso' : 'Rest Days'}
+                  </label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-xs text-[var(--color-danger)] font-bold">-</span>
+                    <input
+                      type="number"
+                      step="50"
+                      min="0"
+                      max="1000"
+                      value={Math.abs(restOffset)}
+                      onChange={(e) => setRestOffset(-Math.abs(parseInt(e.target.value) || 0))}
+                      className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-1.5 text-center text-xs font-bold text-[var(--color-text)] focus:outline-none"
+                    />
+                    <span className="text-[10px] text-[var(--color-text-muted)]">kcal</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* AI Intelligence (Free Tier / Offline) */}

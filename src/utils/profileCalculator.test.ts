@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateBMR, calculateRecommendedNutrition } from './profileCalculator';
+import { calculateBMR, calculateRecommendedNutrition, getEffectiveDailyTargets } from './profileCalculator';
 
 describe('profileCalculator - Athletic BMR & Macro Recommendations', () => {
   it('calculates correct male BMR using Mifflin-St Jeor', () => {
@@ -53,5 +53,36 @@ describe('profileCalculator - Athletic BMR & Macro Recommendations', () => {
     });
 
     assert.ok(res.targetCalories >= 1200);
+  });
+
+  it('adjusts targets on training and rest days when macro cycling is enabled', () => {
+    const base = {
+      calories: 2000,
+      proteinGrams: 150,
+      carbsGrams: 200,
+      fatGrams: 65,
+      waterMl: 3000,
+    };
+    const cycling = {
+      enabled: true,
+      trainingDaysOffsetCalories: 250,
+      restDaysOffsetCalories: -250,
+    };
+
+    // Training day: +250 kcal -> carbs + 63g
+    const trainingTargets = getEffectiveDailyTargets(base, cycling, true);
+    assert.equal(trainingTargets.calories, 2250);
+    assert.equal(trainingTargets.carbsGrams, 263);
+    assert.equal(trainingTargets.proteinGrams, 150);
+    assert.equal(trainingTargets.fatGrams, 65);
+
+    // Rest day: -250 kcal -> carbs - 62g
+    const restTargets = getEffectiveDailyTargets(base, cycling, false);
+    assert.equal(restTargets.calories, 1750);
+    assert.equal(restTargets.carbsGrams, 138);
+
+    // Disabled cycling returns unmodified base
+    const disabledTargets = getEffectiveDailyTargets(base, { ...cycling, enabled: false }, true);
+    assert.deepEqual(disabledTargets, base);
   });
 });

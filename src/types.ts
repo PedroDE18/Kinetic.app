@@ -3,13 +3,15 @@ export type FitnessGoal = 'fat_loss' | 'recomp' | 'maintenance' | 'muscle_gain';
 
 export interface MacroCyclingPlan {
   enabled: boolean;
-  trainingDays: {
+  trainingDaysOffsetCalories: number;
+  restDaysOffsetCalories: number;
+  trainingDays?: {
     calories: number;
     proteinGrams: number;
     carbsGrams: number;
     fatGrams: number;
   };
-  restDays: {
+  restDays?: {
     calories: number;
     proteinGrams: number;
     carbsGrams: number;
@@ -312,6 +314,7 @@ export interface UserProfile {
   geminiApiKey?: string;
   onboardingCompleted?: boolean;
   dailyIntention?: string;
+  macroCycling?: MacroCyclingPlan;
 }
 
 /* =========================================================================
