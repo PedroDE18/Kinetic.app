@@ -4,9 +4,10 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { Navigation, TabType } from './components/Navigation';
 import { TodayView } from './components/today/TodayView';
-import { FoodView } from './components/food/FoodView';
-import { TrainView } from './components/train/TrainView';
-import { ProgressView } from './components/progress/ProgressView';
+import { SystemsView } from './components/systems/SystemsView';
+import { BodyView } from './components/body/BodyView';
+import { MindView } from './components/mind/MindView';
+import { GrowthView } from './components/growth/GrowthView';
 import { AddFoodModal } from './components/food/AddFoodModal';
 import { WeighInModal } from './components/weighin/WeighInModal';
 import { WeeklyReviewModal } from './components/progress/WeeklyReviewModal';
@@ -15,6 +16,8 @@ import { HealthSyncModal } from './components/sync/HealthSyncModal';
 import { InstallPwaModal } from './components/pwa/InstallPwaModal';
 import { ProfileModal } from './components/profile/ProfileModal';
 import { AuthModal } from './components/auth/AuthModal';
+import { SleepModal } from './components/recovery/SleepModal';
+import { ReflectionModal } from './components/mind/ReflectionModal';
 import { checkUrlForHealthSync } from './services/healthSync';
 import { saveUserFitnessState, loadUserFitnessState } from './services/firebase';
 import { Play, ChevronRight, CheckCircle2 } from 'lucide-react';
@@ -36,6 +39,8 @@ function AppContent() {
   const [showInstallPwaModal, setShowInstallPwaModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showSleepModal, setShowSleepModal] = useState(false);
+  const [showReflectionModal, setShowReflectionModal] = useState(false);
   const [healthSyncToast, setHealthSyncToast] = useState<string | null>(null);
 
   const hasActiveWorkout = !!state.activeWorkout;
@@ -56,7 +61,7 @@ function AppContent() {
           // If local state is empty (clean user) or has fewer entries, hydrate from cloud
           if (state.weights.length === 0 && state.loggedFoods.length === 0) {
             replaceFitnessState(cloudState);
-            setHealthSyncToast('Restored your fitness data from Firebase Cloud!');
+            setHealthSyncToast('Restored your life data from Firebase Cloud!');
             setTimeout(() => setHealthSyncToast(null), 4000);
           }
         }
@@ -105,7 +110,7 @@ function AppContent() {
 
   return (
     <div
-      className={`min-h-screen bg-[var(--color-surface-sunken)] text-[var(--color-text)] flex flex-col font-sans antialiased selection:bg-[#E07A5F] selection:text-[var(--color-text)] transition-colors duration-200 ${
+      className={`min-h-screen bg-[var(--color-surface-sunken)] text-[var(--color-text)] flex flex-col font-sans antialiased selection:bg-[var(--color-accent)] selection:text-[var(--color-on-accent)] transition-colors duration-200 ${
         isLight ? 'theme-light' : 'theme-dark'
       }`}
     >
@@ -134,28 +139,31 @@ function AppContent() {
             onOpenWeeklyReview={() => setShowWeeklyReviewModal(true)}
             onOpenProfile={() => setShowProfileModal(true)}
             onNavigateTab={(tab) => setActiveTab(tab)}
+            onOpenSleepModal={() => setShowSleepModal(true)}
+            onOpenReflectionModal={() => setShowReflectionModal(true)}
           />
         )}
 
-        {activeTab === 'food' && (
-          <FoodView onOpenAddModal={(mealType, targetDate) => handleOpenAddFood(mealType, targetDate)} />
-        )}
+        {activeTab === 'systems' && <SystemsView />}
 
-        {activeTab === 'train' && <TrainView />}
-
-        {activeTab === 'progress' && (
-          <ProgressView
-            onOpenWeeklyReview={() => setShowWeeklyReviewModal(true)}
+        {activeTab === 'body' && (
+          <BodyView
+            onOpenAddFoodModal={(mealType, targetDate) => handleOpenAddFood(mealType, targetDate)}
             onOpenWeighInModal={() => setShowWeighInModal(true)}
+            onOpenWeeklyReview={() => setShowWeeklyReviewModal(true)}
           />
         )}
+
+        {activeTab === 'mind' && <MindView />}
+
+        {activeTab === 'growth' && <GrowthView />}
       </main>
 
       {/* Floating Active Workout Pill (if working out while on another tab) */}
-      {hasActiveWorkout && activeTab !== 'train' && (
+      {hasActiveWorkout && activeTab !== 'body' && (
         <aside
           aria-label="Active Workout in progress"
-          onClick={() => setActiveTab('train')}
+          onClick={() => setActiveTab('body')}
           className="fixed bottom-20 left-4 right-4 max-w-md mx-auto bg-[var(--color-surface-raised)] border border-[var(--color-accent)]/50 backdrop-blur-md rounded-2xl p-3 flex items-center justify-between shadow-xl cursor-pointer z-20 active:scale-[0.98] transition-all"
         >
           <div className="flex items-center gap-3">
@@ -239,6 +247,14 @@ function AppContent() {
           onClose={() => setShowAuthModal(false)}
           onSuccess={() => setShowAuthModal(false)}
         />
+      )}
+
+      {showSleepModal && (
+        <SleepModal onClose={() => setShowSleepModal(false)} />
+      )}
+
+      {showReflectionModal && (
+        <ReflectionModal initialType="morning" onClose={() => setShowReflectionModal(false)} />
       )}
 
       {showHealthSyncModal && (

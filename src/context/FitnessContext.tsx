@@ -11,6 +11,15 @@ import {
   WeeklyReviewRecord,
   CardioSession,
   WeeklyRoutineDay,
+  LifeGoal,
+  LifeProject,
+  LifeTask,
+  EunoiaHabit,
+  FrictionIntervention,
+  SleepRecord,
+  ReflectionEntry,
+  RelationshipTouchpoint,
+  LearningItem,
 } from '../types';
 import {
   initialProfile,
@@ -22,10 +31,20 @@ import {
   generateMockHistory,
   buildInitialWeeklyReview,
 } from '../utils/mockData';
+import {
+  defaultStarterHabits,
+  defaultStarterFrictionInterventions,
+  defaultStarterGoals,
+  defaultStarterProjects,
+  defaultStarterTasks,
+  defaultStarterRelationships,
+  defaultStarterLearning,
+} from '../utils/eunoiaDefaults';
 import { calculateWorkoutVolume, calculate1RM, getLocalDateString, getPreferredTheme } from '../utils/engine';
 import { sanitizeLoadedActiveWorkout } from '../utils/workoutSession';
 
-const STORAGE_KEY = 'kinetic_fitness_app_v3';
+const STORAGE_KEY = 'eunoia_os_v1';
+const LEGACY_STORAGE_KEY = 'kinetic_fitness_app_v3';
 
 export interface FitnessState {
   profile: UserProfile;
@@ -41,11 +60,23 @@ export interface FitnessState {
   waterMlToday: number;
   hydrationLogs: Record<string, number>;
   weeklySchedule: WeeklyRoutineDay[];
+
+  // Eunoia Flourishing System
+  goals: LifeGoal[];
+  projects: LifeProject[];
+  tasks: LifeTask[];
+  habits: EunoiaHabit[];
+  frictionInterventions: FrictionIntervention[];
+  sleepRecords: SleepRecord[];
+  reflections: ReflectionEntry[];
+  relationships: RelationshipTouchpoint[];
+  learningItems: LearningItem[];
 }
 
 export interface FitnessContextType {
   state: FitnessState;
   updateProfile: (updater: Partial<UserProfile> | ((prev: UserProfile) => UserProfile)) => void;
+  setDailyIntention: (intention: string) => void;
   addWeightRecord: (record: WeightRecord) => void;
   addLoggedFood: (food: LoggedFood) => void;
   updateLoggedFood: (food: LoggedFood) => void;
@@ -82,6 +113,36 @@ export interface FitnessContextType {
   exportAllJson: () => void;
   importAllJson: (payload: string) => { ok: boolean; error?: string };
   exportCsv: (type: 'weights' | 'foods' | 'workouts' | 'cardio') => void;
+
+  // Eunoia Domain Operations
+  addGoal: (goal: LifeGoal) => void;
+  updateGoal: (goal: LifeGoal) => void;
+  deleteGoal: (id: string) => void;
+  addProject: (project: LifeProject) => void;
+  updateProject: (project: LifeProject) => void;
+  deleteProject: (id: string) => void;
+  addTask: (task: LifeTask) => void;
+  toggleTaskCompleted: (id: string) => void;
+  updateTask: (task: LifeTask) => void;
+  deleteTask: (id: string) => void;
+  addHabit: (habit: EunoiaHabit) => void;
+  toggleHabitDate: (id: string, dateStr?: string) => void;
+  updateHabit: (habit: EunoiaHabit) => void;
+  deleteHabit: (id: string) => void;
+  addFrictionIntervention: (intervention: FrictionIntervention) => void;
+  updateFrictionIntervention: (intervention: FrictionIntervention) => void;
+  deleteFrictionIntervention: (id: string) => void;
+  addSleepRecord: (record: SleepRecord) => void;
+  deleteSleepRecord: (id: string) => void;
+  addReflectionEntry: (entry: ReflectionEntry) => void;
+  deleteReflectionEntry: (id: string) => void;
+  addRelationshipTouchpoint: (touchpoint: RelationshipTouchpoint) => void;
+  updateRelationshipTouchpoint: (touchpoint: RelationshipTouchpoint) => void;
+  logRelationshipContact: (id: string, dateStr?: string) => void;
+  deleteRelationshipTouchpoint: (id: string) => void;
+  addLearningItem: (item: LearningItem) => void;
+  updateLearningItem: (item: LearningItem) => void;
+  deleteLearningItem: (id: string) => void;
 }
 
 const FitnessContext = createContext<FitnessContextType | null>(null);
@@ -89,7 +150,7 @@ const FitnessContext = createContext<FitnessContextType | null>(null);
 function loadInitialFitnessState(): FitnessState {
   const todayStr = getLocalDateString();
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.profile && Array.isArray(parsed.weights)) {
@@ -103,9 +164,24 @@ function loadInitialFitnessState(): FitnessState {
           hydrationLogs: hydration,
           waterMlToday: hydration[todayStr] ?? (parsed.waterMlToday || 0),
           weeklySchedule: parsed.weeklySchedule || defaultWeeklySchedule,
-          // Phantom sessions (corrupt writes, expired rest timers) are pruned
-          // at load so a reload can never resurrect a broken workout.
           activeWorkout: sanitizeLoadedActiveWorkout(parsed.activeWorkout).session,
+
+          // Ensure Eunoia domains exist
+          goals: parsed.goals && parsed.goals.length > 0 ? parsed.goals : defaultStarterGoals,
+          projects: parsed.projects && parsed.projects.length > 0 ? parsed.projects : defaultStarterProjects,
+          tasks: parsed.tasks && parsed.tasks.length > 0 ? parsed.tasks : defaultStarterTasks,
+          habits: parsed.habits && parsed.habits.length > 0 ? parsed.habits : defaultStarterHabits,
+          frictionInterventions: parsed.frictionInterventions && parsed.frictionInterventions.length > 0
+            ? parsed.frictionInterventions
+            : defaultStarterFrictionInterventions,
+          sleepRecords: parsed.sleepRecords || [],
+          reflections: parsed.reflections || [],
+          relationships: parsed.relationships && parsed.relationships.length > 0
+            ? parsed.relationships
+            : defaultStarterRelationships,
+          learningItems: parsed.learningItems && parsed.learningItems.length > 0
+            ? parsed.learningItems
+            : defaultStarterLearning,
         };
       }
     }
@@ -128,6 +204,17 @@ function loadInitialFitnessState(): FitnessState {
     waterMlToday: 0,
     hydrationLogs: { [todayStr]: 0 },
     weeklySchedule: defaultWeeklySchedule,
+
+    // Eunoia Starter Domains
+    goals: defaultStarterGoals,
+    projects: defaultStarterProjects,
+    tasks: defaultStarterTasks,
+    habits: defaultStarterHabits,
+    frictionInterventions: defaultStarterFrictionInterventions,
+    sleepRecords: [],
+    reflections: [],
+    relationships: defaultStarterRelationships,
+    learningItems: defaultStarterLearning,
   };
 
   try {
@@ -513,6 +600,15 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
       waterMlToday: 0,
       hydrationLogs: { [todayStr]: 0 },
       weeklySchedule: defaultWeeklySchedule,
+      goals: defaultStarterGoals,
+      projects: defaultStarterProjects,
+      tasks: defaultStarterTasks,
+      habits: defaultStarterHabits,
+      frictionInterventions: defaultStarterFrictionInterventions,
+      sleepRecords: [],
+      reflections: [],
+      relationships: defaultStarterRelationships,
+      learningItems: defaultStarterLearning,
     };
     setState(freshState);
   };
@@ -635,6 +731,17 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
         waterMlToday: typeof parsed.waterMlToday === 'number' ? parsed.waterMlToday : 0,
         hydrationLogs: parsed.hydrationLogs && typeof parsed.hydrationLogs === 'object' ? parsed.hydrationLogs : { [todayStr]: parsed.waterMlToday || 0 },
         weeklySchedule: Array.isArray(parsed.weeklySchedule) ? parsed.weeklySchedule : defaultWeeklySchedule,
+        goals: Array.isArray(parsed.goals) ? parsed.goals : defaultStarterGoals,
+        projects: Array.isArray(parsed.projects) ? parsed.projects : defaultStarterProjects,
+        tasks: Array.isArray(parsed.tasks) ? parsed.tasks : defaultStarterTasks,
+        habits: Array.isArray(parsed.habits) ? parsed.habits : defaultStarterHabits,
+        frictionInterventions: Array.isArray(parsed.frictionInterventions)
+          ? parsed.frictionInterventions
+          : defaultStarterFrictionInterventions,
+        sleepRecords: Array.isArray(parsed.sleepRecords) ? parsed.sleepRecords : [],
+        reflections: Array.isArray(parsed.reflections) ? parsed.reflections : [],
+        relationships: Array.isArray(parsed.relationships) ? parsed.relationships : defaultStarterRelationships,
+        learningItems: Array.isArray(parsed.learningItems) ? parsed.learningItems : defaultStarterLearning,
       };
       setState(next);
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
@@ -644,11 +751,220 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const setDailyIntention = (intention: string) => {
+    updateProfile({ dailyIntention: intention });
+  };
+
+  // --- Eunoia Goals ---
+  const addGoal = (goal: LifeGoal) => {
+    setState((prev) => ({ ...prev, goals: [goal, ...prev.goals] }));
+  };
+  const updateGoal = (goal: LifeGoal) => {
+    setState((prev) => ({
+      ...prev,
+      goals: prev.goals.map((g) => (g.id === goal.id ? goal : g)),
+    }));
+  };
+  const deleteGoal = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      goals: prev.goals.filter((g) => g.id !== id),
+    }));
+  };
+
+  // --- Eunoia Projects ---
+  const addProject = (project: LifeProject) => {
+    setState((prev) => ({ ...prev, projects: [project, ...prev.projects] }));
+  };
+  const updateProject = (project: LifeProject) => {
+    setState((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => (p.id === project.id ? project : p)),
+    }));
+  };
+  const deleteProject = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      projects: prev.projects.filter((p) => p.id !== id),
+    }));
+  };
+
+  // --- Eunoia Tasks ---
+  const addTask = (task: LifeTask) => {
+    setState((prev) => ({ ...prev, tasks: [task, ...prev.tasks] }));
+  };
+  const toggleTaskCompleted = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      tasks: prev.tasks.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              isCompleted: !t.isCompleted,
+              completedAt: !t.isCompleted ? new Date().toISOString() : undefined,
+            }
+          : t
+      ),
+    }));
+  };
+  const updateTask = (task: LifeTask) => {
+    setState((prev) => ({
+      ...prev,
+      tasks: prev.tasks.map((t) => (t.id === task.id ? task : t)),
+    }));
+  };
+  const deleteTask = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      tasks: prev.tasks.filter((t) => t.id !== id),
+    }));
+  };
+
+  // --- Eunoia Habits ---
+  const addHabit = (habit: EunoiaHabit) => {
+    setState((prev) => ({ ...prev, habits: [habit, ...prev.habits] }));
+  };
+  const toggleHabitDate = (id: string, dateStr?: string) => {
+    const targetDate = dateStr || getLocalDateString();
+    setState((prev) => ({
+      ...prev,
+      habits: prev.habits.map((h) => {
+        if (h.id !== id) return h;
+        const exists = h.completedDates.includes(targetDate);
+        return {
+          ...h,
+          completedDates: exists
+            ? h.completedDates.filter((d) => d !== targetDate)
+            : [...h.completedDates, targetDate],
+        };
+      }),
+    }));
+  };
+  const updateHabit = (habit: EunoiaHabit) => {
+    setState((prev) => ({
+      ...prev,
+      habits: prev.habits.map((h) => (h.id === habit.id ? habit : h)),
+    }));
+  };
+  const deleteHabit = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      habits: prev.habits.filter((h) => h.id !== id),
+    }));
+  };
+
+  // --- Eunoia Friction Interventions ---
+  const addFrictionIntervention = (intervention: FrictionIntervention) => {
+    setState((prev) => ({
+      ...prev,
+      frictionInterventions: [intervention, ...prev.frictionInterventions],
+    }));
+  };
+  const updateFrictionIntervention = (intervention: FrictionIntervention) => {
+    setState((prev) => ({
+      ...prev,
+      frictionInterventions: prev.frictionInterventions.map((f) =>
+        f.id === intervention.id ? intervention : f
+      ),
+    }));
+  };
+  const deleteFrictionIntervention = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      frictionInterventions: prev.frictionInterventions.filter((f) => f.id !== id),
+    }));
+  };
+
+  // --- Eunoia Sleep Records ---
+  const addSleepRecord = (record: SleepRecord) => {
+    setState((prev) => {
+      const filtered = prev.sleepRecords.filter((s) => s.date !== record.date);
+      return {
+        ...prev,
+        sleepRecords: [record, ...filtered].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        ),
+      };
+    });
+  };
+  const deleteSleepRecord = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      sleepRecords: prev.sleepRecords.filter((s) => s.id !== id),
+    }));
+  };
+
+  // --- Eunoia Reflection Journal ---
+  const addReflectionEntry = (entry: ReflectionEntry) => {
+    setState((prev) => ({
+      ...prev,
+      reflections: [entry, ...prev.reflections],
+    }));
+  };
+  const deleteReflectionEntry = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      reflections: prev.reflections.filter((r) => r.id !== id),
+    }));
+  };
+
+  // --- Eunoia Relationships ---
+  const addRelationshipTouchpoint = (touchpoint: RelationshipTouchpoint) => {
+    setState((prev) => ({
+      ...prev,
+      relationships: [touchpoint, ...prev.relationships],
+    }));
+  };
+  const updateRelationshipTouchpoint = (touchpoint: RelationshipTouchpoint) => {
+    setState((prev) => ({
+      ...prev,
+      relationships: prev.relationships.map((r) =>
+        r.id === touchpoint.id ? touchpoint : r
+      ),
+    }));
+  };
+  const logRelationshipContact = (id: string, dateStr?: string) => {
+    const contactDate = dateStr || getLocalDateString();
+    setState((prev) => ({
+      ...prev,
+      relationships: prev.relationships.map((r) =>
+        r.id === id ? { ...r, lastContactDate: contactDate } : r
+      ),
+    }));
+  };
+  const deleteRelationshipTouchpoint = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      relationships: prev.relationships.filter((r) => r.id !== id),
+    }));
+  };
+
+  // --- Eunoia Learning ---
+  const addLearningItem = (item: LearningItem) => {
+    setState((prev) => ({
+      ...prev,
+      learningItems: [item, ...prev.learningItems],
+    }));
+  };
+  const updateLearningItem = (item: LearningItem) => {
+    setState((prev) => ({
+      ...prev,
+      learningItems: prev.learningItems.map((l) => (l.id === item.id ? item : l)),
+    }));
+  };
+  const deleteLearningItem = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      learningItems: prev.learningItems.filter((l) => l.id !== id),
+    }));
+  };
+
   return (
     <FitnessContext.Provider
       value={{
         state,
         updateProfile,
+        setDailyIntention,
         addWeightRecord,
         addLoggedFood,
         updateLoggedFood,
@@ -677,6 +993,36 @@ export function FitnessProvider({ children }: { children: React.ReactNode }) {
         exportAllJson,
         importAllJson,
         exportCsv,
+
+        // Eunoia Domain Operations
+        addGoal,
+        updateGoal,
+        deleteGoal,
+        addProject,
+        updateProject,
+        deleteProject,
+        addTask,
+        toggleTaskCompleted,
+        updateTask,
+        deleteTask,
+        addHabit,
+        toggleHabitDate,
+        updateHabit,
+        deleteHabit,
+        addFrictionIntervention,
+        updateFrictionIntervention,
+        deleteFrictionIntervention,
+        addSleepRecord,
+        deleteSleepRecord,
+        addReflectionEntry,
+        deleteReflectionEntry,
+        addRelationshipTouchpoint,
+        updateRelationshipTouchpoint,
+        logRelationshipContact,
+        deleteRelationshipTouchpoint,
+        addLearningItem,
+        updateLearningItem,
+        deleteLearningItem,
       }}
     >
       {children}

@@ -18,6 +18,12 @@ import {
   Footprints,
   CalendarDays,
   Scale,
+  Feather,
+  Sliders,
+  Compass,
+  Repeat,
+  CheckSquare,
+  Moon,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { calculateWeightTrend, formatWeight, getLocalDateString, getRecentDateStrings } from '../../utils/engine';
@@ -28,7 +34,9 @@ interface TodayViewProps {
   onOpenWeighInModal: () => void;
   onOpenWeeklyReview: () => void;
   onOpenProfile?: () => void;
-  onNavigateTab: (tab: 'food' | 'train' | 'progress') => void;
+  onNavigateTab: (tab: 'systems' | 'body' | 'mind' | 'growth') => void;
+  onOpenSleepModal?: () => void;
+  onOpenReflectionModal?: () => void;
 }
 
 export function TodayView({
@@ -37,8 +45,19 @@ export function TodayView({
   onOpenWeeklyReview,
   onOpenProfile,
   onNavigateTab,
+  onOpenSleepModal,
+  onOpenReflectionModal,
 }: TodayViewProps) {
-  const { state, addWater, startWorkout, getScheduledDayForDate } = useFitness();
+  const {
+    state,
+    addWater,
+    startWorkout,
+    getScheduledDayForDate,
+    setDailyIntention,
+    toggleHabitDate,
+    toggleTaskCompleted,
+  } = useFitness();
+
   const {
     profile,
     loggedFoods,
@@ -49,10 +68,25 @@ export function TodayView({
     reviews,
     waterMlToday,
     templates,
-  } = state as any;
+    habits,
+    tasks,
+    sleepRecords,
+    reflections,
+    frictionInterventions,
+  } = state;
 
   const todayStr = useMemo(() => getLocalDateString(), []);
   const [waterToast, setWaterToast] = useState<{ amount: number; message: string } | null>(null);
+
+  // Daily Intention State
+  const [intentionText, setIntentionText] = useState(profile.dailyIntention || '');
+  const [isEditingIntention, setIsEditingIntention] = useState(!profile.dailyIntention);
+
+  const handleSaveIntention = (e: React.FormEvent) => {
+    e.preventDefault();
+    setDailyIntention(intentionText.trim());
+    setIsEditingIntention(false);
+  };
 
   const handleQuickAddWater = (amount: number) => {
     addWater(amount);
@@ -71,13 +105,13 @@ export function TodayView({
   };
 
   const todayFoods = useMemo(
-    () => loggedFoods.filter((f: any) => f.loggedAt.startsWith(todayStr)),
+    () => loggedFoods.filter((f) => f.loggedAt.startsWith(todayStr)),
     [loggedFoods, todayStr]
   );
 
   const consumed = useMemo(() => {
     return todayFoods.reduce(
-      (acc: any, item: any) => ({
+      (acc, item) => ({
         calories: acc.calories + item.calories,
         protein: acc.protein + item.protein,
         carbs: acc.carbs + item.carbs,
@@ -98,33 +132,49 @@ export function TodayView({
   const isOverTarget = remainingCals < 0;
   const calPercent = Math.min(Math.round((consumed.calories / profile.targets.calories) * 100), 100);
 
-  const pendingReview = reviews.find((r: any) => r.status === 'pending');
+  const pendingReview = reviews.find((r) => r.status === 'pending');
 
   // Today's scheduled routine
   const scheduledDay = useMemo(() => getScheduledDayForDate(todayStr), [getScheduledDayForDate, todayStr]);
   const recentDates = useMemo(() => getRecentDateStrings(5), []);
   const isTrainingDay = scheduledDay?.type === 'training';
   const scheduledTemplate = useMemo(
-    () => templates.find((t: any) => t.id === scheduledDay?.templateId) || templates[0],
+    () => templates.find((t) => t.id === scheduledDay?.templateId) || templates[0],
     [templates, scheduledDay]
   );
 
   const lastCompletedWorkout = completedWorkouts[0];
   const latestCardio = cardioSessions[0];
 
+  // Sleep and reflection signals for Today
+  const recentSleep = sleepRecords[0];
+  const todayMorningReflection = reflections.find((r) => r.date === todayStr && r.type === 'morning');
+  const todayEveningReflection = reflections.find((r) => r.date === todayStr && r.type === 'evening');
+
+  // Habits and Tasks for Today
+  const todayHabits = habits.slice(0, 4);
+  const completedHabitsCount = habits.filter((h) => h.completedDates.includes(todayStr)).length;
+  const highPriorityTasks = tasks.filter((t) => !t.isCompleted).slice(0, 3);
+  const activeFrictionTip = frictionInterventions.find((f) => f.status === 'active' || f.status === 'experimenting');
+
   // Weekly consistency: Mon..Sun of current week
   const weekDays = useMemo(() => {
     const now = new Date();
-    const day = now.getDay(); // 0 Sun
+    const day = now.getDay();
     const mondayOffset = day === 0 ? -6 : 1 - day;
     const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
     const days = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
       const ds = getLocalDateString(d);
-      const completed = completedWorkouts.some((w: any) => (w.startTime || '').startsWith(ds));
-      const scheduled = (state.weeklySchedule || []).find((s: any) => s.dayIndex === d.getDay());
-      days.push({ date: ds, label: d.toLocaleDateString('en-US', { weekday: 'narrow' }), completed, isTraining: scheduled?.type === 'training' });
+      const completed = completedWorkouts.some((w) => (w.startTime || '').startsWith(ds));
+      const scheduled = (state.weeklySchedule || []).find((s) => s.dayIndex === d.getDay());
+      days.push({
+        date: ds,
+        label: d.toLocaleDateString('en-US', { weekday: 'narrow' }),
+        completed,
+        isTraining: scheduled?.type === 'training',
+      });
     }
     return days;
   }, [completedWorkouts, state.weeklySchedule]);
@@ -140,78 +190,153 @@ export function TodayView({
   }, []);
 
   return (
-    <div className="space-y-5 pb-6">
-      {/* Editorial header */}
+    <div className="space-y-4 pb-6 animate-in fade-in duration-200">
+      {/* Editorial Header */}
       <header className="pt-1">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-[var(--color-text-subtle)] tabular-nums">
+            <p className="text-xs font-serif italic text-[var(--color-text-subtle)]">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
-            <h1 className="k-display text-2xl text-[var(--color-text)] mt-0.5">
-              {greeting}, {profile.name?.split(' ')[0] || 'there'}
+            <h1 className="eunoia-editorial text-2xl font-bold text-[var(--color-text)] mt-0.5 tracking-tight">
+              {greeting}, {profile.name?.split(' ')[0] || 'Friend'}
             </h1>
           </div>
-          <div className="h-10 w-10 rounded-2xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center">
-            <Heart className="w-5 h-5" />
+          <div className="h-10 w-10 rounded-2xl bg-[var(--color-accent)]/15 text-[var(--color-accent)] flex items-center justify-center font-serif font-black text-lg shadow-xs">
+            Ε
           </div>
         </div>
       </header>
 
-      {/* Onboarding Welcome Banner for Fresh Athletes */}
-      {!profile.onboardingCompleted && weights.length === 0 && (
-        <section className="bg-gradient-to-br from-[#E07A5F]/15 via-[var(--color-surface)] to-[var(--color-surface)] border border-[#E07A5F]/40 p-4 sm:p-5 rounded-3xl space-y-3 shadow-md animate-fade-in">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[var(--color-accent)] text-[var(--color-on-accent)] flex items-center justify-center font-bold">
-              <Sparkles className="w-4 h-4" />
+      {/* Daily Intention Card (Grounding in Deliberate Action) */}
+      <section className="p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-2 shadow-xs transition-all">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--color-accent)] flex items-center gap-1.5">
+            <Compass className="w-3.5 h-3.5" />
+            <span>Daily Deliberate Intention</span>
+          </span>
+          {!isEditingIntention && (
+            <button
+              onClick={() => setIsEditingIntention(true)}
+              className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] font-semibold"
+            >
+              Refine
+            </button>
+          )}
+        </div>
+
+        {isEditingIntention ? (
+          <form onSubmit={handleSaveIntention} className="space-y-2">
+            <input
+              type="text"
+              value={intentionText}
+              onChange={(e) => setIntentionText(e.target.value)}
+              placeholder="What will you choose to focus on today? (e.g. Unhurried presence, disciplined focus)"
+              className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-2xl px-3.5 py-2 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)] font-serif italic"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="submit"
+                className="px-3 py-1 bg-[var(--color-accent)] text-[var(--color-on-accent)] rounded-xl text-[11px] font-bold shadow-xs"
+              >
+                Set Intention
+              </button>
             </div>
-            <div>
-              <h3 className="font-bold text-sm text-[var(--color-text)]">Welcome to Kinetic</h3>
-              <p className="text-[11px] text-[var(--color-text-muted)]">Athletic-grade, local-first fitness tracking</p>
-            </div>
-          </div>
-          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-            Set up your athletic profile (height, weight, age, activity level) to calculate your personalized metabolic expenditure and recommended macros using Mifflin-St Jeor.
+          </form>
+        ) : (
+          <p className="text-xs font-serif italic text-[var(--color-text)] leading-relaxed">
+            "{profile.dailyIntention || 'Live deliberately today; differentiate what is in your control from what is not.'}"
           </p>
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={onOpenProfile}
-              className="flex-1 min-h-[44px] py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all"
-            >
-              <span>Set Up Athletic Profile</span>
-              <ChevronRight className="w-3.5 h-3.5 stroke-[2.5]" />
-            </button>
-            <button
-              onClick={onOpenWeighInModal}
-              className="px-3.5 min-h-[44px] py-2.5 bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text)] font-semibold rounded-xl text-xs flex items-center justify-center gap-1 active:scale-95 transition-all"
-            >
-              <Scale className="w-3.5 h-3.5 text-[var(--color-accent)]" />
-              <span>First Weigh-in</span>
-            </button>
+        )}
+      </section>
+
+      {/* Flourishing Signals 4-Grid */}
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {/* Mind Signal */}
+        <button
+          onClick={() => onNavigateTab('mind')}
+          className="p-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-left space-y-1 hover:border-[var(--color-accent)]/40 transition-all active:scale-[0.98]"
+        >
+          <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-semibold">
+            <span className="flex items-center gap-1">
+              <Feather className="w-3 h-3 text-[var(--color-accent)]" /> Mind
+            </span>
+            <span>{todayMorningReflection ? 'Done' : 'Pending'}</span>
           </div>
-        </section>
-      )}
+          <div className="text-xs font-bold text-[var(--color-text)] truncate">
+            {todayMorningReflection ? 'Morning Audited' : 'Reflect Today'}
+          </div>
+        </button>
+
+        {/* Recovery / Sleep Signal */}
+        <button
+          onClick={() => (onOpenSleepModal ? onOpenSleepModal() : onNavigateTab('body'))}
+          className="p-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-left space-y-1 hover:border-[var(--color-accent)]/40 transition-all active:scale-[0.98]"
+        >
+          <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-semibold">
+            <span className="flex items-center gap-1">
+              <Moon className="w-3 h-3 text-[var(--color-accent)]" /> Sleep
+            </span>
+            <span>{recentSleep ? `${(recentSleep.durationMinutes / 60).toFixed(1)}h` : 'Log'}</span>
+          </div>
+          <div className="text-xs font-bold text-[var(--color-text)] truncate">
+            {recentSleep ? `${recentSleep.restfulness} rest` : 'Log Last Night'}
+          </div>
+        </button>
+
+        {/* Systems Signal */}
+        <button
+          onClick={() => onNavigateTab('systems')}
+          className="p-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-left space-y-1 hover:border-[var(--color-accent)]/40 transition-all active:scale-[0.98]"
+        >
+          <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-semibold">
+            <span className="flex items-center gap-1">
+              <Repeat className="w-3 h-3 text-[var(--color-accent)]" /> Habits
+            </span>
+            <span>{completedHabitsCount}/{habits.length}</span>
+          </div>
+          <div className="text-xs font-bold text-[var(--color-text)] truncate">
+            {habits.length > 0 ? `${Math.round((completedHabitsCount / habits.length) * 100)}% Complete` : 'None'}
+          </div>
+        </button>
+
+        {/* Nutrition Signal */}
+        <button
+          onClick={() => onNavigateTab('body')}
+          className="p-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-left space-y-1 hover:border-[var(--color-accent)]/40 transition-all active:scale-[0.98]"
+        >
+          <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-semibold">
+            <span className="flex items-center gap-1">
+              <Flame className="w-3 h-3 text-[var(--color-accent)]" /> Energy
+            </span>
+            <span>{isOverTarget ? 'Over' : `${remainingCals} left`}</span>
+          </div>
+          <div className="text-xs font-bold text-[var(--color-text)] truncate">
+            {consumed.calories} / {profile.targets.calories} kcal
+          </div>
+        </button>
+      </section>
 
       {/* Natural Language Quick-Log Bar */}
       <QuickLogBar />
 
-      {/* Pending review alert */}
+      {/* Pending Review Alert (if any) */}
       {pendingReview && (
         <button
           onClick={onOpenWeeklyReview}
           aria-label="Open Weekly Macro Check-in"
-          className="w-full text-left p-4 rounded-2xl bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-text)] flex items-center justify-between transition-all active:scale-[0.99]"
+          className="w-full text-left p-4 rounded-3xl bg-[var(--color-accent)]/15 border border-[var(--color-accent)]/30 text-[var(--color-text)] flex items-center justify-between transition-all active:scale-[0.99] shadow-xs"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[var(--color-surface)] flex items-center justify-center shrink-0 text-[var(--color-accent)]">
+            <div className="w-9 h-9 rounded-2xl bg-[var(--color-surface)] flex items-center justify-center shrink-0 text-[var(--color-accent)]">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
               <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-accent)]">
-                Weekly review ready
+                Weekly Review Proposal Ready
               </div>
               <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                Expenditure calculated • Macro adjustment ready
+                Expenditure calculated • Macro adjustment recommendation
               </div>
             </div>
           </div>
@@ -219,10 +344,129 @@ export function TodayView({
         </button>
       )}
 
-      {/* TODAY'S PLAN — prominent */}
+      {/* TODAY'S HABITS CHECKLIST */}
+      {todayHabits.length > 0 && (
+        <section className="p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="k-section-title flex items-center gap-1.5">
+              <Repeat className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+              <span>Today's Habits</span>
+            </span>
+            <button
+              onClick={() => onNavigateTab('systems')}
+              className="text-[11px] text-[var(--color-accent)] font-semibold hover:underline flex items-center gap-0.5"
+            >
+              <span>View all ({habits.length})</span>
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {todayHabits.map((habit) => {
+              const isCompleted = habit.completedDates.includes(todayStr);
+              return (
+                <div
+                  key={habit.id}
+                  className="flex items-center justify-between p-2.5 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)] text-xs"
+                >
+                  <button
+                    onClick={() => toggleHabitDate(habit.id, todayStr)}
+                    className="flex items-center gap-2.5 text-left flex-1"
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all ${
+                        isCompleted
+                          ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
+                          : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'
+                      }`}
+                    >
+                      {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 stroke-[3]" />}
+                    </div>
+                    <div>
+                      <span className={`font-semibold ${isCompleted ? 'line-through opacity-60' : ''}`}>
+                        {habit.title}
+                      </span>
+                      {habit.minimumViableAction && (
+                        <div className="text-[10px] text-[var(--color-text-muted)] font-serif italic">
+                          Fallback: {habit.minimumViableAction}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                  <span className="text-[10px] font-bold text-[var(--color-text-subtle)] px-2">
+                    {habit.completedDates.length}d
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* TODAY'S PRIORITY TASKS */}
+      {highPriorityTasks.length > 0 && (
+        <section className="p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="k-section-title flex items-center gap-1.5">
+              <CheckSquare className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+              <span>Priority Tasks</span>
+            </span>
+            <button
+              onClick={() => onNavigateTab('systems')}
+              className="text-[11px] text-[var(--color-accent)] font-semibold hover:underline flex items-center gap-0.5"
+            >
+              <span>Systems</span>
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+
+          <div className="space-y-1.5">
+            {highPriorityTasks.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center justify-between p-2.5 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)] text-xs"
+              >
+                <div className="flex items-center gap-2.5 flex-1">
+                  <button
+                    onClick={() => toggleTaskCompleted(t.id)}
+                    className="w-4 h-4 rounded-md border-2 border-[var(--color-border)] hover:border-[var(--color-accent)] flex items-center justify-center shrink-0"
+                  >
+                    {t.isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-accent)]" />}
+                  </button>
+                  <span className="font-semibold text-[var(--color-text)] truncate">{t.title}</span>
+                </div>
+                <span className="px-1.5 py-0.5 bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] rounded text-[9px] font-bold uppercase tracking-wider shrink-0">
+                  {t.area}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ACTIVE FRICTION ENGINEERING NUDGE */}
+      {activeFrictionTip && (
+        <section className="p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-1.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--color-accent)] flex items-center gap-1">
+              <Sliders className="w-3 h-3" />
+              <span>Active Environment Design</span>
+            </span>
+            <span className="text-[10px] text-[var(--color-text-muted)] capitalize">
+              {activeFrictionTip.category}
+            </span>
+          </div>
+          <div className="text-xs font-bold text-[var(--color-text)]">{activeFrictionTip.title}</div>
+          <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
+            {activeFrictionTip.mechanism}
+          </p>
+        </section>
+      )}
+
+      {/* TODAY'S TRAINING / RECOVERY PLAN */}
       <section className="k-card p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <span className="k-section-title">Today's plan</span>
+          <span className="k-section-title">Physical Training</span>
           <span
             className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
               isTrainingDay
@@ -230,14 +474,14 @@ export function TodayView({
                 : 'bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] border-[var(--color-border)]'
             }`}
           >
-            {isTrainingDay ? 'Training day' : scheduledDay?.type === 'active_recovery' ? 'Recovery day' : 'Rest day'}
+            {isTrainingDay ? 'Training Day' : scheduledDay?.type === 'active_recovery' ? 'Active Recovery' : 'Rest Day'}
           </span>
         </div>
 
         {isTrainingDay ? (
           <div>
             <h2 className="k-display text-xl text-[var(--color-text)]">
-              {scheduledTemplate?.name || scheduledDay?.focusName || 'Training session'}
+              {scheduledTemplate?.name || scheduledDay?.focusName || 'Training Session'}
             </h2>
             <p className="text-sm text-[var(--color-text-muted)] mt-1">
               {scheduledDay?.focusName || 'Scheduled strength session'} • {scheduledTemplate?.exercises?.length || 0} exercises
@@ -250,23 +494,23 @@ export function TodayView({
                   {new Date(activeWorkout.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
                 <button
-                  onClick={() => onNavigateTab('train')}
-                  className="min-h-[48px] mt-4 w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text)] font-semibold rounded-2xl text-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-all"
+                  onClick={() => onNavigateTab('body')}
+                  className="min-h-[48px] mt-4 w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-2xl text-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-all shadow-sm"
                 >
                   <Play className="w-4 h-4 fill-current" />
-                  <span>Resume workout</span>
+                  <span>Resume Workout</span>
                 </button>
               </>
             ) : (
               <button
                 onClick={() => {
                   startWorkout(scheduledTemplate?.id || scheduledDay?.templateId);
-                  onNavigateTab('train');
+                  onNavigateTab('body');
                 }}
-                className="min-h-[48px] mt-4 w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text)] font-semibold rounded-2xl text-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-all"
+                className="min-h-[48px] mt-4 w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-2xl text-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-all shadow-sm"
               >
                 <Play className="w-4 h-4 fill-current" />
-                <span>Start workout</span>
+                <span>Start Workout</span>
               </button>
             )}
           </div>
@@ -278,12 +522,12 @@ export function TodayView({
               </div>
               <div>
                 <h2 className="k-display text-lg text-[var(--color-text)]">
-                  {scheduledDay?.focusName || 'Recovery'}
+                  {scheduledDay?.focusName || 'Rest & Recovery'}
                 </h2>
                 <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
                   {scheduledDay?.type === 'active_recovery'
                     ? 'Light movement and mobility. Keep it easy.'
-                    : 'No structured training. Prioritize sleep and nutrition.'}
+                    : 'No structured training. Prioritize sleep, nutrition, and reflection.'}
                 </p>
               </div>
             </div>
@@ -293,14 +537,14 @@ export function TodayView({
                 className="min-h-[44px] py-2.5 rounded-2xl bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text)] text-xs font-semibold flex items-center justify-center gap-2 active:scale-95"
               >
                 <Droplets className="w-4 h-4 text-[var(--color-info)]" />
-                <span>+250 ml water</span>
+                <span>+250 ml Water</span>
               </button>
               <button
                 onClick={onOpenFoodModal}
                 className="min-h-[44px] py-2.5 rounded-2xl bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text)] text-xs font-semibold flex items-center justify-center gap-2 active:scale-95"
               >
                 <Plus className="w-4 h-4 text-[var(--color-accent)]" />
-                <span>Log a meal</span>
+                <span>Log a Meal</span>
               </button>
             </div>
           </div>
@@ -310,7 +554,7 @@ export function TodayView({
       {/* Weekly consistency */}
       <section className="k-card p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="k-section-title">This week</span>
+          <span className="k-section-title">Weekly Cadence</span>
           <span className="text-xs text-[var(--color-text-muted)]">
             {completedTrainingDays} of {trainingDaysThisWeek} training days done
           </span>
@@ -341,7 +585,7 @@ export function TodayView({
           <div>
             <span className="k-section-title flex items-center gap-1.5">
               <Flame className="w-3.5 h-3.5 text-[var(--color-accent)]" />
-              Daily nutrition
+              Daily Nutrition
             </span>
             <div className="flex items-baseline gap-1.5 mt-1">
               <span className="k-display text-3xl text-[var(--color-text)]">{consumed.calories}</span>
@@ -407,32 +651,6 @@ export function TodayView({
             </button>
           </div>
         )}
-
-        {/* 5-day hydration mini bar */}
-        <div className="pt-2.5">
-          <div className="flex items-end justify-between gap-1.5 h-9" aria-hidden="true">
-            {recentDates.slice().reverse().map((date) => {
-              const ml = state.hydrationLogs?.[date] ?? 0;
-              const pct = Math.min(1, ml / Math.max(1, profile.targets.waterMl));
-              const isToday = date === todayStr;
-              return (
-                <div key={date} className="flex-1 flex flex-col items-center gap-1 justify-end h-full">
-                  <div className="w-full bg-[var(--color-surface-raised)] rounded-md h-3 overflow-hidden self-stretch mt-auto">
-                    <div
-                      className={isToday ? 'h-full rounded-md' : 'h-full rounded-md opacity-60'}
-                      style={{ width: `${Math.max(pct * 100, 4)}%`, backgroundColor: 'var(--color-info)' }}
-                    />
-                  </div>
-                  <span
-                    className={`text-[9px] ${isToday ? 'font-semibold text-[var(--color-text-muted)]' : 'text-[var(--color-text-subtle)]'}`}
-                  >
-                    {date.slice(8)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </section>
 
       {/* Weight trend */}
@@ -442,7 +660,7 @@ export function TodayView({
       >
         <div className="flex justify-between items-start mb-2">
           <div>
-            <span className="k-section-title">Weight trend</span>
+            <span className="k-section-title">Weight Trend</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="k-display text-2xl text-[var(--color-text)]">
                 {latestWeight ? formatWeight(latestWeight.trendWeightKg, profile.unitSystem) : '--'}
@@ -453,7 +671,7 @@ export function TodayView({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[11px] text-[var(--color-text-subtle)]">7-day change</div>
+            <div className="text-[11px] text-[var(--color-text-subtle)]">7-Day Change</div>
             <div
               className={`text-xs font-semibold flex items-center justify-end gap-0.5 ${
                 weeklyDelta <= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-accent)]'
@@ -467,72 +685,12 @@ export function TodayView({
           </div>
         </div>
         <div className="h-14 w-full pt-1">
-          <SparklineChart points={weightTrend.slice(-14).map((p: any) => p.actualWeightKg)} />
+          <SparklineChart points={weightTrend.slice(-14).map((p) => p.actualWeightKg)} />
         </div>
         <div className="mt-2 flex items-center justify-between text-[11px] text-[var(--color-text-subtle)] pt-2 border-t border-[var(--color-border)]">
           <span>Tap to record today's weigh-in</span>
           <span className="text-[var(--color-accent)] font-semibold">{weightTrend.length} days logged</span>
         </div>
-      </section>
-
-      {/* Recent activity */}
-      {(latestCardio || lastCompletedWorkout) && (
-        <section className="k-card p-5 space-y-3">
-          <span className="k-section-title">Recent activity</span>
-          {lastCompletedWorkout && (
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2 text-[var(--color-text-muted)]">
-                <Dumbbell className="w-4 h-4 text-[var(--color-accent)]" />
-                <span className="font-medium truncate">{lastCompletedWorkout.name}</span>
-              </div>
-              <span className="text-xs text-[var(--color-text-subtle)] tabular-nums">
-                {Math.round(lastCompletedWorkout.durationSeconds / 60)} min • {lastCompletedWorkout.totalVolumeKg.toLocaleString()} kg
-              </span>
-            </div>
-          )}
-          {latestCardio && (
-            <div className="flex items-center justify-between text-sm pt-2 border-t border-[var(--color-border)]">
-              <div className="flex items-center gap-2 text-[var(--color-text-muted)]">
-                <Watch className="w-4 h-4 text-[var(--color-accent)]" />
-                <span className="font-medium truncate">{latestCardio.name || latestCardio.type}</span>
-              </div>
-              <span className="text-xs text-[var(--color-text-subtle)] tabular-nums">
-                {latestCardio.distanceKm ? `${latestCardio.distanceKm} km • ` : ''}{latestCardio.durationMinutes} min
-              </span>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Today's meals */}
-      <section className="k-card p-5">
-        <div className="flex justify-between items-center mb-3">
-          <span className="k-section-title">Today's meals</span>
-          <button
-            onClick={onOpenFoodModal}
-            className="min-h-[36px] px-2 text-xs font-semibold text-[var(--color-accent)] flex items-center gap-1 active:scale-95"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add</span>
-          </button>
-        </div>
-        {todayFoods.length === 0 ? (
-          <p className="py-4 text-center text-xs text-[var(--color-text-subtle)]">No foods logged yet today.</p>
-        ) : (
-          <div className="divide-y divide-[var(--color-border)]">
-            {todayFoods.map((item: any) => (
-              <div key={item.id} className="py-2.5 flex items-center justify-between">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-[var(--color-text)] truncate">{item.name}</div>
-                  <div className="text-[11px] text-[var(--color-text-subtle)] mt-0.5">
-                    <span className="capitalize text-[var(--color-accent)]">{item.mealType}</span> • {item.servingCount}× {item.servingSize} {item.servingUnit}
-                  </div>
-                </div>
-                <div className="text-xs font-semibold text-[var(--color-text)] shrink-0 ml-2 tabular-nums">{item.calories} kcal</div>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
     </div>
   );
@@ -575,7 +733,7 @@ function SparklineChart({ points }: { points: number[] }) {
     <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
       <polyline
         fill="none"
-        style={{ stroke: "var(--color-accent)" }}
+        style={{ stroke: 'var(--color-accent)' }}
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"

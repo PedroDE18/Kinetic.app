@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Moon, Sun, Watch, Smartphone, User, Cloud } from 'lucide-react';
+import { Settings, Moon, Sun, Watch, Smartphone, User } from 'lucide-react';
 import { useFitness } from '../context/FitnessContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -22,34 +22,27 @@ export function Header({ onOpenSettings, onOpenProfile, onOpenHealthSync, onOpen
     }));
   };
 
-  const goalName = {
-    fat_loss: 'Fat Loss',
-    recomp: 'Recomposition',
-    maintenance: 'Maintenance',
-    muscle_gain: 'Lean Gain',
-  }[state.profile.goal];
-
   return (
-    <header className="sticky top-0 z-30 bg-[var(--color-surface-sunken)] dark:bg-[var(--color-surface-sunken)] backdrop-blur-md border-b border-[var(--color-border)] px-4 notch-header-padding pb-2.5 flex items-center justify-between max-w-md mx-auto w-full transition-colors">
+    <header className="sticky top-0 z-30 bg-[var(--color-surface-sunken)] backdrop-blur-md border-b border-[var(--color-border)] px-4 notch-header-padding pb-2.5 flex items-center justify-between max-w-md mx-auto w-full transition-colors">
       <button
         onClick={onOpenProfile}
         className="flex items-center gap-2.5 text-left active:scale-[0.98] transition-all"
-        title="View & Edit Athletic Profile"
+        title="View & Edit Life Profile"
       >
-        <div className="h-7 w-7 rounded-xl bg-[var(--color-accent)]/20 text-[var(--color-accent)] flex items-center justify-center font-black text-sm tracking-tighter border border-[#E07A5F]/30 shadow-xs">
-          K
+        <div className="h-8 w-8 rounded-xl bg-[var(--color-accent)]/20 text-[var(--color-accent)] flex items-center justify-center font-serif font-black text-base border border-[var(--color-accent)]/30 shadow-xs">
+          Ε
         </div>
         <div>
           <div className="flex items-center gap-1.5">
             <h1 className="text-sm font-bold tracking-tight text-[var(--color-text)]">
-              {state.profile.name || 'Kinetic'}
+              {state.profile.name || 'Eunoia'}
             </h1>
-            <span className="text-[10px] font-semibold px-2 py-0.5 bg-[var(--color-surface-raised)] dark:bg-[#2C241E] text-[#C85A32] dark:text-[var(--color-accent)] rounded-full border border-[var(--color-border)] dark:border-[#42362C]">
-              {currentUser ? 'Cloud' : 'Adaptive'}
+            <span className="text-[10px] font-semibold px-2 py-0.5 bg-[var(--color-surface-raised)] text-[var(--color-accent)] rounded-full border border-[var(--color-border)]">
+              {currentUser ? 'Cloud Sync' : 'Local-First'}
             </span>
           </div>
-          <span className="text-[10px] text-[var(--color-text-muted)] font-medium">
-            {goalName} • {state.profile.targets.calories} kcal
+          <span className="text-[10px] text-[var(--color-text-muted)] font-serif italic block">
+            A personal system for living well
           </span>
         </div>
       </button>
@@ -58,8 +51,8 @@ export function Header({ onOpenSettings, onOpenProfile, onOpenHealthSync, onOpen
         {/* Profile & Cloud Account Button */}
         <button
           onClick={onOpenProfile}
-          aria-label="Athletic Profile and Cloud Account"
-          title={currentUser ? `Signed in as ${currentUser.email || 'Cloud'}` : 'Athletic Profile'}
+          aria-label="Profile and Cloud Account"
+          title={currentUser ? `Signed in as ${currentUser.email || 'Cloud'}` : 'Personal Profile'}
           className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-accent)] active:scale-95 transition-all relative"
         >
           {currentUser ? (
@@ -72,11 +65,11 @@ export function Header({ onOpenSettings, onOpenProfile, onOpenHealthSync, onOpen
           )}
         </button>
 
-        {/* Health & Garmin Sync */}
+        {/* Health & Wearables Sync */}
         {onOpenHealthSync && (
           <button
             onClick={onOpenHealthSync}
-            aria-label="Health & Garmin Sync"
+            aria-label="Health & Wearables Sync"
             title="Sync Apple Health & Garmin"
             className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-accent)] active:scale-95 transition-all"
           >
@@ -84,11 +77,11 @@ export function Header({ onOpenSettings, onOpenProfile, onOpenHealthSync, onOpen
           </button>
         )}
 
-        {/* Install on iPhone PWA Guide */}
+        {/* Install PWA Guide */}
         {onOpenInstallPwa && (
           <button
             onClick={onOpenInstallPwa}
-            aria-label="Install App on iPhone"
+            aria-label="Install App"
             title="Install App"
             className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-text)] active:scale-95 transition-all"
           >
@@ -96,7 +89,7 @@ export function Header({ onOpenSettings, onOpenProfile, onOpenHealthSync, onOpen
           </button>
         )}
 
-        {/* Theme Toggle (Cozy Light vs Cozy Dark) */}
+        {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
           aria-label={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}

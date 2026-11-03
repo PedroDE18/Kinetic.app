@@ -1,42 +1,43 @@
 @import "tailwindcss";
 
 /* ==========================================================
-   KINETIC DESIGN SYSTEM
-   Editorial, restrained, personal. Warm palette. Light + dark.
+   EUNOIA DESIGN SYSTEM (εὔνοια)
+   Swiss International Typographic Style + Stoic Editorial Design
+   Calm, intentional, humanistic. Earth, sage, slate, and clay.
    ========================================================== */
 
 @layer base {
   :root {
-    /* --- Color tokens (dark by default) ---
-       "Graphite ember": a wide warm-neutral elevation ramp with clear steps
-       (sunken < surface < raised < elevated), restrained accent usage, and a
-       dedicated on-accent ink so accent-filled buttons always clear AA. */
-    --color-bg: #141311;
-    --color-bg-elevated: #201D1A;
-    --color-surface: #1C1A18;
-    --color-surface-raised: #262320;
-    --color-surface-sunken: #0D0C0B;
-    --color-border: #302C28;
-    --color-border-subtle: #242220;
-    --color-text: #F4F1EA;
-    --color-text-muted: #ABA39A;
-    --color-text-subtle: #867D72;
-    --color-accent: #E8815E;
-    --color-accent-hover: #F29A77;
-    --color-accent-soft: rgba(232, 129, 94, 0.16);
-    --color-on-accent: #201009;
+    /* --- Eunoia Dark Theme (Serene Forest / Obsidian Slate) --- */
+    --color-bg: #1B1E1B;
+    --color-bg-elevated: #242823;
+    --color-surface: #222621;
+    --color-surface-raised: #2B302A;
+    --color-surface-sunken: #141714;
+    --color-border: #353B33;
+    --color-border-subtle: #292E27;
+    --color-text: #ECEAE1;
+    --color-text-muted: #A3A69A;
+    --color-text-subtle: #797C72;
+    --color-accent: #8FA88F;
+    --color-accent-hover: #A1BAA1;
+    --color-accent-soft: rgba(143, 168, 143, 0.16);
+    --color-on-accent: #131713;
+    --color-secondary-accent: #C49E87;
+    --color-secondary-accent-soft: rgba(196, 158, 135, 0.16);
     --color-success: #8FC3A4;
     --color-success-soft: rgba(143, 195, 164, 0.14);
-    --color-warning: #E9B45C;
-    --color-warning-soft: rgba(233, 180, 92, 0.14);
-    --color-danger: #E77B7B;
-    --color-danger-soft: rgba(231, 123, 123, 0.14);
-    --color-info: #8FB8D8;
+    --color-warning: #E2B366;
+    --color-warning-soft: rgba(226, 179, 102, 0.14);
+    --color-danger: #D97373;
+    --color-danger-soft: rgba(217, 115, 115, 0.14);
+    --color-info: #8AAEC7;
 
     /* --- Typography --- */
-    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --font-mono: "SF Mono", ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Geist", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Geist", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-serif: "Newsreader", "Charter", "Georgia", "Iowan Old Style", "Palatino", serif;
+    --font-mono: "SF Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
 
     --text-xs: 0.75rem;
     --text-sm: 0.875rem;
@@ -93,34 +94,36 @@
     --safe-bottom: env(safe-area-inset-bottom, 16px);
   }
 
-  /* Light theme overrides */
+  /* Light theme overrides (Swiss International Editorial) */
   .theme-light {
-    --color-bg: #FAF7F2;
-    --color-bg-elevated: #FFFDF9;
-    --color-surface: #FFFDF9;
-    --color-surface-raised: #F4EFE6;
-    --color-surface-sunken: #F0EAE0;
-    --color-border: #EBE3D7;
-    --color-border-subtle: #F0E9DD;
-    --color-text: #28221D;
-    --color-text-muted: #6B5D52;
-    --color-text-subtle: #8A7B6E;
-    --color-accent: #C85A32;
-    --color-accent-hover: #B04E2A;
-    --color-accent-soft: rgba(200, 90, 50, 0.10);
+    --color-bg: #F4F2EC;
+    --color-bg-elevated: #FFFFFF;
+    --color-surface: #FFFFFF;
+    --color-surface-raised: #EBE8DF;
+    --color-surface-sunken: #E5E1D6;
+    --color-border: #DDD8CB;
+    --color-border-subtle: #E8E4D8;
+    --color-text: #242722;
+    --color-text-muted: #6B6E64;
+    --color-text-subtle: #8E9186;
+    --color-accent: #526652;
+    --color-accent-hover: #435443;
+    --color-accent-soft: rgba(82, 102, 82, 0.12);
     --color-on-accent: #FFFFFF;
-    --color-success: #3B7A4C;
-    --color-success-soft: rgba(59, 122, 76, 0.10);
-    --color-warning: #A87A0B;
-    --color-warning-soft: rgba(168, 122, 11, 0.10);
-    --color-danger: #B23A3A;
-    --color-danger-soft: rgba(178, 58, 58, 0.10);
-    --color-info: #2D6C96;
+    --color-secondary-accent: #A67C65;
+    --color-secondary-accent-soft: rgba(166, 124, 101, 0.12);
+    --color-success: #3D6E4A;
+    --color-success-soft: rgba(61, 110, 74, 0.10);
+    --color-warning: #946914;
+    --color-warning-soft: rgba(148, 105, 20, 0.10);
+    --color-danger: #A33A3A;
+    --color-danger-soft: rgba(163, 58, 58, 0.10);
+    --color-info: #355F7D;
 
-    --shadow-xs: 0 1px 2px rgba(40, 30, 20, 0.04);
-    --shadow-sm: 0 2px 8px rgba(40, 30, 20, 0.06);
-    --shadow-md: 0 8px 24px rgba(40, 30, 20, 0.08);
-    --shadow-lg: 0 16px 48px rgba(40, 30, 20, 0.10);
+    --shadow-xs: 0 1px 2px rgba(36, 39, 34, 0.03);
+    --shadow-sm: 0 2px 8px rgba(36, 39, 34, 0.05);
+    --shadow-md: 0 8px 24px rgba(36, 39, 34, 0.07);
+    --shadow-lg: 0 16px 48px rgba(36, 39, 34, 0.09);
   }
 
   html {
@@ -214,6 +217,11 @@
   font-weight: 700;
   letter-spacing: var(--tracking-tight);
   line-height: var(--leading-tight);
+}
+
+.eunoia-editorial {
+  font-family: var(--font-serif);
+  letter-spacing: -0.01em;
 }
 
 .k-numeric {
