@@ -193,45 +193,55 @@ ALLOWED EXERCISES:
 ${allowedList}
     `.trim();
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: promptText,
-      config: {
-        systemInstruction:
-          'You are an athletic strength & conditioning coach. Build a balanced workout routine for the requested goal. You MUST ONLY use the exercise IDs provided in the allowed exercises list. DO NOT invent IDs. Return a valid JSON object matching the schema.',
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            name: { type: Type.STRING, description: 'Descriptive routine title' },
-            targetSplit: { type: Type.STRING, description: 'e.g. Upper / Lower, Full Body, Push, Pull' },
-            description: { type: Type.STRING, description: 'Brief explanation of programming philosophy' },
-            exercises: {
-              type: Type.ARRAY,
-              description: 'List of exercise prescriptions',
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  exerciseId: { type: Type.STRING, description: 'Exact ID from allowed exercises list' },
-                  defaultSets: { type: Type.NUMBER, description: 'Prescribed working sets (typically 3-5)' },
-                  defaultReps: { type: Type.NUMBER, description: 'Target repetition range (e.g. 5, 8, 10, 12)' },
-                  targetRpe: { type: Type.NUMBER, description: 'Target RPE on a scale of 6 to 10' },
+    let responseText = '';
+    for (const model of ['gemini-2.0-flash', 'gemini-1.5-flash']) {
+      try {
+        const res = await ai.models.generateContent({
+          model,
+          contents: promptText,
+          config: {
+            systemInstruction:
+              'You are an athletic strength & conditioning coach. Build a balanced workout routine for the requested goal. You MUST ONLY use the exercise IDs provided in the allowed exercises list. DO NOT invent IDs. Return a valid JSON object matching the schema.',
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING, description: 'Descriptive routine title' },
+                targetSplit: { type: Type.STRING, description: 'e.g. Upper / Lower, Full Body, Push, Pull' },
+                description: { type: Type.STRING, description: 'Brief explanation of programming philosophy' },
+                exercises: {
+                  type: Type.ARRAY,
+                  description: 'List of exercise prescriptions',
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      exerciseId: { type: Type.STRING, description: 'Exact ID from allowed exercises list' },
+                      defaultSets: { type: Type.NUMBER, description: 'Prescribed working sets (typically 3-5)' },
+                      defaultReps: { type: Type.NUMBER, description: 'Target repetition range (e.g. 5, 8, 10, 12)' },
+                      targetRpe: { type: Type.NUMBER, description: 'Target RPE on a scale of 6 to 10' },
+                    },
+                    required: ['exerciseId', 'defaultSets', 'defaultReps'],
+                  },
                 },
-                required: ['exerciseId', 'defaultSets', 'defaultReps'],
               },
+              required: ['name', 'targetSplit', 'description', 'exercises'],
             },
           },
-          required: ['name', 'targetSplit', 'description', 'exercises'],
-        },
-      },
-    });
-
-    const text = response.text;
-    if (!text) {
-      throw new Error('Empty model response');
+        });
+        if (res.text) {
+          responseText = res.text;
+          break;
+        }
+      } catch (err: any) {
+        if (String(err?.message || '').includes('API_KEY_INVALID')) break;
+      }
     }
 
-    const parsed = JSON.parse(text);
+    if (!responseText) {
+      throw new Error('Model returned empty response');
+    }
+
+    const parsed = JSON.parse(responseText);
     const validatedExercises = enforceExerciseLibraryConstraints(
       parsed.exercises || [],
       availableExercises

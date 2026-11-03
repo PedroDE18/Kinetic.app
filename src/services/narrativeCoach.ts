@@ -148,31 +148,41 @@ Completed Workouts: ${completedWorkoutsCount} this week
 Avg Daily Hydration: ${Math.round(avgDailyWaterMl)} ml/day
     `.trim();
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: promptText,
-      config: {
-        systemInstruction:
-          'You are an elite, evidence-based strength and conditioning coach and sports dietitian. Synthesize the athlete’s weekly metrics into a supportive, concise 3-sentence narrative story, a clear headline, and 1 specific actionable coaching recommendation. Explain the rationale without fluff.',
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            headline: { type: Type.STRING, description: 'Punchy 3-5 word athletic headline' },
-            story: { type: Type.STRING, description: '2-3 sentence evidence-based story summarizing the week' },
-            recommendation: { type: Type.STRING, description: '1 clear, actionable coaching recommendation' },
+    let responseText = '';
+    for (const model of ['gemini-2.0-flash', 'gemini-1.5-flash']) {
+      try {
+        const res = await ai.models.generateContent({
+          model,
+          contents: promptText,
+          config: {
+            systemInstruction:
+              'You are an elite, evidence-based strength and conditioning coach and sports dietitian. Synthesize the athlete’s weekly metrics into a supportive, concise 3-sentence narrative story, a clear headline, and 1 specific actionable coaching recommendation. Explain the rationale without fluff.',
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                headline: { type: Type.STRING, description: 'Punchy 3-5 word athletic headline' },
+                story: { type: Type.STRING, description: '2-3 sentence evidence-based story summarizing the week' },
+                recommendation: { type: Type.STRING, description: '1 clear, actionable coaching recommendation' },
+              },
+              required: ['headline', 'story', 'recommendation'],
+            },
           },
-          required: ['headline', 'story', 'recommendation'],
-        },
-      },
-    });
+        });
+        if (res.text) {
+          responseText = res.text;
+          break;
+        }
+      } catch (err: any) {
+        if (String(err?.message || '').includes('API_KEY_INVALID')) break;
+      }
+    }
 
-    const text = response.text;
-    if (!text) {
+    if (!responseText) {
       throw new Error('Empty model response');
     }
 
-    const parsed = JSON.parse(text);
+    const parsed = JSON.parse(responseText);
     const offlineBase = generateNarrativeInsightOffline(ctx);
 
     return {

@@ -659,62 +659,86 @@ export async function estimateMealWithAi(
     };
   }
 
-  // API key present: Call Gemini 2.5 Flash Free Tier
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `Estimate the itemized food breakdown and realistic nutritional content for this meal or food description:\n"${cleanPrompt}"`,
-      config: {
-        systemInstruction:
-          'You are an athletic nutrition database estimator with native expertise in both international and Brazilian cultural foods (arroz, feijão carioca/preto, bife acebolado, picanha, mandioca, farofa, tapioca, pão de queijo, açaí, cuscuz nordestino, feijoada, etc., and Brazilian culinary portions like colheres de sopa, concha, escumadeira, gramas, fatias). Given a meal or food description in English or Brazilian Portuguese, break it down into realistic individual ingredients with serving sizes and macronutrient estimations based on TACO (Tabela Brasileira de Composição de Alimentos) and USDA standards. Be physiologically accurate (1g protein = 4 kcal, 1g carb = 4 kcal, 1g fat = 9 kcal). Do not hallucinate negative numbers or absurd values.',
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.ARRAY,
-          description: 'List of individual food components in the meal',
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING, description: 'Descriptive name of the ingredient or food item' },
-              servingCount: { type: Type.NUMBER, description: 'Number of servings, typically 1 or 1.5' },
-              servingSize: { type: Type.NUMBER, description: 'Numerical portion size' },
-              servingUnit: { type: Type.STRING, description: 'Unit of measure, e.g. g, ml, slice, medium' },
-              calories: { type: Type.NUMBER, description: 'Total calories in kcal' },
-              protein: { type: Type.NUMBER, description: 'Protein in grams' },
-              carbs: { type: Type.NUMBER, description: 'Carbohydrates in grams' },
-              fat: { type: Type.NUMBER, description: 'Fat in grams' },
+  // API key present: Call Gemini Flash Free Tier (attempting 2.0-flash, falling back to 1.5-flash)
+  const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+  let lastError: any = null;
+
+  for (const model of modelsToTry) {
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model,
+        contents: `Estimate the itemized food breakdown and realistic nutritional content for this meal or food description:\n"${cleanPrompt}"`,
+        config: {
+          systemInstruction:
+            'You are an athletic nutrition database estimator with native expertise in both international and Brazilian cultural foods (arroz, feijão carioca/preto, bife acebolado, picanha, mandioca, farofa, tapioca, pão de queijo, açaí, cuscuz nordestino, feijoada, etc., and Brazilian culinary portions like colheres de sopa, concha, escumadeira, gramas, fatias). Given a meal or food description in English or Brazilian Portuguese, break it down into realistic individual ingredients with serving sizes and macronutrient estimations based on TACO (Tabela Brasileira de Composição de Alimentos) and USDA standards. Be physiologically accurate (1g protein = 4 kcal, 1g carb = 4 kcal, 1g fat = 9 kcal). Do not hallucinate negative numbers or absurd values.',
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.ARRAY,
+            description: 'List of individual food components in the meal',
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING, description: 'Descriptive name of the ingredient or food item' },
+                servingCount: { type: Type.NUMBER, description: 'Number of servings, typically 1 or 1.5' },
+                servingSize: { type: Type.NUMBER, description: 'Numerical portion size' },
+                servingUnit: { type: Type.STRING, description: 'Unit of measure, e.g. g, ml, slice, medium' },
+                calories: { type: Type.NUMBER, description: 'Total calories in kcal' },
+                protein: { type: Type.NUMBER, description: 'Protein in grams' },
+                carbs: { type: Type.NUMBER, description: 'Carbohydrates in grams' },
+                fat: { type: Type.NUMBER, description: 'Fat in grams' },
+              },
+              required: ['name', 'servingCount', 'servingSize', 'servingUnit', 'calories', 'protein', 'carbs', 'fat'],
             },
-            required: ['name', 'servingCount', 'servingSize', 'servingUnit', 'calories', 'protein', 'carbs', 'fat'],
           },
         },
-      },
-    });
+      });
 
-    const text = response.text;
-    if (!text) {
-      throw new Error('Empty response from model');
+      const text = response.text;
+      if (!text) {
+        throw new Error('Empty response from model');
+      }
+
+      const parsedArray = JSON.parse(text);
+      if (!Array.isArray(parsedArray) || parsedArray.length === 0) {
+        throw new Error('Model did not return a valid list of food items');
+      }
+
+      const sanitizedItems: ParsedAiFoodItem[] = parsedArray.map((raw, idx) =>
+        sanitizeAiFoodItem(raw, idx)
+      );
+
+      return {
+        items: sanitizedItems,
+        source: 'model',
+      };
+    } catch (err: any) {
+      lastError = err;
+      // If error is an invalid API key, no need to retry with another model
+      const msg = String(err?.message || '');
+      if (msg.includes('API_KEY_INVALID') || msg.includes('API key not valid')) {
+        break;
+      }
     }
-
-    const parsedArray = JSON.parse(text);
-    if (!Array.isArray(parsedArray) || parsedArray.length === 0) {
-      throw new Error('Model did not return a valid list of food items');
-    }
-
-    const sanitizedItems: ParsedAiFoodItem[] = parsedArray.map((raw, idx) =>
-      sanitizeAiFoodItem(raw, idx)
-    );
-
-    return {
-      items: sanitizedItems,
-      source: 'model',
-    };
-  } catch (err: any) {
-    // Graceful offline fallback on any error (network offline, quota exhausted, invalid key)
-    const offlineItems = estimateMealOffline(cleanPrompt);
-    return {
-      items: offlineItems,
-      source: 'offline',
-      error: err?.message || 'AI request failed; fell back to offline engine',
-    };
   }
+
+  // Graceful offline fallback on any error (network offline, quota exhausted, invalid key)
+  const offlineItems = estimateMealOffline(cleanPrompt);
+  let humanError = 'AI service unavailable; fell back to offline engine';
+  if (lastError) {
+    const rawMsg = String(lastError?.message || '');
+    if (rawMsg.includes('API_KEY_INVALID') || rawMsg.includes('API key not valid')) {
+      humanError = 'API key invalid. Please verify your Google AI Studio key.';
+    } else if (rawMsg.includes('RESOURCE_EXHAUSTED') || rawMsg.includes('Quota')) {
+      humanError = 'Gemini rate limit exceeded. Using offline estimates.';
+    } else {
+      humanError = `AI notice: ${lastError.message || 'connection failed'}. Using offline estimates.`;
+    }
+  }
+
+  return {
+    items: offlineItems,
+    source: 'offline',
+    error: humanError,
+  };
 }

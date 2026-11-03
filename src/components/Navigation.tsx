@@ -28,14 +28,12 @@ export function Navigation({
       className="fixed bottom-4 sm:bottom-6 left-3 right-3 z-40 max-w-md mx-auto stoic-glass rounded-full p-1.5 shadow-lg transition-all select-none"
     >
       <div className="flex items-center justify-between">
-        {/* 1. Progress (Leftmost tab) */}
+        {/* 1. Mind (Leftmost tab) */}
         <NavButton
-          active={activeTab === 'progress'}
-          onClick={() => onSelectTab('progress')}
-          label={t.nav.progress}
-          icon={<TrendingUp className="w-4 h-4" />}
-          badge={hasPendingReview ? '!' : undefined}
-          badgeColor="bg-[var(--color-accent)] text-[var(--color-on-accent)]"
+          active={activeTab === 'mind'}
+          onClick={() => onSelectTab('mind')}
+          label={t.nav.mind}
+          icon={<Feather className="w-4 h-4" />}
         />
 
         {/* 2. Systems */}
@@ -71,12 +69,14 @@ export function Navigation({
           badgeColor="bg-emerald-500 text-white"
         />
 
-        {/* 5. Mind (Merged Mind & Growth) */}
+        {/* 5. Progress (Rightmost tab) */}
         <NavButton
-          active={activeTab === 'mind'}
-          onClick={() => onSelectTab('mind')}
-          label={t.nav.mind}
-          icon={<Feather className="w-4 h-4" />}
+          active={activeTab === 'progress'}
+          onClick={() => onSelectTab('progress')}
+          label={t.nav.progress}
+          icon={<TrendingUp className="w-4 h-4" />}
+          badge={hasPendingReview ? '!' : undefined}
+          badgeColor="bg-[var(--color-accent)] text-[var(--color-on-accent)]"
         />
       </div>
     </nav>

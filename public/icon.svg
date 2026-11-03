@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <rect width="512" height="512" rx="128" fill="#1B1E1B"/>
-  <rect x="32" y="32" width="448" height="448" rx="96" fill="#222621" stroke="#353B33" stroke-width="8"/>
-  <!-- Minimalist, architectural Greek Epsilon (ε) / Flourishing Glyphic Arc for Eunoia -->
-  <path d="M336 160 H184 V352 H336 M184 256 H304" stroke="#8FA88F" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="512" height="512" rx="122" fill="#181B18"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="#181B18" stroke="#2A302A" stroke-width="8"/>
+  <!-- Minimalist, architectural Greek Epsilon (ε) emblem for Eunoia -->
+  <path d="M348 144 H184 V368 H348 M184 256 H308" stroke="#9EB99E" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

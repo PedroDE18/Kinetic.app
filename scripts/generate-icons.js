@@ -3,26 +3,23 @@ import zlib from 'node:zlib';
 
 // Minimal standard PNG creator using pure Node zlib
 function createPng(width, height, renderPixel) {
-  // PNG signature
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
-  // IHDR chunk
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
   ihdr.writeUInt8(8, 8); // 8-bit depth
   ihdr.writeUInt8(6, 9); // RGBA color type
-  ihdr.writeUInt8(0, 10); // compression
-  ihdr.writeUInt8(0, 11); // filter
-  ihdr.writeUInt8(0, 12); // interlace
+  ihdr.writeUInt8(0, 10);
+  ihdr.writeUInt8(0, 11);
+  ihdr.writeUInt8(0, 12);
 
   const ihdrChunk = createChunk('IHDR', ihdr);
 
-  // Scanlines with filter byte 0
   const scanlines = Buffer.alloc(height * (width * 4 + 1));
   let offset = 0;
   for (let y = 0; y < height; y++) {
-    scanlines.writeUInt8(0, offset++); // Filter byte: None
+    scanlines.writeUInt8(0, offset++);
     for (let x = 0; x < width; x++) {
       const [r, g, b, a] = renderPixel(x, y, width, height);
       scanlines.writeUInt8(r, offset++);
@@ -46,14 +43,12 @@ function createChunk(type, data) {
   chunk.write(type, 4, 4, 'ascii');
   data.copy(chunk, 8);
   
-  // Calculate CRC32 for type + data
   const crcTarget = chunk.subarray(4, 8 + length);
   const crc = crc32(crcTarget);
   chunk.writeUInt32BE(crc, 8 + length);
   return chunk;
 }
 
-// Simple CRC32 table
 const crcTable = new Uint32Array(256);
 for (let n = 0; n < 256; n++) {
   let c = n;
@@ -72,18 +67,16 @@ function crc32(buf) {
   return (c ^ 0xffffffff) >>> 0;
 }
 
-// Render warm cozy icon: rounded squircle warm background (#FAF7F2 / #C85A32 terracotta K lettermark)
-function drawKineticIcon(x, y, w, h) {
+// Render refined Stoic Eunoia icon: rounded squircle dark basalt stone with Greek Epsilon emblem
+function drawEunoiaIcon(x, y, w, h) {
   const cx = w / 2;
   const cy = h / 2;
-  const rCorner = w * 0.22;
+  const rCorner = w * 0.24;
   
-  // Rounded squircle check
   const dx = Math.abs(x - cx);
   const dy = Math.abs(y - cy);
   const maxD = w * 0.46;
   
-  // Background squircle
   const isOutsideCorner = (dx > maxD - rCorner) && (dy > maxD - rCorner);
   let inBounds = true;
   if (isOutsideCorner) {
@@ -96,36 +89,38 @@ function drawKineticIcon(x, y, w, h) {
     inBounds = false;
   }
 
-  if (!inBounds) return [0, 0, 0, 0]; // Transparent outside
+  if (!inBounds) return [0, 0, 0, 0];
 
-  // Cozy terracotta warm badge:
-  // Base background: #2A231E (cozy espresso) with warm terracotta center (#C85A32)
-  const distFromCenter = Math.sqrt(Math.pow((x - cx) / w, 2) + Math.pow((y - cy) / h, 2));
-  
-  // Draw Letter K
-  // Stem: x from 0.32*w to 0.4*w, y from 0.28*h to 0.72*h
-  const inStem = (x >= w * 0.30 && x <= w * 0.40 && y >= h * 0.26 && y <= h * 0.74);
-  
-  // Top arm of K
-  // Line from (0.38*w, 0.52*h) to (0.70*w, 0.28*h)
-  const d1 = distToSegment(x, y, w * 0.38, h * 0.52, w * 0.70, h * 0.28);
-  const inArm1 = d1 <= (w * 0.055);
+  const strokeW = w * 0.08;
+  const xLeft = w * 0.36;
+  const xRightTop = w * 0.68;
+  const xRightMid = w * 0.60;
+  const xRightBot = w * 0.68;
+  const yTop = h * 0.28;
+  const yMid = h * 0.50;
+  const yBot = h * 0.72;
 
-  // Bottom arm of K
-  // Line from (0.45*w, 0.46*h) to (0.70*w, 0.72*h)
-  const d2 = distToSegment(x, y, w * 0.44, h * 0.47, w * 0.70, h * 0.72);
-  const inArm2 = d2 <= (w * 0.055);
+  // Dist to vertical spine
+  const dSpine = distToSegment(x, y, xLeft, yTop, xLeft, yBot);
+  // Dist to top arm
+  const dTop = distToSegment(x, y, xLeft, yTop, xRightTop, yTop);
+  // Dist to mid arm
+  const dMid = distToSegment(x, y, xLeft, yMid, xRightMid, yMid);
+  // Dist to bot arm
+  const dBot = distToSegment(x, y, xLeft, yBot, xRightBot, yBot);
 
-  if (inStem || inArm1 || inArm2) {
-    // Warm terracotta / peach glow on the K
-    return [200, 90, 50, 255]; // #C85A32 warm terracotta
+  const minDist = Math.min(dSpine, dTop, dMid, dBot);
+
+  if (minDist <= strokeW / 2) {
+    // Serene Stoic sage green
+    return [158, 185, 158, 255];
   }
 
-  // Warm cozy subtle gradient background
-  // Warm dark espresso: rgb(40, 34, 29) to rgb(24, 20, 18)
-  const bgR = Math.round(38 - distFromCenter * 15);
-  const bgG = Math.round(32 - distFromCenter * 15);
-  const bgB = Math.round(28 - distFromCenter * 15);
+  // Dark basalt stone background: #181B18 to #121412
+  const distFromCenter = Math.hypot((x - cx) / w, (y - cy) / h);
+  const bgR = Math.max(16, Math.round(25 - distFromCenter * 14));
+  const bgG = Math.max(18, Math.round(28 - distFromCenter * 14));
+  const bgB = Math.max(16, Math.round(25 - distFromCenter * 14));
   return [bgR, bgG, bgB, 255];
 }
 
@@ -139,7 +134,6 @@ function distToSegment(px, py, x1, y1, x2, y2) {
   return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
 }
 
-// Generate files
 const sizes = [
   { size: 180, name: 'apple-touch-icon.png' },
   { size: 192, name: 'icon-192.png' },
@@ -147,7 +141,7 @@ const sizes = [
 ];
 
 for (const s of sizes) {
-  const buf = createPng(s.size, s.size, drawKineticIcon);
+  const buf = createPng(s.size, s.size, drawEunoiaIcon);
   fs.writeFileSync(`./public/${s.name}`, buf);
   console.log(`Generated ./public/${s.name} (${buf.length} bytes)`);
 }

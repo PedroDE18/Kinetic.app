@@ -12,11 +12,26 @@ import {
   Database,
   Trash2,
   Play,
+  Bell,
+  BellRing,
+  Send,
+  AlertCircle,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { FitnessGoal, UnitSystem } from '../../types';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
 import { resolveInitialLanguage, SupportedLanguage } from '../../utils/i18n';
+import {
+  isIOS,
+  isStandalone,
+  isNotificationSupported,
+  getNotificationPermission,
+  requestNotificationPermission,
+  sendTestNotification,
+  loadReminderConfig,
+  saveReminderConfig,
+  ReminderConfig,
+} from '../../services/notificationService';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -56,6 +71,49 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+
+  // Notification & iPhone Web App states
+  const [reminderConfig, setReminderConfig] = useState<ReminderConfig>(() => loadReminderConfig());
+  const [notificationPermission, setNotificationPermission] = useState(getNotificationPermission());
+  const [testNotificationSent, setTestNotificationSent] = useState(false);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
+
+  const handleRequestPermission = async () => {
+    setNotificationError(null);
+    try {
+      const perm = await requestNotificationPermission();
+      setNotificationPermission(perm);
+      if (perm === 'granted') {
+        const updated = { ...reminderConfig, enabled: true };
+        setReminderConfig(updated);
+        saveReminderConfig(updated);
+      }
+    } catch (err: any) {
+      setNotificationError(err?.message || 'Could not request notification permission');
+    }
+  };
+
+  const handleToggleReminderConfig = (field: keyof ReminderConfig, value: any) => {
+    const updated = { ...reminderConfig, [field]: value };
+    setReminderConfig(updated);
+    saveReminderConfig(updated);
+  };
+
+  const handleSendTest = async () => {
+    setTestNotificationSent(false);
+    setNotificationError(null);
+    const ok = await sendTestNotification(language === 'pt-BR');
+    if (ok) {
+      setTestNotificationSent(true);
+      setTimeout(() => setTestNotificationSent(false), 3500);
+    } else {
+      setNotificationError(
+        isIOS() && !isStandalone()
+          ? 'Add Eunoia to your iPhone Home Screen first to enable notifications.'
+          : 'Could not send notification. Please enable permissions first.'
+      );
+    }
+  };
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -444,6 +502,150 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
               </div>
             </button>
           </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* NOTIFICATIONS & IPHONE WEB APP REMINDERS                 */}
+        {/* ======================================================== */}
+        <div className="pt-4 border-t border-[var(--color-border)] space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--color-text)]">
+              <Bell className="w-4 h-4 text-[var(--color-accent)]" />
+              <span>{language === 'pt-BR' ? 'Notificações (iPhone & Web)' : 'Notifications (iPhone & Web)'}</span>
+            </div>
+            <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${
+              notificationPermission === 'granted'
+                ? 'bg-[var(--color-success-soft)] text-[var(--color-success)] border-[var(--color-success)]/30'
+                : 'bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] border-[var(--color-border)]'
+            }`}>
+              {notificationPermission === 'granted' 
+                ? (language === 'pt-BR' ? 'Ativo' : 'Active') 
+                : (language === 'pt-BR' ? 'Desativado' : 'Not Enabled')}
+            </span>
+          </div>
+
+          <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
+            {language === 'pt-BR'
+              ? 'Receba lembretes serenos para sua intenção matinal, equilíbrio do meio-dia e reflexão noturna.'
+              : 'Receive calm, intentional nudges for morning deliberation, midday balance, and evening reflection.'}
+          </p>
+
+          {/* iOS Safari Home Screen Requirement Guide */}
+          {isIOS() && !isStandalone() && (
+            <div className="p-3.5 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-2xl space-y-2 text-xs">
+              <div className="flex items-center gap-2 font-semibold text-[var(--color-accent)]">
+                <Smartphone className="w-4 h-4" />
+                <span>{language === 'pt-BR' ? 'Necessário adicionar à Tela de Início do iPhone' : 'iPhone Home Screen Setup Required'}</span>
+              </div>
+              <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
+                {language === 'pt-BR'
+                  ? 'No iOS (Safari), as notificações web são ativadas quando o aplicativo é adicionado à tela de início:'
+                  : 'On iOS 16.4+, Apple requires Web Apps to be installed on your Home Screen to deliver notifications:'}
+              </p>
+              <ol className="text-[11px] text-[var(--color-text)] space-y-1 list-decimal list-inside font-medium pl-1">
+                <li>{language === 'pt-BR' ? 'Toque no ícone Compartilhar (no rodapé do Safari)' : 'Tap the Share button at the bottom of Safari'}</li>
+                <li>{language === 'pt-BR' ? 'Role e toque em "Adicionar à Tela de Início"' : 'Scroll down and tap "Add to Home Screen"'}</li>
+                <li>{language === 'pt-BR' ? 'Abra o Eunoia pelo ícone na tela de início para ativar' : 'Open Eunoia from your Home Screen icon to enable alerts'}</li>
+              </ol>
+            </div>
+          )}
+
+          {notificationPermission !== 'granted' ? (
+            <button
+              type="button"
+              onClick={handleRequestPermission}
+              className="min-h-[44px] w-full py-2.5 px-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] rounded-xl text-xs font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xs"
+            >
+              <BellRing className="w-4 h-4" />
+              <span>{language === 'pt-BR' ? 'Ativar Notificações no iPhone / Web' : 'Enable Notifications on iPhone / Web'}</span>
+            </button>
+          ) : (
+            <div className="space-y-2.5 pt-1">
+              {/* Daily Reminder Toggles */}
+              <div className="bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] space-y-2.5">
+                {/* Morning */}
+                <div className="flex items-center justify-between text-xs">
+                  <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--color-text)]">
+                    <input
+                      type="checkbox"
+                      checked={reminderConfig.morningEnabled}
+                      onChange={(e) => handleToggleReminderConfig('morningEnabled', e.target.checked)}
+                      className="rounded accent-[var(--color-accent)] w-4 h-4"
+                    />
+                    <span>{language === 'pt-BR' ? 'Intenção Matinal' : 'Morning Intention'}</span>
+                  </label>
+                  <input
+                    type="time"
+                    value={reminderConfig.morningTime}
+                    onChange={(e) => handleToggleReminderConfig('morningTime', e.target.value)}
+                    className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono"
+                  />
+                </div>
+
+                {/* Midday */}
+                <div className="flex items-center justify-between text-xs">
+                  <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--color-text)]">
+                    <input
+                      type="checkbox"
+                      checked={reminderConfig.middayEnabled}
+                      onChange={(e) => handleToggleReminderConfig('middayEnabled', e.target.checked)}
+                      className="rounded accent-[var(--color-accent)] w-4 h-4"
+                    />
+                    <span>{language === 'pt-BR' ? 'Pausa & Hidratação' : 'Midday Pause'}</span>
+                  </label>
+                  <input
+                    type="time"
+                    value={reminderConfig.middayTime}
+                    onChange={(e) => handleToggleReminderConfig('middayTime', e.target.value)}
+                    className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono"
+                  />
+                </div>
+
+                {/* Evening */}
+                <div className="flex items-center justify-between text-xs">
+                  <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--color-text)]">
+                    <input
+                      type="checkbox"
+                      checked={reminderConfig.eveningEnabled}
+                      onChange={(e) => handleToggleReminderConfig('eveningEnabled', e.target.checked)}
+                      className="rounded accent-[var(--color-accent)] w-4 h-4"
+                    />
+                    <span>{language === 'pt-BR' ? 'Reflexão Noturna' : 'Evening Reflection'}</span>
+                  </label>
+                  <input
+                    type="time"
+                    value={reminderConfig.eveningTime}
+                    onChange={(e) => handleToggleReminderConfig('eveningTime', e.target.value)}
+                    className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-xs text-[var(--color-text)] font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Send Test Notification Button */}
+              <button
+                type="button"
+                onClick={handleSendTest}
+                className="min-h-[40px] w-full py-2 px-3 bg-[var(--color-surface-raised)] hover:border-[var(--color-accent)]/50 border border-[var(--color-border)] text-[var(--color-text)] font-semibold rounded-xl text-xs flex items-center justify-center gap-2 active:scale-95 transition-all"
+              >
+                <Send className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+                <span>{language === 'pt-BR' ? 'Enviar Notificação de Teste' : 'Send Test Notification to iPhone'}</span>
+              </button>
+            </div>
+          )}
+
+          {testNotificationSent && (
+            <div className="p-2.5 rounded-xl bg-[var(--color-success-soft)] border border-[var(--color-success)]/30 text-[var(--color-success)] text-xs font-semibold flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5" />
+              <span>{language === 'pt-BR' ? 'Notificação enviada com sucesso!' : 'Test notification sent! Check your screen/banner.'}</span>
+            </div>
+          )}
+
+          {notificationError && (
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs font-semibold flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{notificationError}</span>
+            </div>
+          )}
         </div>
 
         {/* History & Demo Controls */}
