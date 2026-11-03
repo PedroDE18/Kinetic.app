@@ -48,6 +48,23 @@ function AppContent() {
   const isLight = state.profile.theme === 'light';
   const hasHydratedFromCloud = useRef(false);
 
+  // Synchronize theme to document root and body to prevent viewport/overscroll color mismatches
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    if (isLight) {
+      root.classList.add('theme-light');
+      root.classList.remove('theme-dark');
+      body.classList.add('theme-light');
+      body.classList.remove('theme-dark');
+    } else {
+      root.classList.add('theme-dark');
+      root.classList.remove('theme-light');
+      body.classList.add('theme-dark');
+      body.classList.remove('theme-light');
+    }
+  }, [isLight]);
+
   // Cloud Sync Hydration upon login
   useEffect(() => {
     if (!currentUser?.uid || hasHydratedFromCloud.current) return;

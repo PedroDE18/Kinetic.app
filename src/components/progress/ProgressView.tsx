@@ -36,6 +36,7 @@ import {
   formatDistance,
   getLocalDateString,
 } from '../../utils/engine';
+import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
 import { TrendChart } from '../common/TrendChart';
 
 interface ProgressViewProps {
@@ -229,15 +230,18 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
     };
   }, [habits, frictionInterventions, tasks]);
 
+  const lang = profile.language || resolveInitialLanguage();
+  const t = getTranslations(lang);
+
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       {/* Editorial Header */}
       <div className="px-1 pt-1 pb-0.5">
         <h1 className="stoic-title text-2xl font-bold tracking-tight text-[var(--color-text)]">
-          progress.
+          {t.progress.title}
         </h1>
         <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-          trajectory, somatic evolution & systemic consistency.
+          {t.progress.subtitle}
         </p>
       </div>
 
@@ -252,7 +256,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
           }`}
         >
           <Scale className="w-3.5 h-3.5" />
-          <span>Physical</span>
+          <span>{t.progress.physical}</span>
         </button>
 
         <button
@@ -264,7 +268,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
           }`}
         >
           <Feather className="w-3.5 h-3.5" />
-          <span>Contemplative</span>
+          <span>{t.progress.contemplative}</span>
         </button>
 
         <button
@@ -276,7 +280,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal }: Progres
           }`}
         >
           <Repeat className="w-3.5 h-3.5" />
-          <span>Systems</span>
+          <span>{t.progress.systems}</span>
         </button>
       </div>
 

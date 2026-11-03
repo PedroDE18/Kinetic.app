@@ -224,6 +224,7 @@ export interface UserProfile {
   experienceLevel?: ExperienceLevel;
   targets: MacroGoals;
   theme: 'dark' | 'light';
+  language?: 'en' | 'pt-BR';
   startDate: string;
   geminiApiKey?: string;
   onboardingCompleted?: boolean;

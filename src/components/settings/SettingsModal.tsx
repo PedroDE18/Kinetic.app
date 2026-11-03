@@ -16,6 +16,7 @@ import {
 import { useFitness } from '../../context/FitnessContext';
 import { FitnessGoal, UnitSystem } from '../../types';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
+import { resolveInitialLanguage, SupportedLanguage } from '../../utils/i18n';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -40,6 +41,7 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
 
   const [name, setName] = useState(profile.name);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>(profile.unitSystem);
+  const [language, setLanguage] = useState<SupportedLanguage>(profile.language || resolveInitialLanguage());
   const [goal, setGoal] = useState<FitnessGoal>(profile.goal);
   const [targetRate, setTargetRate] = useState<number>(profile.targetRateKgPerWeek);
   const [calories, setCalories] = useState<number>(profile.targets.calories);
@@ -60,6 +62,7 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
     updateProfile({
       name,
       unitSystem,
+      language,
       goal,
       targetRateKgPerWeek: targetRate,
       geminiApiKey: geminiApiKey.trim(),
@@ -150,7 +153,9 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
 
           {/* Unit System */}
           <div>
-            <label className="text-xs font-semibold text-[var(--color-text-muted)] block mb-1">Unit System</label>
+            <label className="text-xs font-semibold text-[var(--color-text-muted)] block mb-1">
+              {language === 'pt-BR' ? 'Sistema de Unidades' : 'Unit System'}
+            </label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -173,6 +178,37 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
                 }`}
               >
                 Imperial (lb / in)
+              </button>
+            </div>
+          </div>
+
+          {/* System Language */}
+          <div>
+            <label className="text-xs font-semibold text-[var(--color-text-muted)] block mb-1">
+              {language === 'pt-BR' ? 'Idioma do Sistema' : 'System Language'}
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setLanguage('pt-BR')}
+                className={`min-h-[40px] py-2 rounded-xl text-xs font-semibold transition-all border ${
+                  language === 'pt-BR'
+                    ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
+                    : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)]'
+                }`}
+              >
+                🇧🇷 Português (Brasil)
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('en')}
+                className={`min-h-[40px] py-2 rounded-xl text-xs font-semibold transition-all border ${
+                  language === 'en'
+                    ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
+                    : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)]'
+                }`}
+              >
+                🇺🇸 English
               </button>
             </div>
           </div>

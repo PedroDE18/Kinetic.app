@@ -21,6 +21,7 @@ import { ReflectionModal } from './ReflectionModal';
 import { LearningItemModal } from '../growth/LearningItemModal';
 import { RelationshipModal } from '../growth/RelationshipModal';
 import { getLocalDateString } from '../../utils/engine';
+import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
 
 export type MindSubTab = 'rituals' | 'intellect' | 'philia' | 'advisor';
 
@@ -153,15 +154,18 @@ export function MindView() {
     };
   }, [sleepRecords, habits, todayStr, tasks, relationships]);
 
+  const lang = state.profile.language || resolveInitialLanguage();
+  const t = getTranslations(lang);
+
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       {/* Editorial Header */}
       <div className="px-1 pt-1 pb-0.5">
         <h1 className="stoic-title text-2xl font-bold tracking-tight text-[var(--color-text)]">
-          mind.
+          {t.mind.title}
         </h1>
         <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-          contemplative grounding, intellectual study, deep relationships & personal wisdom.
+          {t.mind.subtitle}
         </p>
       </div>
 
@@ -176,7 +180,7 @@ export function MindView() {
           }`}
         >
           <Feather className="w-3.5 h-3.5" />
-          <span>Rituals</span>
+          <span>{t.mind.rituals}</span>
         </button>
 
         <button
@@ -188,7 +192,7 @@ export function MindView() {
           }`}
         >
           <BookOpen className="w-3.5 h-3.5" />
-          <span>Intellect</span>
+          <span>{t.mind.intellect}</span>
         </button>
 
         <button
@@ -200,7 +204,7 @@ export function MindView() {
           }`}
         >
           <Heart className="w-3.5 h-3.5" />
-          <span>Philia</span>
+          <span>{t.mind.philia}</span>
         </button>
 
         <button
@@ -212,7 +216,7 @@ export function MindView() {
           }`}
         >
           <Compass className="w-3.5 h-3.5" />
-          <span>Advisor</span>
+          <span>{t.mind.advisor}</span>
         </button>
       </div>
 

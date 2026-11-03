@@ -54,9 +54,9 @@ export function parseQuickLog(input: string, unitSystem: 'metric' | 'imperial' =
   const actions: QuickLogAction[] = [];
   let remaining = clean;
 
-  // 1. Water Parsing (e.g. "500ml water", "drank 1 liter", "chugged 750 ml", "1.5L of water")
-  const waterRegex = /(?:drank|chugged|had|logged)?\s*(\d+(?:[.,]\d+)?)\s*(ml|l|liter|liters|oz)?\s*(?:of\s*)?water/i;
-  const standaloneWaterRegex = /(?:drank|chugged)\s*(\d+(?:[.,]\d+)?)\s*(ml|l|liter|liters|oz)\b/i;
+  // 1. Water Parsing (e.g. "500ml water", "drank 1 liter", "bebi 500ml de agua", "tomei 1 litro de água")
+  const waterRegex = /(?:drank|chugged|had|logged|bebi|tomei)?\s*(\d+(?:[.,]\d+)?)\s*(ml|l|liter|liters|litro|litros|oz|copos?|glasses?)?\s*(?:of|de)?\s*(?:water|água|agua)/i;
+  const standaloneWaterRegex = /(?:drank|chugged|bebi|tomei)\s*(\d+(?:[.,]\d+)?)\s*(ml|l|liter|liters|litro|litros|oz)\b/i;
   const waterMatch = remaining.match(waterRegex) || remaining.match(standaloneWaterRegex);
 
   if (waterMatch) {
@@ -65,6 +65,8 @@ export function parseQuickLog(input: string, unitSystem: 'metric' | 'imperial' =
     let ml = 0;
     if (unit.startsWith('l')) {
       ml = Math.round(rawVal * 1000);
+    } else if (unit.startsWith('copo') || unit.startsWith('glass')) {
+      ml = Math.round(rawVal * 250); // 1 standard glass = 250ml
     } else if (unit === 'oz') {
       ml = Math.round(rawVal * 29.5735);
     } else {
@@ -75,15 +77,15 @@ export function parseQuickLog(input: string, unitSystem: 'metric' | 'imperial' =
       actions.push({
         type: 'water',
         amountMl: ml,
-        label: `+${ml} ml Water`,
+        label: `+${ml} ml ${unitSystem === 'metric' ? 'Água / Water' : 'Water'}`,
       });
       remaining = remaining.replace(waterMatch[0], ' ');
     }
   }
 
-  // 2. Weight Parsing (e.g. "weigh-in 75.4kg", "weighed 75.4 kg", "weight 165 lbs", "75.2kg weigh in")
-  const weightRegex = /(?:weigh(?:-?in)?|weighed|weight)\s*(?:is|at)?\s*(\d+(?:[.,]\d+)?)\s*(kg|kgs|kilos|lbs|pounds)?\b/i;
-  const standaloneWeightRegex = /\b(\d{2,3}(?:[.,]\d+)?)\s*(kg|kgs|kilos|lbs|pounds)\s*(?:weigh(?:-?in)?|scale)?\b/i;
+  // 2. Weight Parsing (e.g. "weigh-in 75.4kg", "peso 74,5 kg", "pesando 75kg", "weighed 75.4 kg")
+  const weightRegex = /(?:weigh(?:-?in)?|weighed|weight|pesando|me\s*pesei|peso|balan[cç]a)\s*(?:is|at|em|de)?\s*(\d+(?:[.,]\d+)?)\s*(kg|kgs|kilos|quilos|lbs|pounds)?\b/i;
+  const standaloneWeightRegex = /\b(\d{2,3}(?:[.,]\d+)?)\s*(kg|kgs|kilos|quilos|lbs|pounds)\s*(?:weigh(?:-?in)?|scale|balan[cç]a)?\b/i;
   const weightMatch = remaining.match(weightRegex) || remaining.match(standaloneWeightRegex);
 
   if (weightMatch) {
@@ -100,24 +102,24 @@ export function parseQuickLog(input: string, unitSystem: 'metric' | 'imperial' =
       actions.push({
         type: 'weight',
         weightKg: kg,
-        label: `Weigh-in: ${kg} kg${unit.includes('lb') ? ` (${rawVal} lbs)` : ''}`,
+        label: `Pesagem / Weigh-in: ${kg} kg${unit.includes('lb') ? ` (${rawVal} lbs)` : ''}`,
       });
       remaining = remaining.replace(weightMatch[0], ' ');
     }
   }
 
-  // 3. Cardio Parsing (e.g. "ran 5k in 25 min", "cycling 15km for 40 mins", "walked 3 km in 35 min", "rowed 20 min")
-  const cardioRegex = /(?:ran|run|running|cycling|biked|bike|walked|walk|walking|rowed|rowing)\s*(?:a\s*)?(\d+(?:[.,]\d+)?\s*(?:k|km|miles|mi|m)?)?(?:\s*(?:in|for)\s*(\d+)(?::(\d+))?\s*(?:min|mins|minutes)?)?/i;
+  // 3. Cardio Parsing (e.g. "ran 5k in 25 min", "corri 5km em 25 min", "pedalei 15km", "caminhada de 30 min")
+  const cardioRegex = /(?:ran|run|running|cycling|biked|bike|walked|walk|walking|rowed|rowing|corri|corrida|pedalei|pedal|bicicleta|caminhei|caminhada|remada)\s*(?:a\s*)?(\d+(?:[.,]\d+)?\s*(?:k|km|quil[oô]metros|miles|mi|m)?)?(?:\s*(?:in|for|em|por|de)\s*(\d+)(?::(\d+))?\s*(?:min|mins|minutos|minutes)?)?/i;
   const cardioMatch = remaining.match(cardioRegex);
 
   if (cardioMatch && (cardioMatch[1] || cardioMatch[2])) {
     const matchStr = cardioMatch[0].toLowerCase();
     let activityType: CardioActivityType = 'running';
-    if (matchStr.includes('cycle') || matchStr.includes('bike')) {
+    if (matchStr.includes('cycle') || matchStr.includes('bike') || matchStr.includes('pedal') || matchStr.includes('bicicleta')) {
       activityType = 'cycling';
-    } else if (matchStr.includes('walk')) {
+    } else if (matchStr.includes('walk') || matchStr.includes('caminh')) {
       activityType = 'walking';
-    } else if (matchStr.includes('row')) {
+    } else if (matchStr.includes('row') || matchStr.includes('remad')) {
       activityType = 'rowing';
     }
 

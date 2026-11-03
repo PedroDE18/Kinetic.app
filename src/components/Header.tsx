@@ -1,7 +1,8 @@
 import React from 'react';
-import { Settings, Moon, Sun, Watch, Smartphone, User } from 'lucide-react';
+import { Settings, Moon, Sun, Watch, Smartphone, User, Globe } from 'lucide-react';
 import { useFitness } from '../context/FitnessContext';
 import { useAuth } from '../context/AuthContext';
+import { resolveInitialLanguage } from '../utils/i18n';
 
 interface HeaderProps {
   onOpenSettings: () => void;
@@ -14,11 +15,20 @@ export function Header({ onOpenSettings, onOpenProfile, onOpenHealthSync, onOpen
   const { state, updateProfile } = useFitness();
   const { currentUser } = useAuth();
   const isLight = state.profile.theme === 'light';
+  const language = state.profile.language || resolveInitialLanguage();
+  const isPortuguese = language === 'pt-BR';
 
   const toggleTheme = () => {
     updateProfile((prev) => ({
       ...prev,
       theme: prev.theme === 'dark' ? 'light' : 'dark',
+    }));
+  };
+
+  const toggleLanguage = () => {
+    updateProfile((prev) => ({
+      ...prev,
+      language: prev.language === 'pt-BR' ? 'en' : 'pt-BR',
     }));
   };
 
@@ -38,16 +48,29 @@ export function Header({ onOpenSettings, onOpenProfile, onOpenHealthSync, onOpen
               {state.profile.name || 'Eunoia'}
             </h1>
             <span className="text-[10px] font-semibold px-2 py-0.5 bg-[var(--color-surface-raised)] text-[var(--color-accent)] rounded-full border border-[var(--color-border)]">
-              {currentUser ? 'Cloud Sync' : 'Local-First'}
+              {currentUser ? (isPortuguese ? 'Nuvem' : 'Cloud Sync') : (isPortuguese ? 'Local' : 'Local-First')}
             </span>
           </div>
           <span className="text-[10px] text-[var(--color-text-muted)] font-serif italic block">
-            A personal system for living well
+            {isPortuguese ? 'Um sistema pessoal para viver bem' : 'A personal system for living well'}
           </span>
         </div>
       </button>
 
       <div className="flex items-center gap-1">
+        {/* Language Switcher (EN / PT-BR) */}
+        <button
+          onClick={toggleLanguage}
+          aria-label={isPortuguese ? 'Mudar para Inglês' : 'Switch to Brazilian Portuguese'}
+          title={isPortuguese ? 'Idioma: Português do Brasil (clique para alternar)' : 'Language: English (click to switch)'}
+          className="min-h-[40px] px-2 flex items-center justify-center rounded-xl text-xs font-bold text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-raised)] active:scale-95 transition-all"
+        >
+          <span className="px-1.5 py-0.5 rounded-md bg-[var(--color-surface-raised)] text-[10px] font-bold border border-[var(--color-border)] flex items-center gap-1">
+            <Globe className="w-3 h-3 text-[var(--color-accent)]" />
+            <span>{isPortuguese ? 'PT' : 'EN'}</span>
+          </span>
+        </button>
+
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}

@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { calculateWeightTrend, formatWeight, getLocalDateString, getRecentDateStrings } from '../../utils/engine';
+import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
 import { QuickLogBar } from './QuickLogBar';
 
 interface TodayViewProps {
@@ -182,22 +183,25 @@ export function TodayView({
   const trainingDaysThisWeek = weekDays.filter((d) => d.isTraining).length;
   const completedTrainingDays = weekDays.filter((d) => d.completed).length;
 
+  const lang = profile.language || resolveInitialLanguage();
+  const t = getTranslations(lang);
+
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  }, []);
+    if (hour < 12) return t.today.goodMorning;
+    if (hour < 18) return t.today.goodAfternoon;
+    return t.today.goodEvening;
+  }, [t]);
 
   return (
     <div className="space-y-4 pb-6 animate-in fade-in duration-200">
       {/* Editorial Header */}
       <header className="px-1 pt-1 pb-0.5">
         <h1 className="stoic-title text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text)]">
-          today.
+          {t.nav.today}.
         </h1>
         <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} • {greeting.toLowerCase()}, {profile.name?.split(' ')[0] || 'friend'}.
+          {new Date().toLocaleDateString(lang === 'pt-BR' ? 'pt-BR' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })} • {greeting.toLowerCase()}, {profile.name?.split(' ')[0] || t.today.friend.toLowerCase()}.
         </p>
       </header>
 
@@ -206,14 +210,14 @@ export function TodayView({
         <div className="flex items-center justify-between">
           <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--color-accent)] flex items-center gap-1.5">
             <Compass className="w-3.5 h-3.5" />
-            <span>Daily Deliberate Intention</span>
+            <span>{t.today.dailyIntention}</span>
           </span>
           {!isEditingIntention && (
             <button
               onClick={() => setIsEditingIntention(true)}
               className="text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] font-medium transition-colors"
             >
-              Refine
+              {t.today.refine}
             </button>
           )}
         </div>
@@ -224,7 +228,7 @@ export function TodayView({
               type="text"
               value={intentionText}
               onChange={(e) => setIntentionText(e.target.value)}
-              placeholder="What will you choose to focus on today? (e.g. Unhurried presence, disciplined focus)"
+              placeholder={t.today.dailyIntentionPrompt}
               className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl px-3.5 py-2 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)] font-serif italic"
             />
             <div className="flex justify-end gap-2">
@@ -232,13 +236,13 @@ export function TodayView({
                 type="submit"
                 className="px-3.5 py-1.5 bg-[var(--color-accent)] text-[var(--color-on-accent)] rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all"
               >
-                Set Intention
+                {t.today.setIntention}
               </button>
             </div>
           </form>
         ) : (
           <p className="text-xs font-serif italic text-[var(--color-text)] leading-relaxed pt-0.5">
-            "{profile.dailyIntention || 'Live deliberately today; differentiate what is in your control from what is not.'}"
+            "{profile.dailyIntention || (lang === 'pt-BR' ? 'Viva deliberadamente hoje; diferencie o que está sob seu controle do que não está.' : 'Live deliberately today; differentiate what is in your control from what is not.')}"
           </p>
         )}
       </section>

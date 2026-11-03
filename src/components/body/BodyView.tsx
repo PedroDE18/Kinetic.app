@@ -17,6 +17,7 @@ import { FoodView } from '../food/FoodView';
 import { TrainView } from '../train/TrainView';
 import { SleepModal } from '../recovery/SleepModal';
 import { getLocalDateString } from '../../utils/engine';
+import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
 
 export type BodySubTab = 'nutrition' | 'training' | 'recovery';
 
@@ -42,6 +43,9 @@ export function BodyView({
   const todayStr = useMemo(() => getLocalDateString(), []);
   const recentSleep = sleepRecords[0];
 
+  const lang = state.profile.language || resolveInitialLanguage();
+  const t = getTranslations(lang);
+
   const avgSleepHours = useMemo(() => {
     if (sleepRecords.length === 0) return 0;
     const slice = sleepRecords.slice(0, 7);
@@ -54,10 +58,10 @@ export function BodyView({
       {/* Editorial Header */}
       <div className="px-1 pt-1 pb-0.5">
         <h1 className="stoic-title text-2xl font-bold tracking-tight text-[var(--color-text)]">
-          body.
+          {t.body.title}
         </h1>
         <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-          the physical vessel — nourishment, athletic training & restorative sleep.
+          {t.body.subtitle}
         </p>
       </div>
 
@@ -72,7 +76,7 @@ export function BodyView({
           }`}
         >
           <Utensils className="w-3.5 h-3.5" />
-          <span>Nutrition</span>
+          <span>{t.body.nutrition}</span>
         </button>
 
         <button
@@ -84,7 +88,7 @@ export function BodyView({
           }`}
         >
           <Dumbbell className="w-3.5 h-3.5" />
-          <span>Training</span>
+          <span>{t.body.training}</span>
           {activeWorkout && (
             <span className="w-2 h-2 rounded-full bg-emerald-500 absolute top-1.5 right-1.5" />
           )}
@@ -99,7 +103,7 @@ export function BodyView({
           }`}
         >
           <Moon className="w-3.5 h-3.5" />
-          <span>Recovery</span>
+          <span>{t.body.recovery}</span>
         </button>
       </div>
 

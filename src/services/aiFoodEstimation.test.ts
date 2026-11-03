@@ -63,12 +63,22 @@ test('estimateMealOffline parses Greek yogurt with banana and seeds', () => {
 });
 
 test('estimateMealOffline falls back cleanly for unknown foods without crashing', () => {
-  const prompt = 'traditional feijoada with farofa';
+  const prompt = 'mysterious exotic hotpot';
   const items = estimateMealOffline(prompt);
 
   assert.equal(items.length, 1);
-  assert.ok(items[0].name.includes('feijoada'));
+  assert.ok(items[0].name.includes('mysterious exotic hotpot'));
   assert.ok(items[0].calories > 0);
+});
+
+test('estimateMealOffline parses Brazilian cultural foods accurately', () => {
+  const prompt = 'feijoada com farofa e arroz';
+  const items = estimateMealOffline(prompt);
+  assert.ok(items.length >= 3);
+  const names = items.map((i) => i.name.toLowerCase());
+  assert.ok(names.some((n) => n.includes('feijoada')));
+  assert.ok(names.some((n) => n.includes('farofa')));
+  assert.ok(names.some((n) => n.includes('arroz') || n.includes('rice')));
 });
 
 test('estimateMealWithAi returns offline estimate when no API key is provided (Zero Cost)', async () => {

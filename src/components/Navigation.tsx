@@ -1,5 +1,7 @@
 import React from 'react';
 import { TrendingUp, Sliders, Compass, Activity, Feather } from 'lucide-react';
+import { useFitness } from '../context/FitnessContext';
+import { getTranslations, resolveInitialLanguage } from '../utils/i18n';
 
 export type TabType = 'progress' | 'systems' | 'today' | 'body' | 'mind';
 
@@ -16,6 +18,10 @@ export function Navigation({
   hasActiveWorkout,
   hasPendingReview,
 }: NavigationProps) {
+  const { state } = useFitness();
+  const lang = state.profile.language || resolveInitialLanguage();
+  const t = getTranslations(lang);
+
   return (
     <nav
       aria-label="Eunoia Navigation"
@@ -26,7 +32,7 @@ export function Navigation({
         <NavButton
           active={activeTab === 'progress'}
           onClick={() => onSelectTab('progress')}
-          label="progress"
+          label={t.nav.progress}
           icon={<TrendingUp className="w-4 h-4" />}
           badge={hasPendingReview ? '!' : undefined}
           badgeColor="bg-[var(--color-accent)] text-[var(--color-on-accent)]"
@@ -36,14 +42,14 @@ export function Navigation({
         <NavButton
           active={activeTab === 'systems'}
           onClick={() => onSelectTab('systems')}
-          label="systems"
+          label={t.nav.systems}
           icon={<Sliders className="w-4 h-4" />}
         />
 
         {/* 3. Today (Center Hero Pill) */}
         <button
           onClick={() => onSelectTab('today')}
-          aria-label="Today Dashboard"
+          aria-label={t.nav.today}
           aria-current={activeTab === 'today' ? 'page' : undefined}
           className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-full transition-all active:scale-95 ${
             activeTab === 'today'
@@ -52,14 +58,14 @@ export function Navigation({
           }`}
         >
           <Compass className="w-4 h-4" />
-          <span className="text-xs tracking-tight">today</span>
+          <span className="text-xs tracking-tight">{t.nav.today}</span>
         </button>
 
         {/* 4. Body */}
         <NavButton
           active={activeTab === 'body'}
           onClick={() => onSelectTab('body')}
-          label="body"
+          label={t.nav.body}
           icon={<Activity className="w-4 h-4" />}
           badge={hasActiveWorkout ? '•' : undefined}
           badgeColor="bg-emerald-500 text-white"
@@ -69,7 +75,7 @@ export function Navigation({
         <NavButton
           active={activeTab === 'mind'}
           onClick={() => onSelectTab('mind')}
-          label="mind"
+          label={t.nav.mind}
           icon={<Feather className="w-4 h-4" />}
         />
       </div>

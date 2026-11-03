@@ -17,6 +17,7 @@ import { HabitModal, LIFE_AREAS } from './HabitModal';
 import { FrictionEngineModal } from './FrictionEngineModal';
 import { TaskModal } from './TaskModal';
 import { getLocalDateString } from '../../utils/engine';
+import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
 
 type SystemsSubTab = 'habits' | 'friction' | 'organization';
 
@@ -73,16 +74,18 @@ export function SystemsView() {
 
   const activeTasks = filteredTasks.filter((t) => !t.isCompleted);
   const completedTasks = filteredTasks.filter((t) => t.isCompleted);
+  const lang = state.profile.language || resolveInitialLanguage();
+  const t = getTranslations(lang);
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       {/* Editorial Header */}
       <div className="px-1 pt-1 pb-0.5">
         <h1 className="stoic-title text-2xl font-bold tracking-tight text-[var(--color-text)]">
-          systems.
+          {t.systems.title}
         </h1>
         <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-          habits, behavioral friction engineering & daily operational architecture.
+          {t.systems.subtitle}
         </p>
       </div>
 
@@ -97,7 +100,7 @@ export function SystemsView() {
           }`}
         >
           <Repeat className="w-3.5 h-3.5" />
-          <span>Habits ({habits.length})</span>
+          <span>{t.systems.habits} ({habits.length})</span>
         </button>
 
         <button
@@ -109,7 +112,7 @@ export function SystemsView() {
           }`}
         >
           <Sliders className="w-3.5 h-3.5" />
-          <span>Friction Engine</span>
+          <span>{t.systems.frictionEngine}</span>
         </button>
 
         <button
@@ -121,7 +124,7 @@ export function SystemsView() {
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          <span>Organization</span>
+          <span>{t.systems.organization}</span>
         </button>
       </div>
 

@@ -3,6 +3,7 @@ import { Sparkles, ArrowRight, Check, RotateCcw, Droplets, Scale, Activity, Uten
 import { useFitness } from '../../context/FitnessContext';
 import { parseQuickLog, QuickLogAction } from '../../services/quickLogParser';
 import { getLocalDateString } from '../../utils/engine';
+import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
 import { LoggedFood } from '../../types';
 
 export function QuickLogBar() {
@@ -153,6 +154,9 @@ export function QuickLogBar() {
     }
   };
 
+  const lang = state.profile.language || resolveInitialLanguage();
+  const t = getTranslations(lang);
+
   return (
     <div className="space-y-2 mb-3">
       {/* Undo Toast */}
@@ -168,7 +172,7 @@ export function QuickLogBar() {
               className="text-[var(--color-accent)] hover:underline flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)]"
             >
               <RotateCcw className="w-3 h-3" />
-              <span>Undo</span>
+              <span>{lang === 'pt-BR' ? 'Desfazer' : 'Undo'}</span>
             </button>
           )}
         </div>
@@ -188,7 +192,7 @@ export function QuickLogBar() {
                 handleApplyActions();
               }
             }}
-            placeholder="Quick log: e.g. 500ml water, ran 5k in 25 min, 2 eggs with toast"
+            placeholder={t.today.quickLogPlaceholder}
             className="w-full bg-transparent text-xs text-[var(--color-text)] placeholder-[var(--color-text-subtle)] focus:outline-none"
           />
           {input && (

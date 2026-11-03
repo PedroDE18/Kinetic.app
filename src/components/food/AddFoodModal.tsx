@@ -81,6 +81,8 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
           ? true
           : selectedCategory === 'Favorites'
           ? item.isFavorite
+          : selectedCategory.includes('Brasil') || selectedCategory.includes('Brazilian')
+          ? item.id.startsWith('f-br-') || (item.source && item.source.includes('TACO')) || (item.brand && item.brand.includes('Brasil'))
           : item.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
@@ -591,7 +593,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
 
                   {/* Category Pills */}
                   <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
-                    {['All', 'Favorites', 'Protein', 'Carbohydrates', 'Fats', 'Produce', 'Dairy'].map(
+                    {['All', 'Favorites', 'Brasil (TACO)', 'Protein', 'Carbohydrates', 'Fats', 'Produce', 'Dairy'].map(
                       (cat) => (
                         <button
                           key={cat}

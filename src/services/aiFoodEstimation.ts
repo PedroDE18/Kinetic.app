@@ -77,15 +77,15 @@ export function estimateMealOffline(prompt: string): ParsedAiFoodItem[] {
   };
 
   // Eggs
-  if (text.includes('egg') || text.includes('omelet')) {
-    const count = extractCount(/(\d+)\s*(?:large\s*)?egg/i, 2);
+  if (text.includes('egg') || text.includes('omelet') || text.includes('ovo') || text.includes('ovos') || text.includes('omelete')) {
+    const count = extractCount(/(\d+)\s*(?:large\s*)?(?:egg|ovo)/i, 2);
     parts.push(
       sanitizeAiFoodItem(
         {
-          name: count === 1 ? 'Large Whole Egg' : `${count} Large Whole Eggs`,
+          name: count === 1 ? 'Ovo Cozido / Egg' : `${count} Ovos / Whole Eggs`,
           servingCount: 1,
           servingSize: count * 50,
-          servingUnit: count === 1 ? 'egg (50g)' : `eggs (${count * 50}g)`,
+          servingUnit: count === 1 ? 'ovo (50g)' : `ovos (${count * 50}g)`,
           calories: Math.round(count * 72),
           protein: Number((count * 6.3).toFixed(1)),
           carbs: Number((count * 0.4).toFixed(1)),
@@ -245,12 +245,12 @@ export function estimateMealOffline(prompt: string): ParsedAiFoodItem[] {
     );
   }
 
-  // Chicken / Turkey / Poultry
-  if (text.includes('chicken') || text.includes('turkey') || text.includes('poultry') || text.includes('breast')) {
+  // Chicken / Turkey / Poultry / Frango
+  if (text.includes('chicken') || text.includes('turkey') || text.includes('poultry') || text.includes('breast') || text.includes('frango')) {
     parts.push(
       sanitizeAiFoodItem(
         {
-          name: 'Grilled Chicken Breast',
+          name: text.includes('frango') ? 'Filé de Frango Grelhado (Chicken Breast)' : 'Grilled Chicken Breast',
           servingCount: 1,
           servingSize: 150,
           servingUnit: 'g',
@@ -264,32 +264,228 @@ export function estimateMealOffline(prompt: string): ParsedAiFoodItem[] {
     );
   }
 
-  // Beef / Steak
-  if (text.includes('beef') || text.includes('steak') || text.includes('ground beef') || text.includes('burger')) {
+  // Beef / Steak / Picanha / Bife Acebolado / Carne Moída
+  if (text.includes('beef') || text.includes('steak') || text.includes('ground beef') || text.includes('burger') || text.includes('bife') || text.includes('carne') || text.includes('picanha') || text.includes('alcatra')) {
+    const isPicanha = text.includes('picanha');
+    const isAcebolado = text.includes('acebolado');
     parts.push(
       sanitizeAiFoodItem(
         {
-          name: 'Lean Ground Beef (93/7)',
+          name: isPicanha ? 'Picanha Bovina Grelhada' : isAcebolado ? 'Bife Acebolado' : 'Bife de Carne Bovina (Alcatra)',
           servingCount: 1,
-          servingSize: 150,
+          servingSize: 120,
           servingUnit: 'g',
-          calories: 228,
-          protein: 36.0,
-          carbs: 0,
-          fat: 8.4,
+          calories: isPicanha ? 285 : isAcebolado ? 225 : 228,
+          protein: isPicanha ? 32.0 : 36.0,
+          carbs: isAcebolado ? 2.4 : 0,
+          fat: isPicanha ? 17.0 : 8.4,
         },
         parts.length
       )
     );
   }
 
-  // Salmon / Tuna / Fish
-  if (text.includes('salmon') || text.includes('tuna') || text.includes('fish')) {
+  // Brazilian Feijão (Carioca / Preto) / Beans
+  if (text.includes('feijao') || text.includes('feijão') || text.includes('beans')) {
+    const isPreto = text.includes('preto');
+    parts.push(
+      sanitizeAiFoodItem(
+        {
+          name: isPreto ? 'Feijão Preto Cozido' : 'Feijão Carioca Cozido',
+          servingCount: 1,
+          servingSize: 100,
+          servingUnit: 'concha (100g)',
+          calories: 76,
+          protein: 4.8,
+          carbs: 13.6,
+          fat: 0.5,
+        },
+        parts.length
+      )
+    );
+  }
+
+  // Feijoada
+  if (text.includes('feijoada')) {
+    parts.push(
+      sanitizeAiFoodItem(
+        {
+          name: 'Feijoada Completa Tradicional',
+          servingCount: 1,
+          servingSize: 250,
+          servingUnit: 'concha (250g)',
+          calories: 342,
+          protein: 24.5,
+          carbs: 19.8,
+          fat: 18.2,
+        },
+        parts.length
+      )
+    );
+  }
+
+  // Tapioca
+  if (text.includes('tapioca')) {
+    const hasCoalho = text.includes('coalho') || text.includes('queijo');
+    parts.push(
+      sanitizeAiFoodItem(
+        {
+          name: hasCoalho ? 'Tapioca com Queijo Coalho' : 'Tapioca Simples (Goma)',
+          servingCount: 1,
+          servingSize: hasCoalho ? 100 : 60,
+          servingUnit: 'disco',
+          calories: hasCoalho ? 265 : 140,
+          protein: hasCoalho ? 9.8 : 0.2,
+          carbs: 34.0,
+          fat: hasCoalho ? 10.4 : 0.1,
+        },
+        parts.length
+      )
+    );
+  }
+
+  // Pão de Queijo
+  if (text.includes('pao de queijo') || text.includes('pão de queijo')) {
+    const count = extractCount(/(\d+)\s*p[aã]o\s*(?:de\s*)?queijo/i, 2);
+    parts.push(
+      sanitizeAiFoodItem(
+        {
+          name: count === 1 ? 'Pão de Queijo Mineiro' : `${count} Pães de Queijo Mineiros`,
+          servingCount: 1,
+          servingSize: count * 40,
+          servingUnit: `${count} unidades (${count * 40}g)`,
+          calories: count * 110,
+          protein: Number((count * 2.6).toFixed(1)),
+          carbs: Number((count * 14.8).toFixed(1)),
+          fat: Number((count * 4.6).toFixed(1)),
+        },
+        parts.length
+      )
+    );
+  }
+
+  // Pão Francês / Cacetinho / Pão na Chapa
+  if (text.includes('pao frances') || text.includes('pão francês') || text.includes('cacetinho') || text.includes('pao na chapa') || text.includes('pão na chapa')) {
+    const isChapa = text.includes('chapa') || text.includes('manteiga');
+    parts.push(
+      sanitizeAiFoodItem(
+        {
+          name: isChapa ? 'Pão Francês na Chapa com Manteiga' : 'Pão Francês Tradicional',
+          servingCount: 1,
+          servingSize: isChapa ? 60 : 50,
+          servingUnit: 'unidade (50g)',
+          calories: isChapa ? 225 : 150,
+          protein: 4.5,
+          carbs: 29.3,
+          fat: isChapa ? 10.2 : 1.5,
+        },
+        parts.length
+      )
+    );
+  }
+
+  // Açaí
+  if (text.includes('acai') || text.includes('açaí')) {
+    parts.push(
+      sanitizeAiFoodItem(
+        {
+          name: 'Açaí na Tigela com Banana e Granola',
+          servingCount: 1,
+          servingSize: 200,
+          servingUnit: 'tigela (200g)',
+          calories: 295,
+          protein: 5.4,
+          carbs: 54.0,
+          fat: 7.2,
+        },
+        parts.length
+      )
+    );
+  }
+
+  // Farofa
+  if (text.includes('farofa')) {
+    parts.push(
+      sanitizeAiFoodItem(
+        {
+          name: 'Farofa de Mandioca Tradicional',
+          servingCount: 1,
+          servingSize: 30,
+          servingUnit: '2 colheres (30g)',
+          calories: 122,
+          protein: 0.8,
+          carbs: 22.5,
+          fat: 3.4,
+        },
+        parts.length
+      )
+    );
+  }
+
+  // Cuscuz Nordestino
+  if (text.includes('cuscuz')) {
+    parts.push(
+      sanitizeAiFoodItem(
+        {
+          name: 'Cuscuz Nordestino com Manteiga',
+          servingCount: 1,
+          servingSize: 100,
+          servingUnit: 'fatia (100g)',
+          calories: 162,
+          protein: 3.2,
+          carbs: 28.5,
+          fat: 4.2,
+        },
+        parts.length
+      )
+    );
+  }
+
+  // Mandioca / Aipim / Macaxeira
+  if (text.includes('mandioca') || text.includes('aipim') || text.includes('macaxeira')) {
+    parts.push(
+      sanitizeAiFoodItem(
+        {
+          name: 'Mandioca / Aipim Cozido',
+          servingCount: 1,
+          servingSize: 100,
+          servingUnit: 'g (2 pedaços)',
+          calories: 125,
+          protein: 0.6,
+          carbs: 30.1,
+          fat: 0.3,
+        },
+        parts.length
+      )
+    );
+  }
+
+  // Café com leite / Pingado
+  if (text.includes('cafe com leite') || text.includes('café com leite') || text.includes('pingado')) {
+    parts.push(
+      sanitizeAiFoodItem(
+        {
+          name: 'Café com Leite (Pingado)',
+          servingCount: 1,
+          servingSize: 150,
+          servingUnit: 'copo americano (150ml)',
+          calories: 65,
+          protein: 4.2,
+          carbs: 6.5,
+          fat: 2.4,
+        },
+        parts.length
+      )
+    );
+  }
+
+  // Salmon / Tuna / Fish / Peixe
+  if (text.includes('salmon') || text.includes('tuna') || text.includes('fish') || text.includes('peixe') || text.includes('tilapia') || text.includes('tilápia')) {
     const isSalmon = text.includes('salmon');
     parts.push(
       sanitizeAiFoodItem(
         {
-          name: isSalmon ? 'Atlantic Salmon Fillet' : 'Canned Light Tuna in Water',
+          name: isSalmon ? 'Atlantic Salmon Fillet' : 'Filé de Peixe Grelhado',
           servingCount: 1,
           servingSize: 140,
           servingUnit: 'g',
@@ -303,24 +499,25 @@ export function estimateMealOffline(prompt: string): ParsedAiFoodItem[] {
     );
   }
 
-  // Rice / Potato / Oats / Pasta
-  if (text.includes('rice')) {
+  // Rice / Potato / Oats / Pasta / Arroz
+  if (text.includes('rice') || text.includes('arroz')) {
+    const isBrown = text.includes('brown') || text.includes('integral');
     parts.push(
       sanitizeAiFoodItem(
         {
-          name: 'Cooked White Jasmine Rice',
+          name: isBrown ? 'Brown Rice (Arroz Integral)' : 'Cooked White Rice (Arroz Branco)',
           servingCount: 1,
-          servingSize: 150,
-          servingUnit: 'g',
-          calories: 195,
-          protein: 3.8,
-          carbs: 43.0,
-          fat: 0.5,
+          servingSize: 120,
+          servingUnit: 'g (4 colheres de sopa)',
+          calories: isBrown ? 149 : 154,
+          protein: isBrown ? 3.1 : 3.0,
+          carbs: isBrown ? 31.0 : 33.7,
+          fat: isBrown ? 1.2 : 0.3,
         },
         parts.length
       )
     );
-  } else if (text.includes('oat') || text.includes('oatmeal') || text.includes('porridge')) {
+  } else if (text.includes('oat') || text.includes('oatmeal') || text.includes('porridge') || text.includes('aveia')) {
     parts.push(
       sanitizeAiFoodItem(
         {
@@ -470,7 +667,7 @@ export async function estimateMealWithAi(
       contents: `Estimate the itemized food breakdown and realistic nutritional content for this meal or food description:\n"${cleanPrompt}"`,
       config: {
         systemInstruction:
-          'You are an athletic nutrition database estimator. Given a meal or food description, break it down into realistic individual ingredients with serving sizes and macronutrient estimations (calories, protein in grams, carbs in grams, fat in grams). Be physiologically accurate (1g protein = 4 kcal, 1g carb = 4 kcal, 1g fat = 9 kcal). Do not hallucinate negative numbers or absurd values.',
+          'You are an athletic nutrition database estimator with native expertise in both international and Brazilian cultural foods (arroz, feijão carioca/preto, bife acebolado, picanha, mandioca, farofa, tapioca, pão de queijo, açaí, cuscuz nordestino, feijoada, etc., and Brazilian culinary portions like colheres de sopa, concha, escumadeira, gramas, fatias). Given a meal or food description in English or Brazilian Portuguese, break it down into realistic individual ingredients with serving sizes and macronutrient estimations based on TACO (Tabela Brasileira de Composição de Alimentos) and USDA standards. Be physiologically accurate (1g protein = 4 kcal, 1g carb = 4 kcal, 1g fat = 9 kcal). Do not hallucinate negative numbers or absurd values.',
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.ARRAY,

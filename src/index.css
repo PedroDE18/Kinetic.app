@@ -95,37 +95,37 @@
     --safe-bottom: env(safe-area-inset-bottom, 16px);
   }
 
-  /* Light theme overrides (Stoic Monochromatic Paper) */
+  /* Light theme overrides (Stoic Monochromatic Paper & Slate) */
   .theme-light {
-    --color-bg: #F2F3F5;
-    --color-bg-elevated: #FFFFFF;
-    --color-surface: #FFFFFF;
-    --color-surface-raised: #E9EAEF;
-    --color-surface-sunken: #EAEBEE;
-    --color-border: #E5E6EA;
-    --color-border-subtle: #ECEEF2;
-    --color-text: #151515;
-    --color-text-muted: #77787D;
-    --color-text-subtle: #A2A3A7;
-    --color-accent: #111111;
-    --color-accent-hover: #262626;
-    --color-accent-soft: rgba(17, 17, 17, 0.06);
+    --color-bg: #EAECEF;
+    --color-bg-elevated: #F8F9FA;
+    --color-surface: #F5F6F8;
+    --color-surface-raised: #E0E2E7;
+    --color-surface-sunken: #E0E2E7;
+    --color-border: #D2D5DC;
+    --color-border-subtle: #DDE0E7;
+    --color-text: #141517;
+    --color-text-muted: #64666E;
+    --color-text-subtle: #8A8D96;
+    --color-accent: #111215;
+    --color-accent-hover: #23252A;
+    --color-accent-soft: rgba(17, 18, 21, 0.06);
     --color-on-accent: #FFFFFF;
-    --color-secondary-accent: #606269;
-    --color-secondary-accent-soft: rgba(96, 98, 105, 0.08);
-    --color-success: #2E724A;
-    --color-success-soft: rgba(46, 114, 74, 0.08);
-    --color-warning: #94681E;
-    --color-warning-soft: rgba(148, 104, 30, 0.08);
-    --color-danger: #A33A3A;
-    --color-danger-soft: rgba(163, 58, 58, 0.08);
-    --color-info: #356285;
+    --color-secondary-accent: #585A62;
+    --color-secondary-accent-soft: rgba(88, 90, 98, 0.08);
+    --color-success: #256A42;
+    --color-success-soft: rgba(37, 106, 66, 0.08);
+    --color-warning: #8E6015;
+    --color-warning-soft: rgba(142, 96, 21, 0.08);
+    --color-danger: #9C3333;
+    --color-danger-soft: rgba(156, 51, 51, 0.08);
+    --color-info: #2E587A;
 
-    --shadow-xs: 0 1px 2px rgba(21, 21, 21, 0.03);
-    --shadow-sm: 0 2px 8px rgba(21, 21, 21, 0.04);
-    --shadow-md: 0 8px 24px rgba(21, 21, 21, 0.05);
-    --shadow-lg: 0 16px 40px rgba(21, 21, 21, 0.07);
-    --shadow-glass: 0 12px 36px rgba(21, 21, 21, 0.06);
+    --shadow-xs: 0 1px 3px rgba(20, 21, 23, 0.04);
+    --shadow-sm: 0 2px 8px rgba(20, 21, 23, 0.05);
+    --shadow-md: 0 8px 24px rgba(20, 21, 23, 0.06);
+    --shadow-lg: 0 16px 40px rgba(20, 21, 23, 0.08);
+    --shadow-glass: 0 8px 28px rgba(20, 21, 23, 0.06);
   }
 
   html {
@@ -325,13 +325,6 @@ body {
 .theme-light {
   background-color: var(--color-bg) !important;
   color: var(--color-text) !important;
-}
-
-.theme-light header,
-.theme-light nav {
-  background-color: color-mix(in srgb, var(--color-surface) 92%, transparent) !important;
-  border-color: var(--color-border) !important;
-  box-shadow: var(--shadow-xs);
 }
 
 /* Map zinc backgrounds */

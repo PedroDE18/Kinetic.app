@@ -16,6 +16,7 @@ import {
 import { useFitness } from '../../context/FitnessContext';
 import { LoggedFood, MealType } from '../../types';
 import { getLocalDateString, formatDisplayDate, getRecentDateStrings } from '../../utils/engine';
+import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
 import { RecipeBuilderModal } from './RecipeBuilderModal';
 
 interface FoodViewProps {
@@ -49,12 +50,15 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
     return state.foodLibrary.find((f) => f.id === detailItem.foodId) || null;
   }, [detailItem, state.foodLibrary]);
 
+  const lang = profile.language || resolveInitialLanguage();
+  const t = getTranslations(lang);
+
   const mealTitle = (mt: LoggedFood['mealType']): string =>
     ({
-      breakfast: 'Breakfast',
-      lunch: 'Lunch',
-      dinner: 'Dinner',
-      snack: 'Snacks',
+      breakfast: t.body.breakfast,
+      lunch: t.body.lunch,
+      dinner: t.body.dinner,
+      snack: t.body.snack,
     })[mt] || mt;
 
   // Aggregated totals for the selected date
@@ -71,10 +75,10 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
   }, [selectedFoods]);
 
   const meals: { key: MealType; title: string }[] = [
-    { key: 'breakfast', title: 'Breakfast' },
-    { key: 'lunch', title: 'Lunch' },
-    { key: 'dinner', title: 'Dinner' },
-    { key: 'snack', title: 'Snacks' },
+    { key: 'breakfast', title: t.body.breakfast },
+    { key: 'lunch', title: t.body.lunch },
+    { key: 'dinner', title: t.body.dinner },
+    { key: 'snack', title: t.body.snack },
   ];
 
   const handleStartEdit = (food: LoggedFood) => {
@@ -190,7 +194,7 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
           <div>
             <span className="k-section-title flex items-center gap-1.5">
               <Flame className="w-3.5 h-3.5 text-[var(--color-accent)]" />
-              <span>{isToday ? "Today's intake" : `${formatDisplayDate(selectedDate)} intake`}</span>
+              <span>{isToday ? (lang === 'pt-BR' ? 'Consumo de Hoje' : "Today's intake") : `${formatDisplayDate(selectedDate)} ${t.body.intake}`}</span>
             </span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="k-display text-2xl text-[var(--color-text)] tabular-nums">{totalNutrition.calories}</span>
@@ -205,7 +209,7 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
               title="Create multi-ingredient recipe"
             >
               <ChefHat className="w-4 h-4 text-[var(--color-accent)]" />
-              <span className="hidden sm:inline">New Recipe</span>
+              <span className="hidden sm:inline">{lang === 'pt-BR' ? 'Nova Receita' : 'New Recipe'}</span>
             </button>
 
             <button
@@ -213,7 +217,7 @@ export function FoodView({ onOpenAddModal }: FoodViewProps) {
               className="min-h-[44px] px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-on-accent)] font-semibold rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Add Food</span>
+              <span>{t.body.addFood}</span>
             </button>
           </div>
         </div>
