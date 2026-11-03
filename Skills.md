@@ -14,7 +14,9 @@ Skill Catalog:
 ├─ SKILL-04: Token-Based Accessible SVG Charting
 ├─ SKILL-05: Local-First State Evolution & Migration
 ├─ SKILL-06: Wearable & Health Data Ingestion
-└─ SKILL-07: Firebase Dual-Sync & Security Rules (Optional Cloud)
+├─ SKILL-07: Firebase Dual-Sync & Security Rules (Optional Cloud)
+├─ SKILL-08: Atomic Commits & Instant Push Protocol
+└─ SKILL-09: Non-Destructive Schema Evolution & Library Merge
 ```
 
 ---
@@ -135,3 +137,29 @@ Skill Catalog:
   ```bash
   npm run lint
   ```
+
+---
+
+### SKILL-08: Atomic Commits & Instant Push Protocol
+- **Domain**: Git workflow, CI verification, project management
+- **Purpose**: Maintain an audit trail of granular, high-confidence commits and push each to remote immediately.
+- **Protocol**:
+  1. *Single Concern Principle*: Each commit addresses one self-contained task or architectural step.
+  2. *Mandatory Pre-Commit Verification Gate*:
+     ```bash
+     npx tsx --test $(find src -name '*.test.ts') && npm run lint && npm run build
+     ```
+  3. *Selective Staging*: Stage explicitly via `git add <files>`.
+  4. *Semantic Commit Message*: Format as `feat(...)`, `fix(...)`, `docs(...)`, `test(...)`, or `refactor(...)`.
+  5. *Immediate Remote Push*: Run `git push origin <branch>` immediately after commit. Never accumulate unpushed local commits.
+
+---
+
+### SKILL-09: Non-Destructive Schema Evolution & Library Merge
+- **Domain**: `src/context/FitnessContext.tsx`, `src/utils/mockData.ts`
+- **Purpose**: Guarantee user data permanence across app releases and seamlessly merge new library additions into existing stores.
+- **Protocol**:
+  1. *Never Overwrite User Customizations*: Custom exercises, logged foods, recipes, habits, and reflections must never be deleted or replaced.
+  2. *Intelligent Merge on Boot*: When new system default foods or exercises are deployed, match existing items by `id` or normalized `name`. If absent, append new defaults to the user's library without altering user-created items.
+  3. *Storage Key Migration*: On first load with a newer storage key, inspect older keys (e.g. `kinetic_fitness_app_v3` -> `eunoia_os_v1`) and migrate all records transparently.
+  4. *Safety Invariant*: In unit tests, verify that existing user weights and food logs round-trip without degradation.

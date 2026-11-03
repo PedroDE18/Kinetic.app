@@ -40,7 +40,7 @@ graph TD
 
 ## 2. Inviolable Operational Invariants
 
-Any agent operating on this repository must strictly adhere to the following 6 core invariants:
+Any agent operating on this repository must strictly adhere to the following 8 core invariants:
 
 ### INVARIANT 1: Zero Cost Guarantee ($0 Forever)
 - **Rule**: Never introduce features or API calls that require paid tokens, credit card billing, or paid subscriptions for the developer, owner, or user.
@@ -50,8 +50,8 @@ Any agent operating on this repository must strictly adhere to the following 6 c
   - If no API key is configured, the application must run silently and fully offline at zero cost.
 
 ### INVARIANT 2: Local-First Supremacy
-- **Rule**: Core athletic functionality (nutrition logging, workout tracking, rest timers, adaptive TDEE) must operate with zero network access and no mandatory account sign-up.
-- **Storage Target**: Primary state must cleanly serialize and restore from `localStorage: kinetic_fitness_app_v3`.
+- **Rule**: Core functionality (nutrition logging, workout tracking, rest timers, adaptive TDEE, habits, reflections) must operate with zero network access and no mandatory account sign-up.
+- **Storage Target**: Primary state must cleanly serialize and restore from `localStorage: eunoia_os_v1` (with seamless migration from `kinetic_fitness_app_v3`).
 
 ### INVARIANT 3: Preserve Firebase WIP
 - **Rule**: The working directory contains uncommitted Firebase Auth & Firestore WIP files (`firebase.json`, `firestore.rules`, `src/services/firebase.ts`, `src/context/AuthContext.tsx`, `src/components/auth/`).
@@ -68,6 +68,21 @@ Any agent operating on this repository must strictly adhere to the following 6 c
   - Test Suite: `npx tsx --test $(find src -name '*.test.ts')`
   - Typecheck: `npm run lint` (`tsc --noEmit`)
   - Production Build: `npm run build` (`vite build`)
+
+### INVARIANT 7: Atomic Commits & Instant Remote Pushes
+- **Rule**: ALWAYS execute atomic git commits and push immediately to remote (`origin/main`).
+- **Standard**:
+  - Break work into distinct, self-contained atomic units (e.g., schema migration, feature component, database expansion, documentation).
+  - Every atomic commit MUST pass tests, typecheck, and build before committing.
+  - IMMEDIATELY push every commit to `origin/main` (`git push origin main`). Never accumulate unpushed local commits or delay pushes until the end of a session.
+  - Write descriptive semantic commit messages: `feat(domain): ...`, `fix(domain): ...`, `docs: ...`, `refactor(domain): ...`.
+
+### INVARIANT 8: User Data Permanence & Non-Destructive Migrations
+- **Rule**: Application updates must NEVER wipe, reset, or degrade existing user data in `localStorage` or cloud storage.
+- **Migration Contract**:
+  - When new default options (e.g. food library items, exercise definitions, starter templates) are added, the storage hydration logic MUST non-destructively merge the new system defaults into the user's existing library.
+  - Existing user custom foods, custom exercises, custom habits, logged entries, and weigh-ins must be strictly preserved.
+  - Upgrades from legacy storage keys (e.g., `kinetic_fitness_app_v3` -> `eunoia_os_v1`) must automatically migrate all records on first boot without requiring manual user action or data loss.
 
 ---
 
@@ -86,7 +101,7 @@ When executing a user request, agents must follow this 5-stage loop:
    - Inspect existing interfaces in `src/types.ts`.
    - Read test suites associated with the domain to learn established verification patterns.
 2. **Plan**:
-   - Verify that the plan honors the 6 Inviolable Invariants.
+   - Verify that the plan honors all 8 Inviolable Invariants (including atomic commits and data permanence).
    - Design schemas before writing UI components.
 3. **Implement**:
    - Write clean, modular TypeScript code.
@@ -95,10 +110,11 @@ When executing a user request, agents must follow this 5-stage loop:
    - Run tests: `npx tsx --test $(find src -name '*.test.ts')`.
    - Run typecheck: `npm run lint`.
    - Run build: `npm run build`.
-5. **Commit & Push**:
-   - Stage files selectively using `git add <explicit files>`. Do NOT use `git add .` to avoid capturing uncommitted Firebase WIP.
-   - Create semantic commits: `feat(domain): description`, `fix(domain): description`, `test(domain): description`.
-   - Push to `origin/main`.
+5. **Commit & Push (Atomic & Instant)**:
+   - Make an atomic commit for each logical unit of work as soon as it passes verification.
+   - Stage files selectively using `git add <explicit files>`. Do NOT stage unrelated WIP files.
+   - Create semantic commits: `feat(domain): description`, `fix(domain): description`, `test(domain): description`, `docs: description`.
+   - Immediately execute `git push origin main`. Never leave commits stranded locally.
 
 ---
 
