@@ -14,10 +14,14 @@ import {
   Heart,
   Edit2,
   Compass,
+  Wind,
+  Search,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { ReflectionEntry, ReflectionType, LearningItem, RelationshipTouchpoint } from '../../types';
 import { ReflectionModal } from './ReflectionModal';
+import { BreathworkModal } from './BreathworkModal';
+import { DichotomyModal } from './DichotomyModal';
 import { LearningItemModal } from '../growth/LearningItemModal';
 import { RelationshipModal } from '../growth/RelationshipModal';
 import { getLocalDateString } from '../../utils/engine';
@@ -42,6 +46,9 @@ export function MindView() {
   // Reflection Modals
   const [showReflectionModal, setShowReflectionModal] = useState(false);
   const [reflectionModalType, setReflectionModalType] = useState<ReflectionType>('morning');
+  const [showBreathworkModal, setShowBreathworkModal] = useState(false);
+  const [showDichotomyModal, setShowDichotomyModal] = useState(false);
+  const [journalSearch, setJournalSearch] = useState('');
 
   // Learning Item Modal
   const [showLearningModal, setShowLearningModal] = useState(false);
@@ -57,6 +64,21 @@ export function MindView() {
   const filteredLearningItems = useMemo(() => {
     return learningItems.filter((i) => (statusFilter === 'all' ? true : i.status === statusFilter));
   }, [learningItems, statusFilter]);
+
+  const filteredReflections = useMemo(() => {
+    if (!journalSearch.trim()) return reflections;
+    const q = journalSearch.toLowerCase();
+    return reflections.filter((r) => {
+      const matchesContent =
+        (r.freeformContent || '').toLowerCase().includes(q) ||
+        (r.dichotomyData?.actionablePivot || '').toLowerCase().includes(q);
+      const matchesAnswers = r.promptAnswers
+        ? Object.values(r.promptAnswers).some((ans) => ans.toLowerCase().includes(q))
+        : false;
+      const matchesWeather = r.affectiveWeather?.toLowerCase().includes(q);
+      return matchesContent || matchesAnswers || matchesWeather;
+    });
+  }, [reflections, journalSearch]);
 
   const todayMorning = reflections.find((r) => r.date === todayStr && r.type === 'morning');
   const todayEvening = reflections.find((r) => r.date === todayStr && r.type === 'evening');
@@ -334,26 +356,77 @@ export function MindView() {
                 )}
               </div>
             </div>
+
+            {/* Somatic & Philosophical Companion Tools */}
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowBreathworkModal(true)}
+                className="p-3.5 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]/50 rounded-2xl text-left transition-all active:scale-[0.98] shadow-xs flex items-center gap-3"
+              >
+                <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center shrink-0">
+                  <Wind className="w-4 h-4" />
+                </div>
+                <div>
+                  <h5 className="text-xs font-bold text-[var(--color-text)]">
+                    {lang === 'pt-BR' ? 'Respiração' : 'Somatic Breath'}
+                  </h5>
+                  <p className="text-[10px] text-[var(--color-text-muted)]">
+                    {lang === 'pt-BR' ? 'Box 4-4, Suspiro' : 'Box, 4-7-8, Sigh'}
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowDichotomyModal(true)}
+                className="p-3.5 bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]/50 rounded-2xl text-left transition-all active:scale-[0.98] shadow-xs flex items-center gap-3"
+              >
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                  <Compass className="w-4 h-4" />
+                </div>
+                <div>
+                  <h5 className="text-xs font-bold text-[var(--color-text)]">
+                    {lang === 'pt-BR' ? 'Dicotomia' : 'Control Canvas'}
+                  </h5>
+                  <p className="text-[10px] text-[var(--color-text-muted)]">
+                    {lang === 'pt-BR' ? 'O que posso controlar' : 'What is in my power'}
+                  </p>
+                </div>
+              </button>
+            </div>
           </section>
 
           {/* Historical Reflections Journal */}
           <section className="space-y-2.5 pt-2">
             <div className="flex items-center justify-between px-1">
               <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
-                Reflections Archive ({reflections.length})
+                {lang === 'pt-BR' ? 'Arquivo de Reflexões' : 'Reflections Archive'} ({filteredReflections.length})
               </span>
             </div>
 
-            {reflections.length === 0 ? (
+            {/* Live Journal Search Bar */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-[var(--color-text-subtle)] absolute left-3.5 top-3" />
+              <input
+                type="text"
+                value={journalSearch}
+                onChange={(e) => setJournalSearch(e.target.value)}
+                placeholder={lang === 'pt-BR' ? 'Buscar reflexões por palavra ou clima...' : 'Search reflections by thought, topic, or mood...'}
+                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl pl-9 pr-3.5 py-2 text-xs text-[var(--color-text)] placeholder-[var(--color-text-subtle)] focus:outline-none focus:border-[var(--color-accent)]"
+              />
+            </div>
+
+            {filteredReflections.length === 0 ? (
               <div className="p-8 bg-[var(--color-surface)] border border-dashed border-[var(--color-border)] rounded-3xl text-center space-y-2">
                 <Feather className="w-6 h-6 mx-auto text-[var(--color-text-muted)] opacity-40" />
                 <p className="text-xs text-[var(--color-text-muted)]">
-                  Your reflective entries will appear here. Begin with a morning reflection to set deliberate focus.
+                  {journalSearch ? 'No matching reflections found.' : 'Your reflective entries will appear here.'}
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {reflections.map((entry) => (
+                {filteredReflections.map((entry) => (
                   <div
                     key={entry.id}
                     className="p-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-2 text-xs relative group shadow-xs"
@@ -366,7 +439,12 @@ export function MindView() {
                         <span className="text-xs font-semibold text-[var(--color-text)]">
                           {entry.date}
                         </span>
-                        {entry.emotionalState && (
+                        {entry.affectiveWeather && (
+                          <span className="px-2 py-0.5 rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)] text-[10px] font-bold capitalize">
+                            • {entry.affectiveWeather}
+                          </span>
+                        )}
+                        {entry.emotionalState && !entry.affectiveWeather && (
                           <span className="text-[10px] text-[var(--color-text-muted)] italic">
                             • {entry.emotionalState}
                           </span>
@@ -380,6 +458,20 @@ export function MindView() {
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
+
+                    {/* Contributing context tags */}
+                    {entry.affectiveTags && entry.affectiveTags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {entry.affectiveTags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="text-[9px] px-1.5 py-0.2 rounded-md bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] capitalize"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Prompt Answers */}
                     {entry.promptAnswers && Object.keys(entry.promptAnswers).length > 0 && (
@@ -720,6 +812,20 @@ export function MindView() {
         <ReflectionModal
           initialType={reflectionModalType}
           onClose={() => setShowReflectionModal(false)}
+        />
+      )}
+
+      {showBreathworkModal && (
+        <BreathworkModal
+          isPortuguese={lang === 'pt-BR'}
+          onClose={() => setShowBreathworkModal(false)}
+        />
+      )}
+
+      {showDichotomyModal && (
+        <DichotomyModal
+          isPortuguese={lang === 'pt-BR'}
+          onClose={() => setShowDichotomyModal(false)}
         />
       )}
 

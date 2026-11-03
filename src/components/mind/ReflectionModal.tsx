@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { X, Sun, Moon, Sparkles, Check, Heart, Feather, BookOpen } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
-import { ReflectionEntry, ReflectionType, EmotionalState } from '../../types';
+import { ReflectionEntry, ReflectionType, EmotionalState, AffectiveWeather, AffectiveTag } from '../../types';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
 import { getLocalDateString } from '../../utils/engine';
+import { AffectiveWeatherSelector } from './AffectiveWeatherSelector';
 
 interface ReflectionModalProps {
   onClose: () => void;
@@ -17,11 +18,14 @@ export function ReflectionModal({
   targetDate,
 }: ReflectionModalProps) {
   useBodyScrollLock(true);
-  const { addReflectionEntry } = useFitness();
+  const { state, addReflectionEntry } = useFitness();
   const dateStr = targetDate || getLocalDateString();
+  const isPortuguese = state.profile.language === 'pt-BR';
 
   const [reflectionType, setReflectionType] = useState<ReflectionType>(initialType);
   const [emotionalState, setEmotionalState] = useState<EmotionalState>('calm');
+  const [affectiveWeather, setAffectiveWeather] = useState<AffectiveWeather>('clear');
+  const [affectiveTags, setAffectiveTags] = useState<AffectiveTag[]>([]);
 
   // Morning Prompts
   const [controllable, setControllable] = useState('');
@@ -35,6 +39,12 @@ export function ReflectionModal({
 
   // Freeform
   const [freeformText, setFreeformText] = useState('');
+
+  const handleToggleTag = (tag: AffectiveTag) => {
+    setAffectiveTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +67,8 @@ export function ReflectionModal({
       promptAnswers,
       freeformContent: freeformText.trim() || undefined,
       emotionalState,
+      affectiveWeather,
+      affectiveTags,
       createdAt: new Date().toISOString(),
     };
 
@@ -136,27 +148,15 @@ export function ReflectionModal({
           </button>
         </div>
 
-        {/* Emotional Awareness */}
-        <div className="space-y-1.5">
-          <label className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider block">
-            State of Mind
-          </label>
-          <div className="flex flex-wrap gap-1.5">
-            {emotions.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setEmotionalState(key)}
-                className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all border ${
-                  emotionalState === key
-                    ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] border-[var(--color-accent)] shadow-xs'
-                    : 'bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)] border-[var(--color-border)]'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        {/* Affective Weather & Contributing Factors (How We Feel inspired) */}
+        <div className="pt-1">
+          <AffectiveWeatherSelector
+            selectedWeather={affectiveWeather}
+            selectedTags={affectiveTags}
+            onSelectWeather={setAffectiveWeather}
+            onToggleTag={handleToggleTag}
+            isPortuguese={isPortuguese}
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
