@@ -438,10 +438,15 @@ export function MindView() {
                         </span>
                         {entry.affectiveWeather && (
                           <span className="px-2 py-0.5 rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)] text-[10px] font-bold capitalize">
-                            • {entry.affectiveWeather}
+                            • {entry.specificEmotion ? `${entry.specificEmotion.replace('_', ' ')} (${entry.affectiveWeather})` : entry.affectiveWeather}
                           </span>
                         )}
-                        {entry.emotionalState && !entry.affectiveWeather && (
+                        {!entry.affectiveWeather && entry.specificEmotion && (
+                          <span className="text-[10px] text-[var(--color-text-muted)] italic capitalize">
+                            • {entry.specificEmotion.replace('_', ' ')}
+                          </span>
+                        )}
+                        {entry.emotionalState && !entry.affectiveWeather && !entry.specificEmotion && (
                           <span className="text-[10px] text-[var(--color-text-muted)] italic">
                             • {entry.emotionalState}
                           </span>

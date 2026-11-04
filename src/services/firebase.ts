@@ -74,7 +74,23 @@ export async function syncUserProfile(user: {
 export async function saveUserFitnessState(userId: string, state: any): Promise<boolean> {
   if (!userId) return false;
   try {
-    const payloadJson = JSON.stringify(state);
+    let payload = state;
+    let payloadJson = JSON.stringify(payload);
+
+    // Guard against Firestore 1,048,576 bytes document limit
+    if (payloadJson.length > 900_000) {
+      console.warn(`State payload is ${payloadJson.length} bytes, safely pruning history to stay under Firestore 1MB limit...`);
+      payload = {
+        ...state,
+        weights: Array.isArray(state.weights) ? state.weights.slice(-1500) : state.weights,
+        cardioSessions: Array.isArray(state.cardioSessions) ? state.cardioSessions.slice(-600) : state.cardioSessions,
+        completedWorkouts: Array.isArray(state.completedWorkouts) ? state.completedWorkouts.slice(-400) : state.completedWorkouts,
+        loggedFoods: Array.isArray(state.loggedFoods) ? state.loggedFoods.slice(-800) : state.loggedFoods,
+        dailyAggregates: Array.isArray(state.dailyAggregates) ? state.dailyAggregates.slice(-400) : state.dailyAggregates,
+      };
+      payloadJson = JSON.stringify(payload);
+    }
+
     const stateRef = doc(db, 'users', userId, 'fitnessData', 'state');
     await setDoc(stateRef, {
       userId,

@@ -30,7 +30,7 @@ export function WeeklyReviewModal({
   onAccept,
   onReject,
 }: WeeklyReviewModalProps) {
-  useBodyScrollLock(true);
+  useBodyScrollLock(!!review);
   const { state } = useFitness();
 
   const [adjustedTarget, setAdjustedTarget] = useState<number>(
@@ -110,7 +110,27 @@ export function WeeklyReviewModal({
     };
   }, [state.reflections, state.completedWorkouts, state.habits]);
 
-  if (!review) return null;
+  if (!review) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+        <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-center">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-bold text-[var(--color-text)]">No Weekly Check-In Yet</h3>
+          <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+            Weekly check-ins evaluate your 7-day scale weight trend and dietary intake to adjust your caloric targets. Log your weigh-ins and meals this week to unlock your adaptive review.
+          </p>
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 rounded-2xl bg-[var(--color-accent)] text-[var(--color-on-accent)] text-xs font-semibold hover:bg-[var(--color-accent-hover)] transition-all shadow-sm"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const currentCal = review.currentCalorieTarget;
   const currentDelta = adjustedTarget - currentCal;

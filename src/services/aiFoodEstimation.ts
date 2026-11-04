@@ -659,8 +659,8 @@ export async function estimateMealWithAi(
     };
   }
 
-  // API key present: Call Gemini Flash Free Tier (attempting 2.0-flash, falling back to 1.5-flash)
-  const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+  // API key present: Call Gemini Flash Free Tier (attempting 2.5-flash, 2.0-flash, 2.5-pro)
+  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-pro', 'gemini-1.5-flash-latest'];
   let lastError: any = null;
 
   for (const model of modelsToTry) {

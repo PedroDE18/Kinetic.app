@@ -59,6 +59,7 @@ export interface FoodItem {
   barcode?: string;
   isFavorite?: boolean;
   isRecent?: boolean;
+  aliases?: string[];
   recipeIngredients?: RecipeIngredient[];
 }
 
@@ -448,6 +449,7 @@ export interface ReflectionEntry {
   promptAnswers: Record<string, string>;
   freeformContent?: string;
   emotionalState?: EmotionalState;
+  specificEmotion?: string;
   affectiveWeather?: AffectiveWeather;
   affectiveTags?: AffectiveTag[];
   worksheetType?: 'dichotomy_of_control' | 'premeditatio_malorum' | 'view_from_above';

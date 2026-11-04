@@ -139,10 +139,13 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
 
   // Filtered foods
   const filteredFoods = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
     return state.foodLibrary.filter((item) => {
       const matchesSearch =
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.brand && item.brand.toLowerCase().includes(searchQuery.toLowerCase()));
+        !q ||
+        item.name.toLowerCase().includes(q) ||
+        (item.brand && item.brand.toLowerCase().includes(q)) ||
+        (item.aliases && item.aliases.some((alias) => alias.toLowerCase().includes(q)));
       const matchesCategory =
         selectedCategory === 'All'
           ? true
@@ -748,8 +751,17 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                             className="flex-1 min-w-0 min-h-[48px] flex items-center justify-between gap-2 text-left"
                           >
                             <div className="min-w-0">
-                              <div className="text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] truncate">
-                                {item.name}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] truncate">
+                                  {item.name}
+                                </span>
+                                {searchQuery.trim() &&
+                                  !item.name.toLowerCase().includes(searchQuery.toLowerCase().trim()) &&
+                                  item.aliases?.some((a) => a.toLowerCase().includes(searchQuery.toLowerCase().trim())) && (
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-[var(--color-accent)]/10 text-[var(--color-accent)] font-medium">
+                                      Alias: {item.aliases.find((a) => a.toLowerCase().includes(searchQuery.toLowerCase().trim()))}
+                                    </span>
+                                  )}
                               </div>
                               <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
                                 {item.servingSize} {item.servingUnit} • {item.calories} kcal • P:{' '}

@@ -20,6 +20,7 @@ import { SleepModal } from './components/recovery/SleepModal';
 import { ReflectionModal } from './components/mind/ReflectionModal';
 import { checkUrlForHealthSync } from './services/healthSync';
 import { saveUserFitnessState, loadUserFitnessState } from './services/firebase';
+import { buildInitialWeeklyReview } from './utils/mockData';
 import { Play, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { MealType } from './types';
 
@@ -75,8 +76,23 @@ function AppContent() {
         const cloudState = await loadUserFitnessState(currentUser!.uid);
         if (cloudState && isMounted) {
           hasHydratedFromCloud.current = true;
-          // If local state is empty (clean user) or has fewer entries, hydrate from cloud
-          if (state.weights.length === 0 && state.loggedFoods.length === 0) {
+          const cloudWeightsCount = Array.isArray(cloudState.weights) ? cloudState.weights.length : 0;
+          const localWeightsCount = state.weights.length;
+          const cloudFoodsCount = Array.isArray(cloudState.loggedFoods) ? cloudState.loggedFoods.length : 0;
+          const localFoodsCount = state.loggedFoods.length;
+          const cloudCardioCount = Array.isArray(cloudState.cardioSessions) ? cloudState.cardioSessions.length : 0;
+          const localCardioCount = state.cardioSessions.length;
+          const cloudSleepCount = Array.isArray(cloudState.sleepRecords) ? cloudState.sleepRecords.length : 0;
+          const localSleepCount = state.sleepRecords.length;
+
+          // If cloud has more data or local has empty records, hydrate from cloud
+          if (
+            cloudWeightsCount > localWeightsCount ||
+            cloudFoodsCount > localFoodsCount ||
+            cloudCardioCount > localCardioCount ||
+            cloudSleepCount > localSleepCount ||
+            (localWeightsCount === 0 && localFoodsCount === 0)
+          ) {
             replaceFitnessState(cloudState);
             setHealthSyncToast('Restored your life data from Firebase Cloud!');
             setTimeout(() => setHealthSyncToast(null), 4000);
@@ -91,7 +107,14 @@ function AppContent() {
     return () => {
       isMounted = false;
     };
-  }, [currentUser?.uid, replaceFitnessState, state.weights.length, state.loggedFoods.length]);
+  }, [
+    currentUser?.uid,
+    replaceFitnessState,
+    state.weights.length,
+    state.loggedFoods.length,
+    state.cardioSessions.length,
+    state.sleepRecords.length,
+  ]);
 
   // Debounced Auto-sync to Firebase Firestore whenever state changes
   useEffect(() => {
@@ -227,7 +250,13 @@ function AppContent() {
 
       {showWeeklyReviewModal && (
         <WeeklyReviewModal
-          review={pendingReview || state.reviews[0]}
+          review={
+            pendingReview ||
+            state.reviews[0] ||
+            (state.weights.length > 0
+              ? buildInitialWeeklyReview(state.weights, state.loggedFoods, state.profile)
+              : undefined)
+          }
           onClose={() => setShowWeeklyReviewModal(false)}
           onAccept={(id, customTarget) => {
             resolveReview(id, 'accepted', customTarget);

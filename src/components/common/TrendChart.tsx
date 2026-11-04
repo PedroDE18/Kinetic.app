@@ -156,9 +156,9 @@ export function TrendChart({
               key={`sec-${idx}`}
               cx={p.x}
               cy={p.ySecondary}
-              r="2.5"
-              opacity="0.55"
-              style={{ fill: 'var(--color-text-subtle)' }}
+              r={activeIndex === idx ? '3.5' : '2'}
+              opacity={activeIndex === idx ? '0.9' : '0.4'}
+              style={{ fill: 'var(--color-accent)' }}
             />
           );
         })}
@@ -185,44 +185,59 @@ export function TrendChart({
         )}
 
         {/* Data points & hit-targets */}
-        {points.map((p, idx) => (
-          <g
-            key={`pt-${idx}`}
-            className="cursor-pointer"
-            onMouseEnter={() => setActiveIndex(idx)}
-            onTouchStart={() => setActiveIndex(idx)}
-          >
-            {/* Invisible large hit target for touch accessibility */}
-            <circle cx={p.x} cy={p.yPrimary} r="14" fill="transparent" />
+        {points.map((p, idx) => {
+          // Compute spacing so max ~4-5 clean dates appear across the chart
+          const labelStride = Math.max(1, Math.ceil((data.length - 1) / 4));
+          const isLabelVisible =
+            data.length <= 5 ||
+            idx === 0 ||
+            idx === data.length - 1 ||
+            (idx % labelStride === 0 && idx < data.length - Math.floor(labelStride / 2));
 
-            {/* Visual Dot */}
-            <circle
-              cx={p.x}
-              cy={p.yPrimary}
-              r={activeIndex === idx ? '5.5' : '3.5'}
-              strokeWidth="2"
-              style={{
-                fill: 'var(--color-surface)',
-                stroke: 'var(--color-accent)',
-                transition: 'r 0.15s ease',
-              }}
-            />
+          // Only render point circles if sparse data or actively hovered, preserving clean line
+          const showVisualDot = data.length <= 12 || activeIndex === idx;
 
-            {/* X-axis label (sampled if many points) */}
-            {(data.length <= 7 || idx === 0 || idx === data.length - 1 || idx % 2 === 0) && (
-              <text
-                x={p.x}
-                y={chartHeight - 4}
-                textAnchor="middle"
-                style={{ fill: 'var(--color-text-subtle)' }}
-                fontSize="8"
-                fontWeight="bold"
-              >
-                {p.data.xLabel}
-              </text>
-            )}
-          </g>
-        ))}
+          return (
+            <g
+              key={`pt-${idx}`}
+              className="cursor-pointer"
+              onMouseEnter={() => setActiveIndex(idx)}
+              onTouchStart={() => setActiveIndex(idx)}
+            >
+              {/* Invisible large hit target for touch accessibility */}
+              <circle cx={p.x} cy={p.yPrimary} r="14" fill="transparent" />
+
+              {/* Visual Dot on Trend Curve */}
+              {showVisualDot && (
+                <circle
+                  cx={p.x}
+                  cy={p.yPrimary}
+                  r={activeIndex === idx ? '5' : '3'}
+                  strokeWidth="2"
+                  style={{
+                    fill: 'var(--color-surface)',
+                    stroke: 'var(--color-accent)',
+                    transition: 'r 0.15s ease',
+                  }}
+                />
+              )}
+
+              {/* X-axis label (non-overlapping, stride-spaced) */}
+              {isLabelVisible && (
+                <text
+                  x={p.x}
+                  y={chartHeight - 4}
+                  textAnchor="middle"
+                  style={{ fill: 'var(--color-text-subtle)' }}
+                  fontSize="8"
+                  fontWeight="bold"
+                >
+                  {p.data.xLabel}
+                </text>
+              )}
+            </g>
+          );
+        })}
       </svg>
 
       {/* Screen-Reader Accessible Summary Table (hidden visually, available for AT) */}

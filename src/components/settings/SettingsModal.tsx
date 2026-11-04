@@ -16,8 +16,13 @@ import {
   BellRing,
   Send,
   AlertCircle,
+  Cloud,
+  CloudUpload,
+  CloudDownload,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
+import { useAuth } from '../../context/AuthContext';
+import { saveUserFitnessState, loadUserFitnessState } from '../../services/firebase';
 import { FitnessGoal, UnitSystem } from '../../types';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
 import { resolveInitialLanguage, SupportedLanguage } from '../../utils/i18n';
@@ -51,7 +56,9 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
     exportAllJson,
     exportCsv,
     importAllJson,
+    replaceFitnessState,
   } = useFitness();
+  const { currentUser } = useAuth();
   const { profile } = state;
 
   const [name, setName] = useState(profile.name);
@@ -74,6 +81,44 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [cloudStatusMsg, setCloudStatusMsg] = useState<string | null>(null);
+  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+
+  const handleManualCloudBackup = async () => {
+    if (!currentUser?.uid) return;
+    setIsSyncingCloud(true);
+    setCloudStatusMsg(null);
+    try {
+      await saveUserFitnessState(currentUser.uid, state);
+      setCloudStatusMsg('Successfully backed up all records to Firebase Cloud!');
+      setTimeout(() => setCloudStatusMsg(null), 4000);
+    } catch (err: any) {
+      setCloudStatusMsg(`Cloud backup failed: ${err?.message || 'Error'}`);
+    } finally {
+      setIsSyncingCloud(false);
+    }
+  };
+
+  const handleManualCloudRestore = async () => {
+    if (!currentUser?.uid) return;
+    setIsSyncingCloud(true);
+    setCloudStatusMsg(null);
+    try {
+      const cloudData = await loadUserFitnessState(currentUser.uid);
+      if (cloudData) {
+        replaceFitnessState(cloudData);
+        const weightsCount = Array.isArray(cloudData.weights) ? cloudData.weights.length : 0;
+        setCloudStatusMsg(`Restored cloud state (${weightsCount} weigh-ins, ${cloudData.loggedFoods?.length || 0} meals)!`);
+        setTimeout(() => setCloudStatusMsg(null), 4000);
+      } else {
+        setCloudStatusMsg('No cloud backup found for this account.');
+      }
+    } catch (err: any) {
+      setCloudStatusMsg(`Cloud restore failed: ${err?.message || 'Error'}`);
+    } finally {
+      setIsSyncingCloud(false);
+    }
+  };
 
   // Notification & iPhone Web App states
   const [reminderConfig, setReminderConfig] = useState<ReminderConfig>(() => loadReminderConfig());
@@ -530,6 +575,78 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
               <span>Workouts</span>
             </button>
           </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* CLOUD SYNC & MULTI-DEVICE PERSISTENCE */}
+        {/* ======================================================== */}
+        <div className="pt-3 border-t border-[var(--color-border)] space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--color-text)]">
+              <Cloud className="w-4 h-4 text-[var(--color-accent)]" />
+              <span>Multi-Device Sync (Laptop ↔ Phone)</span>
+            </div>
+            <span
+              className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                currentUser
+                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                  : 'bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] border-[var(--color-border)]'
+              }`}
+            >
+              {currentUser ? 'Cloud Connected' : 'Local Only'}
+            </span>
+          </div>
+
+          <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
+            {currentUser
+              ? `Signed in as ${currentUser.email}. Changes sync automatically, or use the buttons below to force an immediate transfer.`
+              : 'Sign in to automatically sync your life data between laptop and iPhone without cables or AirDrop.'}
+          </p>
+
+          {currentUser ? (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleManualCloudBackup}
+                disabled={isSyncingCloud}
+                className="min-h-[44px] py-2 bg-[var(--color-surface-raised)] hover:bg-[var(--color-surface-sunken)] text-[var(--color-text)] text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50"
+              >
+                <CloudUpload className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+                <span>{isSyncingCloud ? 'Syncing...' : 'Backup to Cloud'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleManualCloudRestore}
+                disabled={isSyncingCloud}
+                className="min-h-[44px] py-2 bg-[var(--color-surface-raised)] hover:bg-[var(--color-surface-sunken)] text-[var(--color-text)] text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50"
+              >
+                <CloudDownload className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+                <span>Restore from Cloud</span>
+              </button>
+            </div>
+          ) : (
+            <div className="p-3 bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl flex items-center justify-between">
+              <div className="text-[11px] text-[var(--color-text-muted)]">
+                <span>Have an account?</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onOpenProfile) onOpenProfile();
+                }}
+                className="text-xs font-bold text-[var(--color-accent)] hover:underline"
+              >
+                Sign In / Sign Up →
+              </button>
+            </div>
+          )}
+
+          {cloudStatusMsg && (
+            <div className="p-2.5 rounded-xl bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-xs text-[var(--color-accent)] font-medium text-center">
+              {cloudStatusMsg}
+            </div>
+          )}
         </div>
 
         {/* ======================================================== */}

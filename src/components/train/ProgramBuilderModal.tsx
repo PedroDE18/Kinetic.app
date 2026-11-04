@@ -475,100 +475,103 @@ export function ProgramBuilderModal({ onClose, initialTemplate }: ProgramBuilder
             </button>
           </div>
         </form>
+      </div>
 
-        {/* Exercise Selector Sub-Modal */}
-        {showPicker && (
-          <div className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-5 space-y-3.5 max-h-[85vh] flex flex-col shadow-2xl">
-              <div className="flex justify-between items-center">
+      {/* Exercise Selector Sub-Modal (Rendered as independent overlay to prevent scroll-container stacking context clipping) */}
+      {showPicker && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl max-w-sm w-full p-5 space-y-3.5 max-h-[85vh] flex flex-col shadow-2xl overflow-hidden min-h-0">
+            <div className="flex justify-between items-center shrink-0">
+              <div>
                 <h4 className="font-bold text-[var(--color-text)] text-sm">Select Exercise</h4>
+                <p className="text-[10px] text-[var(--color-text-subtle)]">Choose movements for your routine</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPicker(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-[var(--color-surface-raised)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative shrink-0">
+              <Search className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3 top-3" />
+              <input
+                type="text"
+                placeholder="Search exercise or muscle..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="min-h-[42px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl pl-9 pr-3 py-2 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
+              />
+            </div>
+
+            {/* Filter Muscle Pills */}
+            <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar shrink-0">
+              {muscleGroups.map((group) => (
                 <button
+                  key={group}
                   type="button"
-                  onClick={() => setShowPicker(false)}
-                  className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                  onClick={() => setFilterMuscle(group)}
+                  className={`min-h-[30px] px-2.5 py-1 rounded-lg text-[10px] font-bold capitalize whitespace-nowrap transition-all border shrink-0 ${
+                    filterMuscle === group
+                      ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
+                      : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)]'
+                  }`}
                 >
-                  <X className="w-5 h-5" />
+                  {group}
                 </button>
-              </div>
+              ))}
+            </div>
 
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3 top-3" />
-                <input
-                  type="text"
-                  placeholder="Search exercise or muscle..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="min-h-[44px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl pl-9 pr-3 py-2 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
-                />
-              </div>
-
-              {/* Filter Muscle Pills */}
-              <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
-                {muscleGroups.map((group) => (
+            {/* Exercises List */}
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+              {filteredExercises.map((ex) => {
+                const alreadyAdded = selectedExercises.some((s) => s.exerciseId === ex.id);
+                return (
                   <button
-                    key={group}
+                    key={ex.id}
                     type="button"
-                    onClick={() => setFilterMuscle(group)}
-                    className={`min-h-[32px] px-2.5 py-1 rounded-lg text-[10px] font-bold capitalize whitespace-nowrap transition-all border ${
-                      filterMuscle === group
-                        ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
-                        : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)]'
+                    disabled={alreadyAdded}
+                    onClick={() => handleAddExerciseToRoutine(ex.id)}
+                    className={`w-full p-3 rounded-2xl text-left border transition-all flex flex-col gap-1.5 ${
+                      alreadyAdded
+                        ? 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] opacity-40 cursor-not-allowed'
+                        : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] hover:border-[var(--color-accent)]/60 active:scale-[0.98]'
                     }`}
                   >
-                    {group}
-                  </button>
-                ))}
-              </div>
+                    <div className="flex justify-between items-center gap-2 w-full">
+                      <span className="font-bold text-xs text-[var(--color-text)] leading-snug">{ex.name}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)] px-2 py-0.5 rounded-md bg-[var(--color-surface)] border border-[var(--color-border)] shrink-0">
+                        {ex.equipment}
+                      </span>
+                    </div>
 
-              {/* Exercises List */}
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                {filteredExercises.map((ex) => {
-                  const alreadyAdded = selectedExercises.some((s) => s.exerciseId === ex.id);
-                  return (
-                    <button
-                      key={ex.id}
-                      type="button"
-                      disabled={alreadyAdded}
-                      onClick={() => handleAddExerciseToRoutine(ex.id)}
-                      className={`w-full p-3 rounded-2xl text-left border transition-all flex flex-col gap-1.5 ${
-                        alreadyAdded
-                          ? 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] opacity-40 cursor-not-allowed'
-                          : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] hover:border-[var(--color-accent-hover)]/60 active:scale-[0.98]'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center w-full">
-                        <span className="font-bold text-xs text-[var(--color-text)]">{ex.name}</span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-subtle)]">
-                          {ex.equipment}
+                    {/* Targeted muscles display */}
+                    <div className="flex flex-wrap gap-1 text-[10px]">
+                      {ex.primaryMuscles.map((m) => (
+                        <span
+                          key={m}
+                          className="px-1.5 py-0.5 rounded bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] font-semibold"
+                        >
+                          {m}
                         </span>
-                      </div>
-
-                      {/* Targeted muscles display */}
-                      <div className="flex flex-wrap gap-1 text-[10px]">
-                        {ex.primaryMuscles.map((m) => (
-                          <span
-                            key={m}
-                            className="px-1.5 py-0.5 rounded bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] font-semibold"
-                          >
+                      ))}
+                      {ex.secondaryMuscles &&
+                        ex.secondaryMuscles.map((m) => (
+                          <span key={m} className="px-1.5 py-0.5 rounded bg-[var(--color-surface)] text-[var(--color-text-muted)]">
                             {m}
                           </span>
                         ))}
-                        {ex.secondaryMuscles &&
-                          ex.secondaryMuscles.map((m) => (
-                            <span key={m} className="px-1.5 py-0.5 rounded bg-[var(--color-surface)] text-[var(--color-text-muted)]">
-                              {m}
-                            </span>
-                          ))}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

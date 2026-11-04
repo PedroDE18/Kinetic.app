@@ -24,6 +24,7 @@ export function ReflectionModal({
 
   const [reflectionType, setReflectionType] = useState<ReflectionType>(initialType);
   const [emotionalState, setEmotionalState] = useState<EmotionalState>('calm');
+  const [selectedEmotion, setSelectedEmotion] = useState<string>('calm');
   const [affectiveWeather, setAffectiveWeather] = useState<AffectiveWeather>('clear');
   const [affectiveTags, setAffectiveTags] = useState<AffectiveTag[]>([]);
 
@@ -67,6 +68,7 @@ export function ReflectionModal({
       promptAnswers,
       freeformContent: freeformText.trim() || undefined,
       emotionalState,
+      specificEmotion: selectedEmotion,
       affectiveWeather,
       affectiveTags,
       createdAt: new Date().toISOString(),
@@ -152,8 +154,10 @@ export function ReflectionModal({
         <div className="pt-1">
           <AffectiveWeatherSelector
             selectedWeather={affectiveWeather}
+            selectedEmotion={selectedEmotion}
             selectedTags={affectiveTags}
             onSelectWeather={setAffectiveWeather}
+            onSelectEmotion={setSelectedEmotion}
             onToggleTag={handleToggleTag}
             isPortuguese={isPortuguese}
           />

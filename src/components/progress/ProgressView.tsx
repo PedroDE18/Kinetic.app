@@ -677,7 +677,9 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
                   </div>
                 ) : (
                   <div className="divide-y divide-[var(--color-border)]">
-                    {cardioSessions.map((session) => (
+                    {[...cardioSessions]
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .map((session) => (
                       <div key={session.id} className="py-3 flex items-center justify-between">
                         <div>
                           <div className="flex items-center gap-2">

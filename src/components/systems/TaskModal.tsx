@@ -3,6 +3,8 @@ import { X, CheckSquare } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { LifeTask, LifeArea } from '../../types';
 import { getLocalDateString } from '../../utils/engine';
+import { GoalModal } from './GoalModal';
+import { ProjectModal } from './ProjectModal';
 
 interface TaskModalProps {
   taskToEdit?: LifeTask | null;
@@ -31,9 +33,8 @@ export function TaskModal({ taskToEdit, initialArea, onClose }: TaskModalProps) 
   const [dueDate, setDueDate] = useState(taskToEdit?.dueDate || '');
   const [notes, setNotes] = useState(taskToEdit?.notes || '');
   const [error, setError] = useState('');
-
-  const filteredProjects = projects.filter((p) => p.area === area || !p.area);
-  const filteredGoals = goals.filter((g) => g.area === area || !g.area);
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [showNewGoalModal, setShowNewGoalModal] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,36 +184,68 @@ export function TaskModal({ taskToEdit, initialArea, onClose }: TaskModalProps) 
           {/* Connected Project / Goal */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-[var(--color-text)] uppercase tracking-wider mb-1.5">
-                Connected Project
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] font-semibold text-[var(--color-text)] uppercase tracking-wider">
+                  Connected Project
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowNewProjectModal(true)}
+                  className="text-[10px] text-[var(--color-accent)] font-bold hover:underline"
+                >
+                  + New
+                </button>
+              </div>
               <select
                 value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setProjectId(val);
+                  const selectedProj = projects.find((p) => p.id === val);
+                  if (selectedProj?.area) {
+                    setArea(selectedProj.area);
+                  }
+                }}
                 className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-2xl px-3 py-2 text-xs text-[var(--color-text)] focus:outline-none"
               >
                 <option value="">No Project (Standalone)</option>
-                {filteredProjects.map((p) => (
+                {projects.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.title}
+                    {p.title} ({p.area.replace('_', ' ')})
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-[var(--color-text)] uppercase tracking-wider mb-1.5">
-                Connected Goal
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] font-semibold text-[var(--color-text)] uppercase tracking-wider">
+                  Connected Goal
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowNewGoalModal(true)}
+                  className="text-[10px] text-[var(--color-accent)] font-bold hover:underline"
+                >
+                  + New
+                </button>
+              </div>
               <select
                 value={goalId}
-                onChange={(e) => setGoalId(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setGoalId(val);
+                  const selectedGoal = goals.find((g) => g.id === val);
+                  if (selectedGoal?.area) {
+                    setArea(selectedGoal.area);
+                  }
+                }}
                 className="w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-2xl px-3 py-2 text-xs text-[var(--color-text)] focus:outline-none"
               >
                 <option value="">No Goal</option>
-                {filteredGoals.map((g) => (
+                {goals.map((g) => (
                   <option key={g.id} value={g.id}>
-                    {g.title}
+                    {g.title} ({g.area.replace('_', ' ')})
                   </option>
                 ))}
               </select>
@@ -250,6 +283,20 @@ export function TaskModal({ taskToEdit, initialArea, onClose }: TaskModalProps) 
           </div>
         </form>
       </div>
+
+      {showNewProjectModal && (
+        <ProjectModal
+          initialArea={area}
+          onClose={() => setShowNewProjectModal(false)}
+        />
+      )}
+
+      {showNewGoalModal && (
+        <GoalModal
+          initialArea={area}
+          onClose={() => setShowNewGoalModal(false)}
+        />
+      )}
     </div>
   );
 }

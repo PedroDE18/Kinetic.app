@@ -57,9 +57,12 @@ export function RecipeBuilderModal({
   // Filter food library for ingredient search
   const filteredLibrary = useMemo(() => {
     if (!searchQuery.trim()) return state.foodLibrary.slice(0, 15);
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase().trim();
     return state.foodLibrary.filter(
-      (f) => f.name.toLowerCase().includes(q) || (f.brand && f.brand.toLowerCase().includes(q))
+      (f) =>
+        f.name.toLowerCase().includes(q) ||
+        (f.brand && f.brand.toLowerCase().includes(q)) ||
+        (f.aliases && f.aliases.some((a) => a.toLowerCase().includes(q)))
     );
   }, [state.foodLibrary, searchQuery]);
 
