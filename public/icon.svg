@@ -1,6 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <rect width="512" height="512" rx="122" fill="#181B18"/>
-  <rect x="16" y="16" width="480" height="480" rx="108" fill="#181B18" stroke="#2A302A" stroke-width="8"/>
-  <!-- Minimalist, architectural Greek Epsilon (ε) emblem for Eunoia -->
-  <path d="M348 144 H184 V368 H348 M184 256 H308" stroke="#9EB99E" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background fade: darker on bottom, main transition in the middle of square (Google Calendar / OpenEvidence style) -->
+    <linearGradient id="bgFade" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#282A2E"/>
+      <stop offset="36%" stop-color="#1F2124"/>
+      <stop offset="50%" stop-color="#141517"/>
+      <stop offset="68%" stop-color="#0B0C0D"/>
+      <stop offset="100%" stop-color="#040506"/>
+    </linearGradient>
+
+    <!-- Subtle rim highlight -->
+    <linearGradient id="rimLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="48%" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.02"/>
+    </linearGradient>
+
+    <!-- Subtle soft shadow under white letter -->
+    <filter id="letterShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Dark fade rounded squircle -->
+  <rect width="512" height="512" rx="118" fill="url(#bgFade)"/>
+  <rect x="2" y="2" width="508" height="508" rx="116" fill="none" stroke="url(#rimLight)" stroke-width="3"/>
+
+  <!-- Classical Serif Greek Epsilon (Ε) / Serif E -->
+  <path
+    d="M 143.9 391.0 L 143.9 371.0 L 159.8 371.0 Q 167.7 371.0 173.4 367.2 Q 179.0 363.4 179.0 348.3 L 179.0 165.6 Q 179.0 149.4 173.6 145.2 Q 168.1 141.0 159.8 141.0 L 143.9 141.0 L 143.9 121.0 L 353.8 121.0 L 355.3 190.6 L 328.8 190.6 L 326.9 172.8 Q 325.4 158.8 319.9 151.4 Q 314.4 144.1 302.7 144.1 L 239.2 144.1 L 239.2 238.6 L 328.8 238.6 L 328.8 261.3 L 239.2 261.3 L 239.2 367.9 L 314.8 367.9 Q 326.1 367.9 331.6 359.8 Q 337.1 351.7 339.0 339.2 L 342.0 321.4 L 368.1 321.4 L 365.5 391.0 Z"
+    fill="#FFFFFF"
+    filter="url(#letterShadow)"
+  />
 </svg>

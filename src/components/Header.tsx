@@ -36,7 +36,7 @@ export function Header({ onOpenSettings, onOpenProfile }: HeaderProps) {
         className="flex items-center gap-2.5 text-left active:scale-[0.98] transition-all group"
         title="View & Edit Life Profile"
       >
-        <div className="h-7 w-7 rounded-lg bg-[var(--color-accent-soft)] text-[var(--color-accent)] flex items-center justify-center font-serif font-semibold text-sm border border-[var(--color-accent)]/20 shadow-xs transition-colors">
+        <div className="h-7 w-7 rounded-lg bg-gradient-to-b from-[#282A2E] via-[#141517] to-[#040506] text-white flex items-center justify-center font-serif font-semibold text-sm border border-white/15 shadow-xs transition-transform">
           Ε
         </div>
         <div className="flex items-center gap-1.5">
