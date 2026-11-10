@@ -1,0 +1,125 @@
+[
+  {
+    "id": "fric-001",
+    "timestamp": "2026-11-10T15:00:00.000Z",
+    "category": "workout_logging",
+    "severity": "high_friction",
+    "title": "Absence of In-Set Historical Benchmarks ('Last Session Ghost')",
+    "description": "When logging an active workout set, the input row is empty. Users must remember or navigate away to history to check their previous weight and reps for progressive overload.",
+    "suggestedSolution": "Render subtle ghosted placeholder text showing 'Last: X kg × Y reps' in the weight and reps inputs.",
+    "reporter": "human_user",
+    "status": "open"
+  },
+  {
+    "id": "fric-002",
+    "timestamp": "2026-11-10T15:00:00.000Z",
+    "category": "workout_logging",
+    "severity": "minor_annoyance",
+    "title": "Missing Olympic Barbell Plate Calculator",
+    "description": "Entering heavy weights requires mental collar math between intense sets.",
+    "suggestedSolution": "Add a quick-tap plate visualization chip (e.g. 20kg + 15kg + 2.5kg per side) in set rows.",
+    "reporter": "human_user",
+    "status": "open"
+  },
+  {
+    "id": "fric-003",
+    "timestamp": "2026-11-10T15:00:00.000Z",
+    "category": "nutrition_diary",
+    "severity": "high_friction",
+    "title": "Lack of Recipe and Meal Consolidation Builder",
+    "description": "Athletes logging multi-ingredient meals (e.g., protein oats, daily smoothies) must enter ingredients individually every single day.",
+    "suggestedSolution": "Implement a composite recipe builder with serving yield calculations.",
+    "reporter": "human_user",
+    "status": "open"
+  },
+  {
+    "id": "fric-004",
+    "timestamp": "2026-11-10T15:00:00.000Z",
+    "category": "ui_contrast_layout",
+    "severity": "enhancement",
+    "title": "Rest Timer Lacks Device Vibration and Audio Cue",
+    "description": "Athletes resting with eyes closed or phone locked miss the countdown completion.",
+    "suggestedSolution": "Trigger navigator.vibrate([100, 50, 100]) and a soft Web Audio synthesizer chime when remaining rest reaches zero.",
+    "reporter": "human_user",
+    "status": "open"
+  },
+  {
+    "id": "fric-005",
+    "timestamp": "2026-11-10T15:00:00.000Z",
+    "category": "feature_request",
+    "severity": "enhancement",
+    "title": "In-App Friction & Recommendation Feedback Sheet",
+    "description": "Users need an accessible, frictionless way directly in the PWA to log bugs or feature ideas that sync to the backlog.",
+    "suggestedSolution": "Add a 'Share Feedback' sheet in SettingsModal with dual sync to Firestore friction_reports and local backlog.",
+    "reporter": "human_user",
+    "status": "open"
+  },
+  {
+    "id": "fric-006",
+    "timestamp": "2026-11-10T15:34:00.000Z",
+    "category": "ui_contrast_layout",
+    "severity": "blocker",
+    "title": "Exercise Atlas Selection Filter Rail Overlaps Exercise Cards",
+    "description": "In the Atlas page of exercises, the muscle group / category filter tool (legs, arms, back, etc.) overlaps the exercise list items, blocking interaction and obscuring cards.",
+    "suggestedSolution": "Fix flex/grid layout, sticky offset, z-index and container padding in ExerciseAtlasModal / AtlasView so filter chips remain fixed or cleanly stacked without overlapping content.",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "fix(train): isolate pinned exercise atlas filter rail from scrollable cards"
+  },
+  {
+    "id": "fric-007",
+    "timestamp": "2026-11-10T15:34:00.000Z",
+    "category": "nutrition_diary",
+    "severity": "high_friction",
+    "title": "Limited Food Library & Absence of Community/Custom Food Suggestion Flow",
+    "description": "Built-in food options are limited. Need a continuous expansion drive and a dedicated in-app modal or button to suggest new foods to be added to default verified atlas.",
+    "suggestedSolution": "Add food suggestion affordance in AddFoodModal and expand default foods database.",
+    "reporter": "human_user",
+    "status": "open"
+  },
+  {
+    "id": "fric-008",
+    "timestamp": "2026-11-10T15:34:00.000Z",
+    "category": "performance_bug",
+    "severity": "high_friction",
+    "title": "Cardio Progress Merges All Modalities into Single Aggregate",
+    "description": "The cardio progress page merges all cardio activities (running, cycling, swimming, rowing) into a single progression curve, obscuring modality-specific pace and endurance gains.",
+    "suggestedSolution": "Segment cardio progress by modality (Run vs Cycle vs Swim vs Row) with independent pace, distance, and HR graphs.",
+    "reporter": "human_user",
+    "status": "open"
+  },
+  {
+    "id": "fric-009",
+    "timestamp": "2026-11-10T15:34:00.000Z",
+    "category": "performance_bug",
+    "severity": "blocker",
+    "title": "Daily Habit Streaks Do Not Reset When a Day is Missed",
+    "description": "If a user misses completing a habit on yesterday's date, currentStreak continues incrementing or stays positive instead of resetting to 0 on non-consecutive days.",
+    "suggestedSolution": "Audit and fix streak calculation algorithm in Habit tracking logic to verify strict consecutive day compliance relative to local date.",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "fix(habits): implement deterministic consecutive streak calculation with zero-reset on missed days"
+  },
+  {
+    "id": "fric-010",
+    "timestamp": "2026-11-10T15:34:00.000Z",
+    "category": "stoic_reflection",
+    "severity": "high_friction",
+    "title": "Mood Logging Tightly Coupled to Daily Reflection Instead of Standalone Stoic Widget",
+    "description": "Mood logging is buried inside the evening reflection rather than being a fast, standalone 4-quadrant check-in inspired by HowWeFeel adapted to the Stoic emotional regulation paradigm.",
+    "suggestedSolution": "Decouple mood logging into a standalone quick-log check-in widget on TodayView.",
+    "reporter": "human_user",
+    "status": "open"
+  },
+  {
+    "id": "fric-011",
+    "timestamp": "2026-11-10T15:34:00.000Z",
+    "category": "ui_contrast_layout",
+    "severity": "high_friction",
+    "title": "Light / White Mode UI and Contrast Regressions",
+    "description": "While Dark Mode is polished, Clear/White theme suffers from low contrast text, unreadable badge chips, and mismatched border tokens.",
+    "suggestedSolution": "Audit index.css light theme variables and fix hardcoded dark classes across components.",
+    "reporter": "human_user",
+    "status": "open"
+  }
+]

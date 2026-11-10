@@ -11,6 +11,7 @@ import {
   calculateRoutineVolumeHistory,
   formatPace,
   calculateCardioStats,
+  calculateConsecutiveStreak,
 } from './engine';
 import { WeightRecord, LoggedFood, CompletedWorkout, CardioSession } from '../types';
 
@@ -209,4 +210,41 @@ test('unit conversion helpers work accurately', () => {
   assert.equal(lb, 176.4);
   const kg = convertLbToKg(176.4);
   assert.equal(Math.round(kg), 80);
+});
+
+test('calculateConsecutiveStreak accurately computes and resets habit streaks', () => {
+  const refDate = new Date(2026, 10, 10); // Nov 10, 2026
+
+  // 1. Empty dates
+  assert.equal(calculateConsecutiveStreak([], refDate), 0);
+
+  // 2. Completed today (Nov 10), yesterday (Nov 09), day before (Nov 08) => 3
+  assert.equal(
+    calculateConsecutiveStreak(['2026-11-10', '2026-11-09', '2026-11-08'], refDate),
+    3
+  );
+
+  // 3. Not completed today yet, but completed yesterday (Nov 09) and day before (Nov 08) => 2 (active grace)
+  assert.equal(
+    calculateConsecutiveStreak(['2026-11-09', '2026-11-08'], refDate),
+    2
+  );
+
+  // 4. Lost yesterday! Completed Nov 08, Nov 07, Nov 06, but skipped Nov 09 and Nov 10 => 0 (streak reset)
+  assert.equal(
+    calculateConsecutiveStreak(['2026-11-08', '2026-11-07', '2026-11-06'], refDate),
+    0
+  );
+
+  // 5. Gap in middle: Completed today (Nov 10), skipped Nov 09, completed Nov 08, 07 => 1 (fresh streak restarted today)
+  assert.equal(
+    calculateConsecutiveStreak(['2026-11-10', '2026-11-08', '2026-11-07'], refDate),
+    1
+  );
+
+  // 6. Unsorted dates and duplicate entries handled idempotently
+  assert.equal(
+    calculateConsecutiveStreak(['2026-11-08', '2026-11-10', '2026-11-09', '2026-11-10'], refDate),
+    3
+  );
 });

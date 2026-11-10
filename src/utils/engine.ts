@@ -542,3 +542,51 @@ export function getWeekDates(anchor: Date = new Date()): string[] {
   }
   return result;
 }
+
+/**
+ * Calculates current consecutive streak for a habit.
+ * 
+ * Invariant Rules:
+ * 1. A streak is active if completed today OR yesterday.
+ * 2. If neither today nor yesterday was completed, the streak has broken (returns 0).
+ * 3. If active, steps backwards day by day and counts consecutive days without gaps.
+ * 4. Deduplicates and handles unsorted completedDates.
+ */
+export function calculateConsecutiveStreak(
+  completedDates: string[],
+  referenceDate: Date = new Date()
+): number {
+  if (!completedDates || completedDates.length === 0) return 0;
+
+  const dateSet = new Set(completedDates);
+  const today = getLocalDateString(referenceDate);
+
+  const yesterdayDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate() - 1);
+  const yesterday = getLocalDateString(yesterdayDate);
+
+  const completedToday = dateSet.has(today);
+  const completedYesterday = dateSet.has(yesterday);
+
+  // If neither today nor yesterday was completed, streak is broken
+  if (!completedToday && !completedYesterday) {
+    return 0;
+  }
+
+  let streak = 0;
+  // If completed today, start counting back from today; otherwise start from yesterday
+  const anchorDate = completedToday ? referenceDate : yesterdayDate;
+
+  let check = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), anchorDate.getDate());
+  while (true) {
+    const checkStr = getLocalDateString(check);
+    if (dateSet.has(checkStr)) {
+      streak++;
+      // Step back 1 calendar day
+      check = new Date(check.getFullYear(), check.getMonth(), check.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}

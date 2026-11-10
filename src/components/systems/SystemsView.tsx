@@ -18,7 +18,7 @@ import { FrictionEngineModal } from './FrictionEngineModal';
 import { TaskModal } from './TaskModal';
 import { GoalModal } from './GoalModal';
 import { ProjectModal } from './ProjectModal';
-import { getLocalDateString } from '../../utils/engine';
+import { getLocalDateString, calculateConsecutiveStreak } from '../../utils/engine';
 import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
 
 type SystemsSubTab = 'habits' | 'friction' | 'organization';
@@ -232,7 +232,7 @@ export function SystemsView() {
             ) : (
               filteredHabits.map((habit) => {
                 const isCompletedToday = habit.completedDates.includes(todayStr);
-                const streak = habit.completedDates.length;
+                const streak = calculateConsecutiveStreak(habit.completedDates);
                 const dayOfWeek = new Date().getDay();
                 const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
                 const isScheduledToday =

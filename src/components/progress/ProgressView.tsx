@@ -38,6 +38,7 @@ import {
   formatPace,
   formatDistance,
   getLocalDateString,
+  calculateConsecutiveStreak,
 } from '../../utils/engine';
 import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
 import { TrendChart } from '../common/TrendChart';
@@ -286,17 +287,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
     // Longest current streak
     let bestCurrentStreak = 0;
     habits.forEach((h) => {
-      let streak = 0;
-      let checkDate = new Date(now);
-      while (true) {
-        const ds = getLocalDateString(checkDate);
-        if (h.completedDates.includes(ds)) {
-          streak++;
-          checkDate = new Date(checkDate.getTime() - 24 * 60 * 60 * 1000);
-        } else {
-          break;
-        }
-      }
+      const streak = calculateConsecutiveStreak(h.completedDates, now);
       if (streak > bestCurrentStreak) bestCurrentStreak = streak;
     });
 

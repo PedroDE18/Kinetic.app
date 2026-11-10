@@ -26,7 +26,7 @@ import {
   Moon,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
-import { calculateWeightTrend, formatWeight, getLocalDateString, getRecentDateStrings } from '../../utils/engine';
+import { calculateWeightTrend, formatWeight, getLocalDateString, getRecentDateStrings, calculateConsecutiveStreak } from '../../utils/engine';
 import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
 import { getEffectiveDailyTargets } from '../../utils/profileCalculator';
 import { QuickLogBar } from './QuickLogBar';
@@ -399,7 +399,7 @@ export function TodayView({
                       </div>
                     </button>
                     <span className="text-[10px] font-medium text-[var(--color-text-subtle)] pl-2 shrink-0">
-                      {habit.completedDates.length}d streak
+                      {calculateConsecutiveStreak(habit.completedDates)}d streak
                     </span>
                   </div>
                 );

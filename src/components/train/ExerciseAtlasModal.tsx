@@ -71,56 +71,59 @@ export function ExerciseAtlasModal({ onClose }: ExerciseAtlasModalProps) {
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-md w-full p-6 space-y-4 max-h-[92vh] flex flex-col shadow-2xl">
-        <div className="flex justify-between items-center">
-          <div>
-            <div className="flex items-center gap-1.5 text-[var(--color-accent)] text-xs font-bold uppercase tracking-wider">
-              <Dumbbell className="w-3.5 h-3.5" />
-              <span>Targeted Muscle Atlas</span>
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+      <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+        {/* Pinned Control Header: Title, Search, and Muscle Filter Rail */}
+        <div className="shrink-0 p-5 pb-3 border-b border-[var(--color-border)] space-y-3 bg-[var(--color-bg-elevated)] z-10">
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="flex items-center gap-1.5 text-[var(--color-accent)] text-xs font-bold uppercase tracking-wider">
+                <Dumbbell className="w-3.5 h-3.5" />
+                <span>Targeted Muscle Atlas</span>
+              </div>
+              <h3 className="text-base font-bold text-[var(--color-text)] mt-0.5">Exercise & Muscle Library</h3>
             </div>
-            <h3 className="text-base font-bold text-[var(--color-text)] mt-0.5">Exercise & Muscle Library</h3>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Close atlas"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Search */}
-        <div className="relative">
-          <Search className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3 top-3.5" />
-          <input
-            type="text"
-            placeholder="Search exercise or muscle..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="min-h-[44px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl pl-9 pr-3 py-2 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
-          />
-        </div>
-
-        {/* Muscle group tabs */}
-        <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
-          {muscles.map((m) => (
             <button
-              key={m}
-              onClick={() => setSelectedMuscle(m)}
-              className={`min-h-[32px] px-3 py-1 rounded-xl text-[10px] font-bold capitalize whitespace-nowrap transition-all border ${
-                selectedMuscle === m
-                  ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
-                  : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)]'
-              }`}
+              onClick={onClose}
+              aria-label="Close atlas"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)] rounded-full hover:bg-[var(--color-surface)] transition-colors"
             >
-              {m}
+              <X className="w-5 h-5" />
             </button>
-          ))}
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3 top-3.5" />
+            <input
+              type="text"
+              placeholder="Search exercise or muscle..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="min-h-[44px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl pl-9 pr-3 py-2 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
+            />
+          </div>
+
+          {/* Muscle group selection tabs */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none shrink-0">
+            {muscles.map((m) => (
+              <button
+                key={m}
+                onClick={() => setSelectedMuscle(m)}
+                className={`min-h-[32px] px-3.5 py-1 rounded-xl text-[11px] font-bold capitalize whitespace-nowrap transition-all border shrink-0 ${
+                  selectedMuscle === m
+                    ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)] shadow-sm'
+                    : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Cards List */}
-        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+        {/* Scrollable Cards List (Strictly constrained below the filter rail) */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-5 pt-3 space-y-3">
           {filtered.map((ex) => {
             const isExpanded = expandedExId === ex.id;
             const history = isExpanded ? getProgression(ex.id, ex.name) : [];
