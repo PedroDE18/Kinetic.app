@@ -86,6 +86,34 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
   const [customCarbs, setCustomCarbs] = useState('15');
   const [customFat, setCustomFat] = useState('5');
   const [quickAddedMsg, setQuickAddedMsg] = useState<string | null>(null);
+  const [isEstimatingCustom, setIsEstimatingCustom] = useState(false);
+  const [customEstimateMsg, setCustomEstimateMsg] = useState<string | null>(null);
+
+  const handleAutoEstimateCustomMacros = async () => {
+    if (!customName.trim()) return;
+    setIsEstimatingCustom(true);
+    setCustomEstimateMsg('Researching nutrition values...');
+    try {
+      const res = await estimateMealWithAi(customName.trim(), state.profile.geminiApiKey);
+      if (res.items && res.items.length > 0) {
+        const item = res.items[0];
+        setCustomCalories(String(item.calories));
+        setCustomProtein(String(item.protein));
+        setCustomCarbs(String(item.carbs));
+        setCustomFat(String(item.fat));
+        setCustomServingSize(String(item.servingSize || 100));
+        setCustomServingUnit(item.servingUnit || 'g');
+        setCustomEstimateMsg(`Auto-estimated from database (${res.source === 'model' ? 'Gemini AI' : 'USDA/TACO Offline'})`);
+      } else {
+        setCustomEstimateMsg('No match found. Please input macros manually.');
+      }
+    } catch {
+      setCustomEstimateMsg('Estimate failed. Please input macros manually.');
+    } finally {
+      setIsEstimatingCustom(false);
+      setTimeout(() => setCustomEstimateMsg(null), 4000);
+    }
+  };
 
   // Recent unique foods logged by the user
   const recentFoods = useMemo(() => {
@@ -398,19 +426,26 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
     addFoodToLibrary(food);
 
     // Also register to continuous improvement backlog so autonomous squad can evaluate for core library
+    const suggestionItem = {
+      id: `fric-food-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      category: 'nutrition_diary' as const,
+      severity: 'enhancement' as const,
+      title: `Food Atlas Suggestion: ${food.name}`,
+      description: `User suggested food: ${food.name} (${food.servingSize}${food.servingUnit}, ${food.calories} kcal, P:${food.protein}g C:${food.carbs}g F:${food.fat}g).`,
+      reporter: 'human_user' as const,
+      status: 'open' as const,
+    };
+
     try {
       const existing = JSON.parse(localStorage.getItem('eunoia_friction_v1') || '[]');
-      existing.unshift({
-        id: `fric-food-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        category: 'nutrition_diary',
-        severity: 'enhancement',
-        title: `Food Atlas Suggestion: ${food.name}`,
-        description: `User suggested food: ${food.name} (${food.servingSize}${food.servingUnit}, ${food.calories} kcal, P:${food.protein}g C:${food.carbs}g F:${food.fat}g).`,
-        reporter: 'human_user',
-        status: 'open',
-      });
+      existing.unshift(suggestionItem);
       localStorage.setItem('eunoia_friction_v1', JSON.stringify(existing));
+      fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(suggestionItem),
+      }).catch(() => {});
     } catch {
       // Ignore quota
     }
@@ -787,13 +822,6 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                                 <span className="text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] truncate">
                                   {item.name}
                                 </span>
-                                {searchQuery.trim() &&
-                                  !item.name.toLowerCase().includes(searchQuery.toLowerCase().trim()) &&
-                                  item.aliases?.some((a) => a.toLowerCase().includes(searchQuery.toLowerCase().trim())) && (
-                                    <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-[var(--color-accent)]/10 text-[var(--color-accent)] font-medium">
-                                      Alias: {item.aliases.find((a) => a.toLowerCase().includes(searchQuery.toLowerCase().trim()))}
-                                    </span>
-                                  )}
                               </div>
                               <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
                                 {item.servingSize} {item.servingUnit} • {item.calories} kcal • P:{' '}
@@ -1297,15 +1325,32 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
           {activeTab === 'custom' && (
             <form onSubmit={handleCreateCustomFood} className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-[var(--color-text-muted)] block mb-1">Food Name *</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-[var(--color-text-muted)]">Food Name *</label>
+                  <button
+                    type="button"
+                    disabled={!customName.trim() || isEstimatingCustom}
+                    onClick={handleAutoEstimateCustomMacros}
+                    className="text-[11px] px-2.5 py-1 rounded-lg bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-accent)] font-semibold flex items-center gap-1 active:scale-95 transition-all disabled:opacity-40"
+                    title="Automatically estimate calories and macros from nutrition database"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>{isEstimatingCustom ? 'Estimating...' : 'Auto-Estimate Macros'}</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Protein Bar, Homemade Stew"
+                  placeholder="e.g. Protein Bar, Homemade Stew, Pão de Queijo"
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
                   className="min-h-[44px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-xs text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
                 />
+                {customEstimateMsg && (
+                  <p className="text-[11px] text-[var(--color-accent)] font-medium mt-1 animate-in fade-in">
+                    {customEstimateMsg}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2">

@@ -26,6 +26,7 @@ import {
   Moon,
   Upload,
   Watch,
+  Check,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import {
@@ -322,6 +323,102 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
     };
   }, [habits, frictionInterventions, tasks]);
 
+  // 28-Day Habit Consistency Grid (4 full weeks ending today)
+  const habitCalendarGrid = useMemo(() => {
+    const totalHabits = habits.length;
+    const now = new Date();
+    const days: {
+      dateStr: string;
+      dayNum: number;
+      dayName: string;
+      completedCount: number;
+      totalHabits: number;
+      isToday: boolean;
+    }[] = [];
+
+    for (let i = 27; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const ds = getLocalDateString(d);
+      const doneCount = habits.filter((h) => h.completedDates.includes(ds)).length;
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      days.push({
+        dateStr: ds,
+        dayNum: d.getDate(),
+        dayName: dayNames[d.getDay()],
+        completedCount: doneCount,
+        totalHabits,
+        isToday: ds === todayStr,
+      });
+    }
+    return days;
+  }, [habits, todayStr]);
+
+  // 30-Day Habit Adherence Rate Trajectory Curve
+  const habitAdherenceTrend = useMemo(() => {
+    if (habits.length === 0) return [];
+    const points: { xLabel: string; primaryValue: number; unit: string }[] = [];
+    const now = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateStr = getLocalDateString(d);
+      const done = habits.filter((h) => h.completedDates.includes(dateStr)).length;
+      const rate = Math.round((done / habits.length) * 100);
+      points.push({
+        xLabel: dateStr.slice(5),
+        primaryValue: rate,
+        unit: '%',
+      });
+    }
+    return points;
+  }, [habits]);
+
+  // Cardio Distance Progression Curve
+  const cardioDistanceTrend = useMemo(() => {
+    if (filteredCardioSessions.length < 2) return [];
+    return [...filteredCardioSessions]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map((s) => ({
+        xLabel: s.date.slice(5),
+        primaryValue: parseFloat((s.distanceKm || 0).toFixed(2)),
+        unit: profile.unitSystem === 'imperial' ? 'mi' : 'km',
+      }));
+  }, [filteredCardioSessions, profile.unitSystem]);
+
+  // Cardio Speed / Pace Progression Curve
+  const cardioSpeedTrend = useMemo(() => {
+    if (filteredCardioSessions.length < 2) return [];
+    return [...filteredCardioSessions]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .filter((s) => (s.distanceKm || 0) > 0 && s.durationMinutes > 0)
+      .map((s) => {
+        const speedKmh = ((s.distanceKm || 0) / s.durationMinutes) * 60;
+        return {
+          xLabel: s.date.slice(5),
+          primaryValue: parseFloat(speedKmh.toFixed(1)),
+          unit: profile.unitSystem === 'imperial' ? 'mph' : 'km/h',
+        };
+      });
+  }, [filteredCardioSessions, profile.unitSystem]);
+
+  // 30-Day Nutrition Calorie Intake Trajectory
+  const nutritionIntakeTrend = useMemo(() => {
+    const dayMap: Record<string, number> = {};
+    loggedFoods.forEach((f) => {
+      const dateStr = f.loggedAt ? f.loggedAt.slice(0, 10) : '';
+      if (dateStr) {
+        dayMap[dateStr] = (dayMap[dateStr] || 0) + (f.calories || 0);
+      }
+    });
+    const dates = Object.keys(dayMap).sort();
+    if (dates.length < 2) return [];
+    return dates.slice(-30).map((d) => ({
+      xLabel: d.slice(5),
+      primaryValue: Math.round(dayMap[d]),
+      secondaryValue: profile.targets?.calories || tdeeData.estimatedTdee,
+      unit: 'kcal',
+    }));
+  }, [loggedFoods, profile.targets?.calories, tdeeData.estimatedTdee]);
+
   const lang = profile.language || resolveInitialLanguage();
   const t = getTranslations(lang);
 
@@ -461,22 +558,33 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
                 </div>
 
                 {/* Metabolic Comparison Metrics */}
-                <div className="grid grid-cols-2 gap-2 text-xs bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] mb-3">
+                <div className="grid grid-cols-3 gap-2 text-xs bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] mb-3">
                   <div>
                     <span className="text-[var(--color-text-subtle)] block text-[10px] uppercase font-semibold">
-                      Current Intake Target
+                      Target
                     </span>
                     <span className="font-bold text-[var(--color-text)]">
-                      {profile.targets.calories} kcal/day
+                      {profile.targets.calories} kcal
                     </span>
+                    <span className="text-[9px] text-[var(--color-text-subtle)] block">Plan Budget</span>
                   </div>
                   <div>
                     <span className="text-[var(--color-text-subtle)] block text-[10px] uppercase font-semibold">
-                      Logged Daily Avg
+                      Logged Avg
                     </span>
                     <span className="font-bold text-[var(--color-text)]">
-                      {tdeeData.avgDailyIntake} kcal/day
+                      {tdeeData.avgDailyIntake} kcal
                     </span>
+                    <span className="text-[9px] text-[var(--color-text-subtle)] block">Diary entries</span>
+                  </div>
+                  <div>
+                    <span className="text-[var(--color-text-subtle)] block text-[10px] uppercase font-semibold text-[var(--color-accent)]">
+                      Inferred Eaten
+                    </span>
+                    <span className="font-bold text-[var(--color-accent)]">
+                      {tdeeData.inferredActualIntake} kcal
+                    </span>
+                    <span className="text-[9px] text-[var(--color-text-subtle)] block">From weight delta</span>
                   </div>
                 </div>
 
@@ -562,6 +670,34 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
                     + Record Weigh-in
                   </button>
                 </div>
+              </section>
+
+              {/* Daily Calorie Intake vs Target Trajectory */}
+              <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
+                      Calorie Intake Trajectory
+                    </span>
+                    <div className="flex items-baseline gap-2 mt-0.5">
+                      <span className="text-xl font-black text-[var(--color-text)] tabular-nums">
+                        {tdeeData.inferredActualIntake ? `${tdeeData.inferredActualIntake} kcal` : `${tdeeData.estimatedTdee} kcal`}
+                      </span>
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        daily burn vs logged foods
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <TrendChart
+                  title="Calorie Intake vs Expenditure"
+                  data={nutritionIntakeTrend}
+                  primaryLabel="Logged Intake"
+                  secondaryLabel="Target / TDEE"
+                  emptyMessage="Log foods across multiple days to view calorie intake trajectory curves..."
+                  height={150}
+                />
               </section>
             </div>
           )}
@@ -695,6 +831,40 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
                     </span>
                   </div>
                 </div>
+              </section>
+
+              {/* Cardio Evolution Curves */}
+              <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-4 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
+                    {selectedCardioModality === 'all' ? 'Cardio Distance Progression' : `${selectedCardioModality} Distance Evolution`}
+                  </span>
+                  <span className="text-xs font-bold text-[var(--color-accent)]">
+                    {formatDistance(cardioStats.totalDistanceKm, profile.unitSystem)} total
+                  </span>
+                </div>
+
+                <TrendChart
+                  title="Distance Trajectory"
+                  data={cardioDistanceTrend}
+                  primaryLabel="Distance"
+                  emptyMessage="Log 2 or more cardio sessions to graph distance evolution curves..."
+                  height={150}
+                />
+
+                {cardioSpeedTrend.length >= 2 && (
+                  <div className="pt-3 border-t border-[var(--color-border)]">
+                    <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)] block mb-2">
+                      Speed / Pace Trajectory
+                    </span>
+                    <TrendChart
+                      title="Speed Evolution"
+                      data={cardioSpeedTrend}
+                      primaryLabel="Avg Speed"
+                      height={140}
+                    />
+                  </div>
+                )}
               </section>
 
               {/* Sessions List */}
@@ -1125,34 +1295,168 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
               </div>
             </div>
 
-            {/* Individual Habit Streaks */}
-            <div className="space-y-2 pt-1 border-t border-[var(--color-border)]">
+            {/* Individual Habit Streaks & 7-Day Consistency Trail */}
+            <div className="space-y-2.5 pt-3 border-t border-[var(--color-border)]">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-subtle)] block">
+                Active Habits & 7-Day Performance
+              </span>
               {habits.map((h) => {
                 const isDoneToday = h.completedDates.includes(todayStr);
+                const last7Days: { dateStr: string; done: boolean; dayLetter: string }[] = [];
+                const now = new Date();
+                const dayLetters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+                for (let i = 6; i >= 0; i--) {
+                  const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+                  const ds = getLocalDateString(d);
+                  last7Days.push({
+                    dateStr: ds,
+                    done: h.completedDates.includes(ds),
+                    dayLetter: dayLetters[d.getDay()],
+                  });
+                }
+
                 return (
                   <div
                     key={h.id}
-                    className="p-3 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)] flex items-center justify-between text-xs"
+                    className="p-3.5 bg-[var(--color-surface-sunken)] rounded-2xl border border-[var(--color-border)] space-y-2.5 text-xs"
                   >
-                    <div>
-                      <div className="font-bold text-[var(--color-text)]">{h.title}</div>
-                      <div className="text-[10px] text-[var(--color-text-muted)]">
-                        {h.completedDates.length} total completions • {h.area}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-[var(--color-text)]">{h.title}</div>
+                        <div className="text-[10px] text-[var(--color-text-muted)]">
+                          {h.completedDates.length} total completions • {h.area}
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          isDoneToday
+                            ? 'bg-[var(--color-success-soft)] text-[var(--color-success)]'
+                            : 'bg-[var(--color-surface-raised)] text-[var(--color-text-muted)]'
+                        }`}
+                      >
+                        {isDoneToday ? 'Done Today' : 'Pending'}
+                      </span>
+                    </div>
+
+                    {/* 7-Day Execution Trail */}
+                    <div className="flex items-center justify-between pt-1 border-t border-[var(--color-border)]/50">
+                      <span className="text-[10px] text-[var(--color-text-subtle)] font-medium">Last 7 days:</span>
+                      <div className="flex items-center gap-1.5">
+                        {last7Days.map((day, idx) => (
+                          <div
+                            key={idx}
+                            title={`${day.dateStr}: ${day.done ? 'Done' : 'Missed'}`}
+                            className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold transition-all ${
+                              day.done
+                                ? 'bg-[var(--color-success)] text-[var(--color-on-accent)]'
+                                : 'bg-[var(--color-surface-raised)] text-[var(--color-text-subtle)] border border-[var(--color-border)]'
+                            }`}
+                          >
+                            {day.done ? <Check className="w-3 h-3 stroke-[3]" /> : day.dayLetter}
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        isDoneToday
-                          ? 'bg-[var(--color-success-soft)] text-[var(--color-success)]'
-                          : 'bg-[var(--color-surface-raised)] text-[var(--color-text-muted)]'
-                      }`}
-                    >
-                      {isDoneToday ? 'Done Today' : 'Pending'}
-                    </span>
                   </div>
                 );
               })}
             </div>
+          </section>
+
+          {/* 28-Day Habit Consistency Heatmap Grid */}
+          <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[var(--color-accent)]" />
+                <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
+                  Habit Consistency Calendar
+                </span>
+              </div>
+              <span className="text-xs font-bold text-[var(--color-accent)]">
+                Past 28 Days
+              </span>
+            </div>
+
+            <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+              Visual calendar tracking the days you executed your non-negotiable systems and habits.
+            </p>
+
+            {/* 7-column Calendar Matrix (Mon to Sun) */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-[var(--color-text-subtle)] pb-1">
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
+                  <span key={idx}>{day}</span>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1.5">
+                {habitCalendarGrid.map((day) => {
+                  const isComplete = day.totalHabits > 0 && day.completedCount === day.totalHabits;
+                  const isPartial = day.completedCount > 0 && !isComplete;
+                  const isMissed = day.totalHabits > 0 && day.completedCount === 0;
+
+                  return (
+                    <div
+                      key={day.dateStr}
+                      title={`${day.dateStr}: ${day.completedCount}/${day.totalHabits} habits completed`}
+                      className={`aspect-square rounded-xl flex flex-col items-center justify-center text-[10px] transition-all relative group cursor-default border ${
+                        isComplete
+                          ? 'bg-[var(--color-success)] text-[var(--color-on-accent)] font-bold border-[var(--color-success)] shadow-xs'
+                          : isPartial
+                          ? 'bg-[var(--color-success)]/20 text-[var(--color-text)] font-semibold border-[var(--color-success)]/40'
+                          : isMissed
+                          ? 'bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)] border-[var(--color-border)]'
+                          : 'bg-[var(--color-surface-sunken)] text-[var(--color-text-subtle)] border-dashed border-[var(--color-border)]'
+                      } ${day.isToday ? 'ring-2 ring-[var(--color-accent)] ring-offset-1 ring-offset-[var(--color-surface)]' : ''}`}
+                    >
+                      <span className="text-[10px] leading-none">{day.dayNum}</span>
+                      {isComplete && <Check className="w-2.5 h-2.5 mt-0.5 stroke-[3]" />}
+                      {isPartial && <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] mt-0.5" />}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Calendar Legend */}
+              <div className="flex items-center justify-between pt-2 text-[10px] text-[var(--color-text-muted)]">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-md bg-[var(--color-surface-sunken)] border border-[var(--color-border)] inline-block" />
+                    None
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-md bg-[var(--color-success)]/20 border border-[var(--color-success)]/40 inline-block" />
+                    Partial
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-md bg-[var(--color-success)] inline-block" />
+                    All Followed
+                  </span>
+                </div>
+                <span className="text-[10px] text-[var(--color-accent)] font-semibold">
+                  {todayStr.slice(5)} (Today)
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {/* Habit Adherence Evolution Curve */}
+          <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
+                Habit Adherence Evolution
+              </span>
+              <span className="text-xs font-bold text-[var(--color-accent)]">
+                {systemsStats.weeklyRate}% 7d rolling
+              </span>
+            </div>
+
+            <TrendChart
+              title="Habit Execution Trajectory"
+              data={habitAdherenceTrend}
+              primaryLabel="Adherence %"
+              emptyMessage="Complete habits across multiple days to view adherence curve..."
+              height={150}
+            />
           </section>
 
           {/* Friction Engineering Status */}

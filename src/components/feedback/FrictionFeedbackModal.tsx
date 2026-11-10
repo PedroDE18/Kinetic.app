@@ -24,16 +24,37 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
   const [backlogItems, setBacklogItems] = useState<FrictionReport[]>([]);
   const [copied, setCopied] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
+  const [isDiskConnected, setIsDiskConnected] = useState<boolean | null>(null);
 
   const loadBacklog = async () => {
     try {
       const res = await fetch('/api/feedback');
       if (res.ok) {
+        setIsDiskConnected(true);
         const items: FrictionReport[] = await res.json();
         setBacklogItems(items);
 
         // Auto-sync any unsynced local reports
         const local = JSON.parse(localStorage.getItem('eunoia_friction_v1') || '[]');
+        let localChanged = false;
+        const updatedLocal = local.map((loc: FrictionReport) => {
+          const match = items.find(
+            (srv: any) =>
+              srv.id === loc.id ||
+              (srv.title && loc.title && srv.title.trim().toLowerCase() === loc.title.trim().toLowerCase())
+          );
+          if (match && (match.status !== loc.status || match.resolutionCommit !== loc.resolutionCommit)) {
+            localChanged = true;
+            return { ...loc, status: match.status, resolutionCommit: match.resolutionCommit };
+          }
+          return loc;
+        });
+
+        if (localChanged) {
+          localStorage.setItem('eunoia_friction_v1', JSON.stringify(updatedLocal));
+          setSavedReports(updatedLocal);
+        }
+
         const missing = local.filter(
           (loc: FrictionReport) =>
             !items.some(
@@ -48,10 +69,14 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(missing),
           });
+          setSyncStatus(`Auto-synced ${missing.length} recommendation(s) to repository disk`);
+          setTimeout(() => setSyncStatus(null), 3500);
         }
+      } else {
+        setIsDiskConnected(false);
       }
     } catch {
-      // Offline mode fallback
+      setIsDiskConnected(false);
     }
   };
 
@@ -176,6 +201,21 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
             <h3 className="text-base font-bold text-[var(--color-text)] mt-0.5">
               Recommendations & Friction
             </h3>
+            <div className="flex items-center gap-1.5 mt-1">
+              {isDiskConnected === true ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--color-success)]/15 border border-[var(--color-success)]/30 text-[var(--color-success)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] animate-pulse" />
+                  <span>Disk Sync Connected</span>
+                </span>
+              ) : isDiskConnected === false ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--color-warning)]/15 border border-[var(--color-warning)]/30 text-[var(--color-warning)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-warning)]" />
+                  <span>Local Storage Mode (Dev server offline)</span>
+                </span>
+              ) : (
+                <span className="text-[10px] text-[var(--color-text-subtle)]">Checking sync status...</span>
+              )}
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -360,14 +400,14 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
                           <div className="space-y-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               {isResolved ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-success)]/15 border border-[var(--color-success)]/30 text-[var(--color-success)] font-bold shrink-0">
-                                  <CheckCircle2 className="w-3 h-3 text-[var(--color-success)]" />
-                                  <span>Ticked Off / Resolved</span>
+                                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-success)]/15 border border-[var(--color-success)]/40 text-[var(--color-success)] font-bold shrink-0">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-success)]" />
+                                  <span>✓ Ticked Off & Resolved</span>
                                 </span>
                               ) : isInRoadmap ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] font-bold shrink-0">
-                                  <Sparkles className="w-3 h-3 text-[var(--color-accent)]" />
-                                  <span>In Autonomous Roadmap</span>
+                                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/40 text-[var(--color-accent)] font-bold shrink-0">
+                                  <Check className="w-3 h-3 text-[var(--color-accent)] stroke-[2.5]" />
+                                  <span>✓ In Squad Consideration</span>
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-muted)] font-medium shrink-0">
@@ -465,7 +505,7 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
                   <Tag className="w-3 h-3 text-[var(--color-accent)]" />
                   <span>Area of App</span>
                 </label>
-                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                <div className="flex flex-wrap gap-1.5">
                   {categories.map((c) => (
                     <button
                       type="button"

@@ -258,69 +258,111 @@ export function TodayView({
         )}
       </section>
 
-      {/* Flourishing Signals 4-Grid */}
-      <section className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      {/* Flourishing Signals 2x2 Grid - Spacious & Legible */}
+      <section className="grid grid-cols-2 gap-2.5 sm:gap-3">
         {/* Mind Signal */}
         <button
           onClick={() => onNavigateTab('mind')}
-          className="p-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-left space-y-1 hover:border-[var(--color-accent)]/50 transition-all active:scale-[0.98]"
+          className="p-3.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-left space-y-1.5 hover:border-[var(--color-accent)]/50 transition-all active:scale-[0.98] shadow-xs"
         >
-          <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-medium">
-            <span className="flex items-center gap-1">
-              <Feather className="w-3 h-3 text-[var(--color-accent)]" /> Mind
+          <div className="flex items-center justify-between text-[11px] text-[var(--color-text-muted)] font-medium">
+            <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[10px] text-[var(--color-accent)]">
+              <Feather className="w-3.5 h-3.5" /> Mind
             </span>
-            <span>{todayMorningReflection ? 'Done' : 'Pending'}</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                todayMorningReflection
+                  ? 'bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/20'
+                  : 'bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)] border-[var(--color-border)]'
+              }`}
+            >
+              {todayMorningReflection ? 'Audited' : 'Pending'}
+            </span>
           </div>
-          <div className="text-xs font-bold text-[var(--color-text)] truncate">
-            {todayMorningReflection ? 'Morning Audited' : 'Reflect Today'}
+          <div>
+            <div className="text-xs sm:text-sm font-bold text-[var(--color-text)]">
+              {todayMorningReflection ? 'Morning Audited' : 'Evening Reflection'}
+            </div>
+            <div className="text-[10px] text-[var(--color-text-subtle)] mt-0.5">
+              {todayMorningReflection ? 'Virtue aligned today' : 'Tap to examine thoughts'}
+            </div>
           </div>
         </button>
 
         {/* Recovery / Sleep Signal */}
         <button
           onClick={() => (onOpenSleepModal ? onOpenSleepModal() : onNavigateTab('body'))}
-          className="p-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-left space-y-1 hover:border-[var(--color-accent)]/50 transition-all active:scale-[0.98]"
+          className="p-3.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-left space-y-1.5 hover:border-[var(--color-accent)]/50 transition-all active:scale-[0.98] shadow-xs"
         >
-          <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-medium">
-            <span className="flex items-center gap-1">
-              <Moon className="w-3 h-3 text-[var(--color-accent)]" /> Sleep
+          <div className="flex items-center justify-between text-[11px] text-[var(--color-text-muted)] font-medium">
+            <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[10px] text-[var(--color-accent)]">
+              <Moon className="w-3.5 h-3.5" /> Sleep
             </span>
-            <span>{recentSleep ? `${(recentSleep.durationMinutes / 60).toFixed(1)}h` : 'Log'}</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)] border border-[var(--color-border)]">
+              {recentSleep ? `${(recentSleep.durationMinutes / 60).toFixed(1)}h` : 'Log'}
+            </span>
           </div>
-          <div className="text-xs font-bold text-[var(--color-text)] truncate">
-            {recentSleep ? `${recentSleep.restfulness} rest` : 'Log Last Night'}
+          <div>
+            <div className="text-xs sm:text-sm font-bold text-[var(--color-text)]">
+              {recentSleep ? `${recentSleep.restfulness} Rest` : 'Log Last Night'}
+            </div>
+            <div className="text-[10px] text-[var(--color-text-subtle)] mt-0.5">
+              {recentSleep ? `${recentSleep.durationMinutes} mins restorative` : 'Track sleep recovery'}
+            </div>
           </div>
         </button>
 
         {/* Systems Signal */}
         <button
           onClick={() => onNavigateTab('systems')}
-          className="p-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-left space-y-1 hover:border-[var(--color-accent)]/50 transition-all active:scale-[0.98]"
+          className="p-3.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-left space-y-1.5 hover:border-[var(--color-accent)]/50 transition-all active:scale-[0.98] shadow-xs"
         >
-          <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-medium">
-            <span className="flex items-center gap-1">
-              <Repeat className="w-3 h-3 text-[var(--color-accent)]" /> Habits
+          <div className="flex items-center justify-between text-[11px] text-[var(--color-text-muted)] font-medium">
+            <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[10px] text-[var(--color-accent)]">
+              <Repeat className="w-3.5 h-3.5" /> Habits
             </span>
-            <span>{completedHabitsCount}/{habits.length}</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)] border border-[var(--color-border)]">
+              {completedHabitsCount}/{habits.length}
+            </span>
           </div>
-          <div className="text-xs font-bold text-[var(--color-text)] truncate">
-            {habits.length > 0 ? `${Math.round((completedHabitsCount / habits.length) * 100)}% Complete` : 'None'}
+          <div>
+            <div className="text-xs sm:text-sm font-bold text-[var(--color-text)]">
+              {habits.length > 0 ? `${Math.round((completedHabitsCount / habits.length) * 100)}% Complete` : 'No Habits'}
+            </div>
+            <div className="text-[10px] text-[var(--color-text-subtle)] mt-0.5">
+              {habits.length - completedHabitsCount > 0
+                ? `${habits.length - completedHabitsCount} habits remaining`
+                : 'All daily habits executed'}
+            </div>
           </div>
         </button>
 
         {/* Nutrition Signal */}
         <button
           onClick={() => onNavigateTab('body')}
-          className="p-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-left space-y-1 hover:border-[var(--color-accent)]/50 transition-all active:scale-[0.98]"
+          className="p-3.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-left space-y-1.5 hover:border-[var(--color-accent)]/50 transition-all active:scale-[0.98] shadow-xs"
         >
-          <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-medium">
-            <span className="flex items-center gap-1">
-              <Flame className="w-3 h-3 text-[var(--color-accent)]" /> Energy
+          <div className="flex items-center justify-between text-[11px] text-[var(--color-text-muted)] font-medium">
+            <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[10px] text-[var(--color-accent)]">
+              <Flame className="w-3.5 h-3.5" /> Energy
             </span>
-            <span>{isOverTarget ? 'Over' : `${remainingCals} left`}</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+                isOverTarget
+                  ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)] border-[var(--color-danger)]/20'
+                  : 'bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)] border-[var(--color-border)]'
+              }`}
+            >
+              {isOverTarget ? `${Math.abs(remainingCals)} over` : `${remainingCals} left`}
+            </span>
           </div>
-          <div className="text-xs font-bold text-[var(--color-text)] truncate">
-            {consumed.calories} / {effectiveTargets.calories} kcal
+          <div>
+            <div className="text-xs sm:text-sm font-bold text-[var(--color-text)]">
+              {consumed.calories} / {effectiveTargets.calories} kcal
+            </div>
+            <div className="text-[10px] text-[var(--color-text-subtle)] mt-0.5">
+              {calPercent}% of daily budget
+            </div>
           </div>
         </button>
       </section>

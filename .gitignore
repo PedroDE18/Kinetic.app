@@ -15,3 +15,5 @@ firebase-applet-config.json
 # Antigravity agent skills cache
 .agents/
 skills-lock.json
+*.jsonl
+kinetic-product-redesign-implementation.json

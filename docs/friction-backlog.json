@@ -1,5 +1,116 @@
 [
   {
+    "id": "fric-1794341620382",
+    "timestamp": "2026-11-10T20:13:40.382Z",
+    "category": "feature_request",
+    "severity": "enhancement",
+    "title": "Better home page",
+    "description": "in the home page, there are 4 side-to-side buttons, one leading to reflections, other to sleep, other to exercise and another to nutrition; they are so crowded! you cant read anything in the text... there must be a better way",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "feat(today): redesign home flourishing signals into spacious 2x2 cards with clear labels and progress indicators"
+  },
+  {
+    "id": "fric-1794341523841",
+    "timestamp": "2026-11-10T20:12:03.841Z",
+    "category": "feature_request",
+    "severity": "enhancement",
+    "title": "Graphs & Evolution Views in Progress",
+    "description": "I want many more graph views in the progress page!! not only reports of my history... i want to see my evolution. And in the habits part, maybe a calendar showing the days i followed my habits?",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "feat(progress): add 28-day habit consistency calendar matrix, 30-day adherence curve, cardio distance/speed curves, and calorie intake trajectory"
+  },
+  {
+    "id": "fric-1794341417420",
+    "timestamp": "2026-11-10T20:10:17.420Z",
+    "category": "workout_logging",
+    "severity": "enhancement",
+    "title": "Overflowing buttons in cardio page",
+    "description": "The right-most 'Add cardio session' button is overflowing to the right",
+    "suggestedSolution": "Maybe remove the text from the Sync with device button, and just keep the clock image",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "fix(train): compact wearable sync button to clean icon affordance to prevent horizontal overflow"
+  },
+  {
+    "id": "fric-1794341359091",
+    "timestamp": "2026-11-10T20:09:19.091Z",
+    "category": "workout_logging",
+    "severity": "enhancement",
+    "title": "Better history session (Collapsible with View All Modal)",
+    "description": "The historic session of cardio workouts, strength workouts, sleep sessions, etc, is too extensive. It should only show a limited amount of exercises, and when you click it, there should be a popup where you can scroll and see everything",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "feat(train): limit inline history cards and add dedicated scrollable popup modals for all strength and cardio workouts"
+  },
+  {
+    "id": "fric-1794341295211",
+    "timestamp": "2026-11-10T20:08:15.211Z",
+    "category": "workout_logging",
+    "severity": "minor_annoyance",
+    "title": "Cardio light mode surface contrast bug",
+    "description": "In the light mode, in the cardio page, theres a box thats completely white and it looks weird against the warm grey of the rest of the UI",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "fix(theme): harmonize light mode tokens with warm paper cream surfaces and terracotta ember accents"
+  },
+  {
+    "id": "fric-1794341231578",
+    "timestamp": "2026-11-10T20:07:11.578Z",
+    "category": "nutrition_diary",
+    "severity": "enhancement",
+    "title": "Calculation of actual eaten calories from weight gain",
+    "description": "It would be nice if you could get an estimate of how many actual calories you have been eating (in average) based on your measured weight gain",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "feat(metabolic): infer actual eaten calories based on mass balance and weight rate of change in progress view"
+  },
+  {
+    "id": "fric-1794341169388",
+    "timestamp": "2026-11-10T20:06:09.388Z",
+    "category": "ui_contrast_layout",
+    "severity": "minor_annoyance",
+    "title": "Logo is completely dark in white mode",
+    "description": "The Eumonia logo is completely black when you change to white mode",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "fix(header): harmonize header logo emblem with theme-aware raised surface and accent terracotta typography"
+  },
+  {
+    "id": "fric-1794341135828",
+    "timestamp": "2026-11-10T20:05:35.828Z",
+    "category": "nutrition_diary",
+    "severity": "enhancement",
+    "title": "Multilingual Support & Food Deduplication (Egg vs Ovos)",
+    "description": "Currently, we can see Eggs and Ovos in the food options... it would be nice if there was only one 'Egg' card with aliases for search matching without cluttering the display.",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "feat(food): deduplicate egg entries, hide alias chip on food cards, and unify multilingual search matching"
+  },
+  {
+    "id": "fric-1794341041725",
+    "timestamp": "2026-11-10T20:04:01.725Z",
+    "category": "nutrition_diary",
+    "severity": "enhancement",
+    "title": "Automatic Macros in the custom add nutrition",
+    "description": "The custom add nutrition in the atlas is nice but i mostly dont know the macros of what i eat. There should be an automated research of the macros, or the food you want added should just be sent to a list that gets looked at whenever any update is done, adding whatever was missing then.",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "feat(food): add 1-tap macro auto-estimation in custom food creator and auto-sync custom items to roadmap backlog"
+  },
+  {
+    "id": "fric-1794340910059",
+    "timestamp": "2026-11-10T20:01:50.059Z",
+    "category": "performance_bug",
+    "severity": "minor_annoyance",
+    "title": "Recommendations & Friction Side Scroll Bug",
+    "description": "In the Recommendations & Friction 'Area of App' side scroll, there's a bug not allowing you to scroll the items and see all the boxes",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "fix(feedback): replace horizontal overflow scroll with responsive flex-wrap grid in area picker"
+  },
+  {
     "id": "fric-001",
     "timestamp": "2026-11-10T15:00:00.000Z",
     "category": "workout_logging",

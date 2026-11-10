@@ -47,6 +47,7 @@ export function calculateAdaptiveTDEE(
   windowDays = 21
 ): {
   estimatedTdee: number;
+  inferredActualIntake?: number;
   confidenceScore: number; // 0.0 - 1.0
   avgDailyIntake: number;
   avgProteinIntake: number;
@@ -91,6 +92,7 @@ export function calculateAdaptiveTDEE(
   if (trend.length < 3) {
     return {
       estimatedTdee: 2400,
+      inferredActualIntake: 2150,
       confidenceScore: fallbackConfidence,
       avgDailyIntake: 2150,
       avgProteinIntake: 160,
@@ -168,8 +170,14 @@ export function calculateAdaptiveTDEE(
   // Clamp within realistic human physiological bounds
   const clampedTdee = Math.round(Math.min(Math.max(blendedTdee, 1300), 4500));
 
+  // Inferred actual caloric intake derived from weight rate of change (7700 kcal/kg)
+  const inferredActualIntake = Math.round(
+    Math.min(Math.max(clampedTdee + energyBalanceOffset, 1200), 5500)
+  );
+
   return {
     estimatedTdee: clampedTdee,
+    inferredActualIntake,
     confidenceScore: Number(effectiveConfidence.toFixed(2)),
     avgDailyIntake,
     avgProteinIntake,
