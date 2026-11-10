@@ -19,6 +19,7 @@ import {
   Cloud,
   CloudUpload,
   CloudDownload,
+  MessageSquarePlus,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { useAuth } from '../../context/AuthContext';
@@ -43,9 +44,10 @@ interface SettingsModalProps {
   onOpenProfile?: () => void;
   onOpenHealthSync?: () => void;
   onOpenInstallPwa?: () => void;
+  onOpenFeedback?: () => void;
 }
 
-export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpenInstallPwa }: SettingsModalProps) {
+export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpenInstallPwa, onOpenFeedback }: SettingsModalProps) {
   useBodyScrollLock(true);
   const {
     state,
@@ -839,6 +841,30 @@ export function SettingsModal({ onClose, onOpenProfile, onOpenHealthSync, onOpen
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span>{notificationError}</span>
             </div>
+          )}
+        </div>
+
+        {/* Continuous Improvement & Recommendations */}
+        <div className="bg-[var(--color-surface-sunken)] p-4 rounded-2xl border border-[var(--color-border)] space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--color-text)]">
+            <MessageSquarePlus className="w-4 h-4 text-[var(--color-accent)]" />
+            <span>Recommendations & Friction Feedback</span>
+          </div>
+          <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
+            Have an idea, recommendation, or encountered friction? Submit directly to the autonomous development team.
+          </p>
+          {onOpenFeedback && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenFeedback();
+              }}
+              className="w-full min-h-[38px] py-2 px-3 bg-[var(--color-accent)] text-[var(--color-on-accent)] font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-xs"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Submit Recommendation or Bug</span>
+            </button>
           )}
         </div>
 

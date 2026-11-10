@@ -394,6 +394,36 @@ export interface EunoiaHabit {
 export type FrictionCategory = 'physical' | 'digital' | 'temporal' | 'social';
 export type FrictionActionType = 'add_friction' | 'remove_friction';
 
+export type FeedbackCategory =
+  | 'feature_request'
+  | 'nutrition_diary'
+  | 'workout_logging'
+  | 'stoic_reflection'
+  | 'habits_systems'
+  | 'ui_contrast_layout'
+  | 'performance_bug';
+
+export type FrictionSeverity = 'minor_annoyance' | 'high_friction' | 'blocker' | 'enhancement';
+
+export interface FrictionReport {
+  id: string;
+  timestamp: string;
+  category: FeedbackCategory;
+  severity: FrictionSeverity;
+  title: string;
+  description: string;
+  suggestedSolution?: string;
+  deviceContext: {
+    viewport: string;
+    userAgent: string;
+    isStandalonePwa: boolean;
+    theme: string;
+  };
+  reporter: 'human_user' | 'ai_fake_user';
+  status: 'open' | 'triaged' | 'in_progress' | 'resolved';
+  resolutionCommit?: string;
+}
+
 export interface FrictionIntervention {
   id: string;
   title: string;

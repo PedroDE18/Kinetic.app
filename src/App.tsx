@@ -18,6 +18,7 @@ import { ProfileModal } from './components/profile/ProfileModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { SleepModal } from './components/recovery/SleepModal';
 import { ReflectionModal } from './components/mind/ReflectionModal';
+import { FrictionFeedbackModal } from './components/feedback/FrictionFeedbackModal';
 import { checkUrlForHealthSync } from './services/healthSync';
 import { saveUserFitnessState, loadUserFitnessState } from './services/firebase';
 import { buildInitialWeeklyReview } from './utils/mockData';
@@ -42,6 +43,7 @@ function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSleepModal, setShowSleepModal] = useState(false);
   const [showReflectionModal, setShowReflectionModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [healthSyncToast, setHealthSyncToast] = useState<string | null>(null);
 
   const hasActiveWorkout = !!state.activeWorkout;
@@ -158,6 +160,7 @@ function AppContent() {
       <Header
         onOpenSettings={() => setShowSettingsModal(true)}
         onOpenProfile={() => setShowProfileModal(true)}
+        onOpenFeedback={() => setShowFeedbackModal(true)}
         onOpenHealthSync={() => setShowHealthSyncModal(true)}
         onOpenInstallPwa={() => setShowInstallPwaModal(true)}
       />
@@ -276,6 +279,10 @@ function AppContent() {
             setShowSettingsModal(false);
             setShowProfileModal(true);
           }}
+          onOpenFeedback={() => {
+            setShowSettingsModal(false);
+            setShowFeedbackModal(true);
+          }}
           onOpenHealthSync={() => {
             setShowSettingsModal(false);
             setShowHealthSyncModal(true);
@@ -315,6 +322,10 @@ function AppContent() {
 
       {showInstallPwaModal && (
         <InstallPwaModal onClose={() => setShowInstallPwaModal(false)} isOpen={showInstallPwaModal} />
+      )}
+
+      {showFeedbackModal && (
+        <FrictionFeedbackModal onClose={() => setShowFeedbackModal(false)} />
       )}
     </div>
   );

@@ -1,16 +1,17 @@
 import React from 'react';
-import { Settings, Moon, Sun } from 'lucide-react';
+import { Settings, Moon, Sun, MessageSquarePlus } from 'lucide-react';
 import { useFitness } from '../context/FitnessContext';
 import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {
   onOpenSettings: () => void;
   onOpenProfile: () => void;
+  onOpenFeedback?: () => void;
   onOpenHealthSync?: () => void;
   onOpenInstallPwa?: () => void;
 }
 
-export function Header({ onOpenSettings, onOpenProfile }: HeaderProps) {
+export function Header({ onOpenSettings, onOpenProfile, onOpenFeedback }: HeaderProps) {
   const { state, updateProfile } = useFitness();
   const { currentUser } = useAuth();
   const isLight = state.profile.theme === 'light';
@@ -59,6 +60,18 @@ export function Header({ onOpenSettings, onOpenProfile }: HeaderProps) {
         >
           {isLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
         </button>
+
+        {/* Submit Feedback & Recommendations */}
+        {onOpenFeedback && (
+          <button
+            onClick={onOpenFeedback}
+            aria-label="Submit Feedback & Recommendations"
+            title="Submit Feedback & Recommendations (Autonomous Roadmap)"
+            className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-xl text-[var(--color-accent)] hover:bg-[var(--color-surface-raised)] active:scale-95 transition-all"
+          >
+            <MessageSquarePlus className="w-4 h-4" />
+          </button>
+        )}
 
         {/* Settings & Preferences */}
         <button
