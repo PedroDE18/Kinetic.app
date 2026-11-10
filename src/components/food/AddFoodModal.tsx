@@ -396,6 +396,25 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
       isFavorite: true,
     };
     addFoodToLibrary(food);
+
+    // Also register to continuous improvement backlog so autonomous squad can evaluate for core library
+    try {
+      const existing = JSON.parse(localStorage.getItem('eunoia_friction_v1') || '[]');
+      existing.unshift({
+        id: `fric-food-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        category: 'nutrition_diary',
+        severity: 'enhancement',
+        title: `Food Atlas Suggestion: ${food.name}`,
+        description: `User suggested food: ${food.name} (${food.servingSize}${food.servingUnit}, ${food.calories} kcal, P:${food.protein}g C:${food.carbs}g F:${food.fat}g).`,
+        reporter: 'human_user',
+        status: 'open',
+      });
+      localStorage.setItem('eunoia_friction_v1', JSON.stringify(existing));
+    } catch {
+      // Ignore quota
+    }
+
     setSelectedFood(food);
     setActiveTab('database');
   };
@@ -733,7 +752,20 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                           or describe a meal below and it will be saved for you.
                         </>
                       ) : (
-                        <>No foods found matching "{searchQuery}".</>
+                        <div className="space-y-3 py-2">
+                          <p>No foods found matching "{searchQuery}".</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCustomName(searchQuery);
+                              setActiveTab('custom');
+                            }}
+                            className="px-4 py-2 rounded-xl bg-[var(--color-accent)] text-[var(--color-on-accent)] text-xs font-bold inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Suggest & Add "{searchQuery}" to Atlas</span>
+                          </button>
+                        </div>
                       )}
                     </div>
                   ) : (
@@ -791,6 +823,21 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                       ))}
                     </div>
                   )}
+
+                  {/* Suggest / Add Custom Food Prompt */}
+                  <div className="pt-3 pb-1 text-center border-t border-[var(--color-border)] mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomName(searchQuery || '');
+                        setActiveTab('custom');
+                      }}
+                      className="text-xs font-semibold text-[var(--color-accent)] hover:underline inline-flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Can't find a food? Suggest or add a custom food to Atlas</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </>
