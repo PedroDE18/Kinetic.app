@@ -130,5 +130,29 @@
     "reporter": "human_user",
     "status": "resolved",
     "resolutionCommit": "fix(theme): overhaul light/clear mode tokens with crisp white surfaces, high-contrast text and clean inputs"
+  },
+  {
+    "id": "fric-012",
+    "type": "friction",
+    "title": "Cycling Pace Formatted as Min/Km Running Pace Instead of Km/h Speed",
+    "category": "progress_tracking",
+    "severity": "minor_annoyance",
+    "description": "Cycling sessions and modality-filtered cardio progression display pace in minutes per kilometer (e.g. 2:00 /km) instead of standard cycling speed (km/h or mph), creating cognitive friction for cyclists and triathletes.",
+    "suggestedSolution": "When cardio activity or selected modality is cycling/biking, compute and display speed in km/h or mph (distance / (duration / 60)) alongside or in place of min/km pace.",
+    "reporter": "ai_beta_tester_thiago",
+    "status": "open",
+    "timestamp": "2026-11-10T20:58:06.533Z"
+  },
+  {
+    "id": "fric-013",
+    "type": "friction",
+    "title": "Cardio Best Pace Metric Hardcodes '/km' Suffix in Imperial Unit System",
+    "category": "progress_tracking",
+    "severity": "minor_annoyance",
+    "description": "ProgressView cardio best pace summary card hardcodes ' /km' suffix regardless of user unitSystem setting (imperial vs metric).",
+    "suggestedSolution": "Dynamically render `/mi` when profile.unitSystem === 'imperial' and `/km` when 'metric'.",
+    "reporter": "ai_beta_tester_thiago",
+    "status": "open",
+    "timestamp": "2026-11-10T20:58:06.533Z"
   }
 ]

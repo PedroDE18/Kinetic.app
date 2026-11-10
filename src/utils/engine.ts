@@ -482,10 +482,11 @@ export function formatWeight(valKg: number, unit: UnitSystem): string {
  * Local date string formatter: returns YYYY-MM-DD in the user's local timezone.
  * Eliminates UTC boundary shifting bugs where evening logs get stamped as tomorrow.
  */
-export function getLocalDateString(d: Date = new Date()): string {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+export function getLocalDateString(d: Date | string = new Date()): string {
+  const dateObj = typeof d === 'string' ? new Date(d) : d;
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -554,14 +555,18 @@ export function getWeekDates(anchor: Date = new Date()): string[] {
  */
 export function calculateConsecutiveStreak(
   completedDates: string[],
-  referenceDate: Date = new Date()
+  referenceDate: Date | string = new Date()
 ): number {
   if (!completedDates || completedDates.length === 0) return 0;
 
-  const dateSet = new Set(completedDates);
-  const today = getLocalDateString(referenceDate);
+  const refDate = typeof referenceDate === 'string'
+    ? (referenceDate.includes('T') ? new Date(referenceDate) : new Date(referenceDate + 'T12:00:00'))
+    : referenceDate;
 
-  const yesterdayDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate() - 1);
+  const dateSet = new Set(completedDates);
+  const today = getLocalDateString(refDate);
+
+  const yesterdayDate = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate() - 1);
   const yesterday = getLocalDateString(yesterdayDate);
 
   const completedToday = dateSet.has(today);
@@ -574,7 +579,7 @@ export function calculateConsecutiveStreak(
 
   let streak = 0;
   // If completed today, start counting back from today; otherwise start from yesterday
-  const anchorDate = completedToday ? referenceDate : yesterdayDate;
+  const anchorDate = completedToday ? refDate : yesterdayDate;
 
   let check = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), anchorDate.getDate());
   while (true) {
