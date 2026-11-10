@@ -79,6 +79,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
   const [physicalCategory, setPhysicalCategory] = useState<'metabolic' | 'strength' | 'cardio' | 'biometrics'>(
     'metabolic'
   );
+  const [selectedCardioModality, setSelectedCardioModality] = useState<string>('all');
 
   // Apple Health Historical IndexedDB Metrics
   const [dailyMetrics, setDailyMetrics] = useState<DailyAggregatedMetrics[]>([]);
@@ -222,10 +223,19 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
     [completedWorkouts]
   );
 
-  // Cardio Stats
+  // Cardio Stats (Segmented by modality)
+  const filteredCardioSessions = useMemo(() => {
+    if (selectedCardioModality === 'all') return cardioSessions;
+    return cardioSessions.filter(
+      (s) =>
+        (s.activity || s.type) === selectedCardioModality ||
+        (selectedCardioModality === 'cycling' && (s.activity || s.type) === 'stationary_bike')
+    );
+  }, [cardioSessions, selectedCardioModality]);
+
   const cardioStats = useMemo(
-    () => calculateCardioStats(cardioSessions, profile.unitSystem),
-    [cardioSessions, profile.unitSystem]
+    () => calculateCardioStats(filteredCardioSessions, profile.unitSystem),
+    [filteredCardioSessions, profile.unitSystem]
   );
 
   // Mind Analytics
@@ -610,13 +620,39 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
           {/* ======================================================== */}
           {physicalCategory === 'cardio' && (
             <div className="space-y-4">
+              {/* Modality Selector Rail */}
+              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                {[
+                  { id: 'all', label: 'All Activities' },
+                  { id: 'running', label: 'Running' },
+                  { id: 'cycling', label: 'Cycling' },
+                  { id: 'walking', label: 'Walking' },
+                  { id: 'swimming', label: 'Swimming' },
+                  { id: 'rowing', label: 'Rowing' },
+                ].map((mod) => (
+                  <button
+                    key={mod.id}
+                    onClick={() => setSelectedCardioModality(mod.id)}
+                    className={`min-h-[32px] px-3.5 py-1 rounded-xl text-xs font-bold capitalize whitespace-nowrap transition-all border shrink-0 ${
+                      selectedCardioModality === mod.id
+                        ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)] shadow-xs'
+                        : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                    }`}
+                  >
+                    {mod.label}
+                  </button>
+                ))}
+              </div>
+
               <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
-                    Cardio Performance PRs
+                    {selectedCardioModality === 'all'
+                      ? 'Cardio Performance PRs'
+                      : `${selectedCardioModality} Personal Bests`}
                   </span>
                   <span className="text-xs font-bold text-[var(--color-accent)]">
-                    {cardioStats.totalSessions} sessions logged
+                    {cardioStats.totalSessions} sessions
                   </span>
                 </div>
 
@@ -659,16 +695,18 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
               {/* Sessions List */}
               <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
                 <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
-                  Cardio History
+                  {selectedCardioModality === 'all' ? 'Cardio History' : `${selectedCardioModality} History`}
                 </span>
 
-                {cardioSessions.length === 0 ? (
+                {filteredCardioSessions.length === 0 ? (
                   <div className="p-6 text-center text-xs text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)] rounded-2xl">
-                    No cardio sessions logged yet. Log runs, walks, or cycling in the Body tab.
+                    {selectedCardioModality === 'all'
+                      ? 'No cardio sessions logged yet. Log runs, walks, or cycling in the Body tab.'
+                      : `No ${selectedCardioModality} sessions logged yet.`}
                   </div>
                 ) : (
                   <div className="divide-y divide-[var(--color-border)]">
-                    {[...cardioSessions]
+                    {[...filteredCardioSessions]
                       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                       .map((session) => (
                       <div key={session.id} className="py-3 flex items-center justify-between">
