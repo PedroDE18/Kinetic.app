@@ -12,7 +12,7 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
   useBodyScrollLock(true);
   const { state } = useFitness();
 
-  const [activeView, setActiveView] = useState<'create' | 'history'>('create');
+  const [activeView, setActiveView] = useState<'create' | 'history' | 'roadmap'>('history');
   const [feedbackType, setFeedbackType] = useState<'recommendation' | 'friction'>('recommendation');
   const [category, setCategory] = useState<FeedbackCategory>('feature_request');
   const [severity, setSeverity] = useState<FrictionSeverity>('enhancement');
@@ -21,15 +21,62 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
   const [suggestedSolution, setSuggestedSolution] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [savedReports, setSavedReports] = useState<FrictionReport[]>([]);
+  const [backlogItems, setBacklogItems] = useState<FrictionReport[]>([]);
   const [copied, setCopied] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
+
+  const loadBacklog = async () => {
+    try {
+      const res = await fetch('/api/feedback');
+      if (res.ok) {
+        const items: FrictionReport[] = await res.json();
+        setBacklogItems(items);
+
+        // Auto-sync any unsynced local reports
+        const local = JSON.parse(localStorage.getItem('eunoia_friction_v1') || '[]');
+        const missing = local.filter(
+          (loc: FrictionReport) =>
+            !items.some(
+              (srv: any) =>
+                srv.id === loc.id ||
+                (srv.title === loc.title && srv.timestamp === loc.timestamp)
+            )
+        );
+        if (missing.length > 0) {
+          await fetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(missing),
+          });
+        }
+      }
+    } catch {
+      // Offline mode fallback
+    }
+  };
 
   useEffect(() => {
     try {
       const existing = JSON.parse(localStorage.getItem('eunoia_friction_v1') || '[]');
       setSavedReports(existing);
+      if (existing.length === 0) {
+        setActiveView('create');
+      }
     } catch {}
+    loadBacklog();
   }, []);
+
+  const matchBacklogItem = (item: FrictionReport) => {
+    return backlogItems.find(
+      (b) =>
+        b.id === item.id ||
+        b.title?.trim().toLowerCase() === item.title?.trim().toLowerCase() ||
+        (b.description && item.description && (
+          b.description.toLowerCase().includes(item.description.toLowerCase().slice(0, 25)) ||
+          item.description.toLowerCase().includes(b.description.toLowerCase().slice(0, 25))
+        ))
+    );
+  };
 
   const categories: { id: FeedbackCategory; label: string }[] = [
     { id: 'feature_request', label: 'Feature Request' },
@@ -139,12 +186,12 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
           </button>
         </div>
 
-        {/* View Switcher: Create vs History */}
-        <div className="shrink-0 px-5 pt-3 pb-1 border-b border-[var(--color-border)] flex items-center gap-2 bg-[var(--color-bg-elevated)]">
+        {/* View Switcher: Create vs History vs Roadmap */}
+        <div className="shrink-0 px-5 pt-3 pb-1 border-b border-[var(--color-border)] flex items-center gap-2 bg-[var(--color-bg-elevated)] overflow-x-auto scrollbar-none">
           <button
             type="button"
             onClick={() => setActiveView('create')}
-            className={`min-h-[34px] px-3.5 py-1 rounded-xl text-xs font-bold transition-all border ${
+            className={`min-h-[34px] px-3.5 py-1 rounded-xl text-xs font-bold transition-all border whitespace-nowrap shrink-0 ${
               activeView === 'create'
                 ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)] shadow-xs'
                 : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
@@ -155,25 +202,109 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
           <button
             type="button"
             onClick={() => setActiveView('history')}
-            className={`min-h-[34px] px-3.5 py-1 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+            className={`min-h-[34px] px-3.5 py-1 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
               activeView === 'history'
                 ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)] shadow-xs'
                 : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
             }`}
           >
             <List className="w-3.5 h-3.5" />
-            <span>My Submissions ({savedReports.length})</span>
+            <span>My Recommendations ({savedReports.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView('roadmap')}
+            className={`min-h-[34px] px-3.5 py-1 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+              activeView === 'roadmap'
+                ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)] shadow-xs'
+                : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-success)]" />
+            <span>
+              Roadmap ({backlogItems.filter((b) => b.status === 'resolved').length} Ticked Off)
+            </span>
           </button>
         </div>
 
         {/* Content */}
         <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
-          {activeView === 'history' ? (
+          {activeView === 'roadmap' ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--color-border)]">
+                <div>
+                  <span className="text-xs font-bold text-[var(--color-text)] block">
+                    Engineering Squad Roadmap & Ticked-Off Work
+                  </span>
+                  <span className="text-[11px] text-[var(--color-text-muted)]">
+                    {backlogItems.filter((b) => b.status === 'resolved').length} resolved •{' '}
+                    {backlogItems.filter((b) => b.status === 'open').length} in progress
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={loadBacklog}
+                  title="Refresh backlog"
+                  className="min-h-[30px] px-2.5 py-1 rounded-lg bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[11px] font-semibold text-[var(--color-accent)] flex items-center gap-1 active:scale-95 transition-all"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Refresh</span>
+                </button>
+              </div>
+
+              <div className="space-y-2.5">
+                {backlogItems.map((item) => {
+                  const isResolved = item.status === 'resolved';
+                  return (
+                    <div
+                      key={item.id}
+                      className={`p-3.5 rounded-2xl border transition-all space-y-1.5 ${
+                        isResolved
+                          ? 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] opacity-95'
+                          : 'bg-[var(--color-surface-raised)] border-[var(--color-accent)]/40 shadow-xs'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          {isResolved ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-success)]/15 border border-[var(--color-success)]/30 text-[var(--color-success)] font-bold shrink-0">
+                              <CheckCircle2 className="w-3 h-3 text-[var(--color-success)]" />
+                              <span>Ticked Off</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] font-bold shrink-0">
+                              <Sparkles className="w-3 h-3 text-[var(--color-accent)]" />
+                              <span>In Progress</span>
+                            </span>
+                          )}
+                          <span className="text-xs font-bold text-[var(--color-text)]">
+                            {item.title}
+                          </span>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] font-semibold shrink-0">
+                          {item.category?.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                        {item.description}
+                      </p>
+                      {item.resolutionCommit && (
+                        <div className="text-[10px] text-[var(--color-success)] font-medium pt-1 border-t border-[var(--color-border)] flex items-center gap-1.5">
+                          <Check className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{item.resolutionCommit}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : activeView === 'history' ? (
             <div className="space-y-3">
               {/* History Toolbar */}
               <div className="flex items-center justify-between gap-2 pb-2 border-b border-[var(--color-border)]">
                 <span className="text-xs font-semibold text-[var(--color-text-muted)]">
-                  {savedReports.length} items registered
+                  {savedReports.length} recommendations on this device
                 </span>
                 <div className="flex items-center gap-1.5">
                   <button
@@ -209,32 +340,73 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
                 </div>
               ) : (
                 <div className="space-y-2.5">
-                  {savedReports.map((item) => (
-                    <div
-                      key={item.id}
-                      className="p-3.5 bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-2xl space-y-1.5"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-xs font-bold text-[var(--color-text)]">
-                          {item.title}
-                        </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-muted)] font-semibold shrink-0">
-                          {item.category.replace('_', ' ')}
-                        </span>
-                      </div>
-                      <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-                        {item.description}
-                      </p>
-                      {item.suggestedSolution && (
-                        <div className="text-[11px] text-[var(--color-accent)] font-medium pt-1 border-t border-[var(--color-border)]">
-                          Suggestion: {item.suggestedSolution}
+                  {savedReports.map((item) => {
+                    const match = matchBacklogItem(item);
+                    const isResolved = match ? match.status === 'resolved' : item.status === 'resolved';
+                    const isInRoadmap = Boolean(match);
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`p-3.5 rounded-2xl border space-y-1.5 transition-all ${
+                          isResolved
+                            ? 'bg-[var(--color-surface-sunken)] border-[var(--color-success)]/30'
+                            : isInRoadmap
+                            ? 'bg-[var(--color-surface-sunken)] border-[var(--color-accent)]/30'
+                            : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)]'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {isResolved ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-success)]/15 border border-[var(--color-success)]/30 text-[var(--color-success)] font-bold shrink-0">
+                                  <CheckCircle2 className="w-3 h-3 text-[var(--color-success)]" />
+                                  <span>Ticked Off / Resolved</span>
+                                </span>
+                              ) : isInRoadmap ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] font-bold shrink-0">
+                                  <Sparkles className="w-3 h-3 text-[var(--color-accent)]" />
+                                  <span>In Autonomous Roadmap</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-muted)] font-medium shrink-0">
+                                  <span>Saved on Device</span>
+                                </span>
+                              )}
+                              <span className="text-xs font-bold text-[var(--color-text)]">
+                                {item.title}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-muted)] font-semibold shrink-0">
+                            {item.category.replace('_', ' ')}
+                          </span>
                         </div>
-                      )}
-                      <div className="text-[9px] text-[var(--color-text-subtle)] pt-0.5">
-                        {new Date(item.timestamp).toLocaleString()}
+
+                        <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                          {item.description}
+                        </p>
+
+                        {item.suggestedSolution && (
+                          <div className="text-[11px] text-[var(--color-accent)] font-medium pt-1 border-t border-[var(--color-border)]">
+                            Suggestion: {item.suggestedSolution}
+                          </div>
+                        )}
+
+                        {match?.resolutionCommit && (
+                          <div className="text-[10px] text-[var(--color-success)] font-medium pt-1 border-t border-[var(--color-border)] flex items-center gap-1.5">
+                            <Check className="w-3 h-3 shrink-0" />
+                            <span className="truncate">Ticked off in {match.resolutionCommit}</span>
+                          </div>
+                        )}
+
+                        <div className="text-[9px] text-[var(--color-text-subtle)] pt-0.5">
+                          {new Date(item.timestamp).toLocaleString()}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

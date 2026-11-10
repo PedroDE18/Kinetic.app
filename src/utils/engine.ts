@@ -320,17 +320,20 @@ export function calculateGlobalVolumeHistory(
  */
 export function formatPace(
   arg1: number | string,
-  arg2?: number | UnitSystem
+  arg2?: number | UnitSystem,
+  arg3?: UnitSystem
 ): string {
   if (typeof arg1 === 'string') {
     return arg1.includes('/') ? arg1 : `${arg1} /km`;
   }
   if (typeof arg2 === 'number') {
-    // formatPace(totalMinutes, distanceKm)
+    // formatPace(totalMinutes, distanceKm, unitSystem)
     const totalMinutes = arg1;
     const distanceKm = arg2;
+    const unit = arg3 || 'metric';
     if (!distanceKm || distanceKm <= 0 || !totalMinutes || totalMinutes <= 0) return '--:--';
-    const paceDec = totalMinutes / distanceKm;
+    const effectiveDistance = unit === 'imperial' ? distanceKm * 0.621371 : distanceKm;
+    const paceDec = totalMinutes / effectiveDistance;
     const mins = Math.floor(paceDec);
     const secs = Math.round((paceDec - mins) * 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -346,6 +349,18 @@ export function formatPace(
   return `${mins}:${secs.toString().padStart(2, '0')} ${unitLabel}`;
 }
 
+/**
+ * Format speed in km/h or mph for cycling and endurance sports
+ */
+export function formatSpeed(speedKmh: number, unitSystem: UnitSystem = 'metric'): string {
+  if (!speedKmh || speedKmh <= 0 || isNaN(speedKmh)) return '--';
+  if (unitSystem === 'imperial') {
+    const mph = speedKmh * 0.621371;
+    return `${mph.toFixed(1)} mph`;
+  }
+  return `${speedKmh.toFixed(1)} km/h`;
+}
+
 export interface CardioProgressionStats {
   longestDistanceKm: number;
   longestDistanceActivity?: string;
@@ -353,6 +368,7 @@ export interface CardioProgressionStats {
   bestPaceMinPerKm: string;
   bestPaceSecPerKm?: number;
   bestPaceActivity?: string;
+  bestSpeedKmh?: number;
   totalDistanceKm: number;
   totalDurationMinutes: number;
   totalCaloriesBurned: number;
@@ -381,6 +397,7 @@ export function calculateCardioStats(
       longestDurationMinutes: 0,
       bestPaceMinPerKm: '--:--',
       bestPaceSecPerKm: 0,
+      bestSpeedKmh: 0,
       totalDistanceKm: 0,
       totalDurationMinutes: 0,
       totalCaloriesBurned: 0,
@@ -396,6 +413,7 @@ export function calculateCardioStats(
   let fastestPaceSecPerKm = 0;
   let bestPaceStr = '--:--';
   let bestPaceAct = '';
+  let fastestSpeedKmh = 0;
   let totalDist = 0;
   let totalDur = 0;
   let totalCals = 0;
@@ -416,6 +434,10 @@ export function calculateCardioStats(
         bestPaceStr = formatPace(s.durationMinutes, s.distanceKm);
         bestPaceAct = s.type;
       }
+      const speed = (s.distanceKm / s.durationMinutes) * 60;
+      if (speed > fastestSpeedKmh) {
+        fastestSpeedKmh = speed;
+      }
     }
     totalDist += s.distanceKm || 0;
     totalDur += s.durationMinutes;
@@ -429,6 +451,7 @@ export function calculateCardioStats(
     bestPaceMinPerKm: fastestPaceDec !== Infinity ? bestPaceStr : '--:--',
     bestPaceSecPerKm: fastestPaceSecPerKm,
     bestPaceActivity: bestPaceAct,
+    bestSpeedKmh: Number(fastestSpeedKmh.toFixed(1)),
     totalDistanceKm: Number(totalDist.toFixed(1)),
     totalDurationMinutes: totalDur,
     totalCaloriesBurned: totalCals,

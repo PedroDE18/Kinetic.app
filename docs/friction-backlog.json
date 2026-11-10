@@ -140,7 +140,8 @@
     "description": "Cycling sessions and modality-filtered cardio progression display pace in minutes per kilometer (e.g. 2:00 /km) instead of standard cycling speed (km/h or mph), creating cognitive friction for cyclists and triathletes.",
     "suggestedSolution": "When cardio activity or selected modality is cycling/biking, compute and display speed in km/h or mph (distance / (duration / 60)) alongside or in place of min/km pace.",
     "reporter": "ai_beta_tester_thiago",
-    "status": "open",
+    "status": "resolved",
+    "resolutionCommit": "feat(cardio): format cycling pace as km/h or mph speed and dynamic unit suffix in progress view",
     "timestamp": "2026-11-10T20:58:06.533Z"
   },
   {
@@ -152,7 +153,8 @@
     "description": "ProgressView cardio best pace summary card hardcodes ' /km' suffix regardless of user unitSystem setting (imperial vs metric).",
     "suggestedSolution": "Dynamically render `/mi` when profile.unitSystem === 'imperial' and `/km` when 'metric'.",
     "reporter": "ai_beta_tester_thiago",
-    "status": "open",
+    "status": "resolved",
+    "resolutionCommit": "fix(cardio): render dynamic /mi vs /km pace unit suffix matching user profile unit system",
     "timestamp": "2026-11-10T20:58:06.533Z"
   }
 ]

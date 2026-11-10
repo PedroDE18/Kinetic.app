@@ -10,6 +10,7 @@ import {
   convertLbToKg,
   calculateRoutineVolumeHistory,
   formatPace,
+  formatSpeed,
   calculateCardioStats,
   calculateConsecutiveStreak,
 } from './engine';
@@ -174,6 +175,8 @@ test('routine volume history groups volume correctly by routine', () => {
 test('formatPace and calculateCardioStats compute records accurately', () => {
   assert.equal(formatPace(30, 5), '6:00');
   assert.equal(formatPace(25, 5), '5:00');
+  assert.equal(formatSpeed(30, 'metric'), '30.0 km/h');
+  assert.equal(formatSpeed(30, 'imperial'), '18.6 mph');
 
   const sessions: CardioSession[] = [
     {
@@ -196,6 +199,15 @@ test('formatPace and calculateCardioStats compute records accurately', () => {
       avgPaceMinPerKm: '5:18',
       caloriesBurned: 580,
     },
+    {
+      id: 'c3',
+      type: 'cycling',
+      name: 'Outdoor Ride',
+      date: '2026-10-28T07:00:00Z',
+      durationMinutes: 60,
+      distanceKm: 30,
+      caloriesBurned: 600,
+    },
   ];
 
   const stats = calculateCardioStats(sessions, 'running');
@@ -203,6 +215,10 @@ test('formatPace and calculateCardioStats compute records accurately', () => {
   assert.equal(stats.longestDurationMinutes, 45);
   assert.equal(stats.sessionCount, 2);
   assert.equal(stats.totalDistanceKm, 13.5);
+
+  const cycleStats = calculateCardioStats(sessions, 'cycling');
+  assert.equal(cycleStats.sessionCount, 1);
+  assert.equal(cycleStats.bestSpeedKmh, 30);
 });
 
 test('unit conversion helpers work accurately', () => {

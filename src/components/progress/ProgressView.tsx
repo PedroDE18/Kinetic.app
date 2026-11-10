@@ -36,6 +36,7 @@ import {
   calculateRoutineVolumeHistory,
   calculateCardioStats,
   formatPace,
+  formatSpeed,
   formatDistance,
   getLocalDateString,
   calculateConsecutiveStreak,
@@ -670,12 +671,16 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
 
                   <div className="bg-[var(--color-surface-sunken)] p-3 rounded-2xl border border-[var(--color-border)] text-center">
                     <span className="text-[10px] text-[var(--color-text-subtle)] uppercase font-bold block mb-1">
-                      Best Pace
+                      {selectedCardioModality === 'cycling' ? 'Best Speed' : 'Best Pace'}
                     </span>
                     <span className="text-sm font-black text-[var(--color-text)] block">
-                      {cardioStats.bestPaceMinPerKm !== '--:--'
-                        ? `${cardioStats.bestPaceMinPerKm} /km`
-                        : '--'}
+                      {selectedCardioModality === 'cycling'
+                        ? cardioStats.bestSpeedKmh && cardioStats.bestSpeedKmh > 0
+                          ? formatSpeed(cardioStats.bestSpeedKmh, profile.unitSystem)
+                          : '--'
+                        : cardioStats.bestPaceMinPerKm !== '--:--'
+                          ? `${cardioStats.bestPaceMinPerKm} ${profile.unitSystem === 'imperial' ? '/mi' : '/km'}`
+                          : '--'}
                     </span>
                   </div>
 
@@ -716,10 +721,18 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
                               {(session.activity || session.type).replace('_', ' ')}
                             </span>
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-surface-raised)] text-[var(--color-text)] font-semibold border border-[var(--color-border)]">
-                              {session.avgPaceMinPerKm ||
-                                (session.avgPaceSecPerKm
-                                  ? formatPace(session.avgPaceSecPerKm, profile.unitSystem)
-                                  : '--:--')}
+                              {(session.activity || session.type) === 'cycling' || session.type === 'stationary_bike'
+                                ? formatSpeed(
+                                    ((session.distanceKm || 0) / Math.max(session.durationMinutes, 1)) * 60,
+                                    profile.unitSystem
+                                  )
+                                : session.avgPaceMinPerKm
+                                  ? `${session.avgPaceMinPerKm} ${profile.unitSystem === 'imperial' ? '/mi' : '/km'}`
+                                  : session.avgPaceSecPerKm
+                                    ? formatPace(session.avgPaceSecPerKm, profile.unitSystem)
+                                    : session.distanceKm && session.durationMinutes
+                                      ? `${formatPace(session.durationMinutes, session.distanceKm, profile.unitSystem)} ${profile.unitSystem === 'imperial' ? '/mi' : '/km'}`
+                                      : '--:--'}
                             </span>
                           </div>
                           <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
