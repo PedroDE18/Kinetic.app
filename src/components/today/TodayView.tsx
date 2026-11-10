@@ -39,6 +39,7 @@ interface TodayViewProps {
   onNavigateTab: (tab: 'progress' | 'systems' | 'today' | 'body' | 'mind') => void;
   onOpenSleepModal?: () => void;
   onOpenReflectionModal?: () => void;
+  onOpenMoodCheckIn?: () => void;
 }
 
 export function TodayView({
@@ -49,6 +50,7 @@ export function TodayView({
   onNavigateTab,
   onOpenSleepModal,
   onOpenReflectionModal,
+  onOpenMoodCheckIn,
 }: TodayViewProps) {
   const {
     state,
@@ -157,6 +159,9 @@ export function TodayView({
   const recentSleep = sleepRecords[0];
   const todayMorningReflection = reflections.find((r) => r.date === todayStr && r.type === 'morning');
   const todayEveningReflection = reflections.find((r) => r.date === todayStr && r.type === 'evening');
+  const latestMoodReflection = reflections
+    .filter((r) => r.affectiveWeather)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
   // Habits and Tasks for Today
   const todayHabits = habits.slice(0, 4);
@@ -318,6 +323,54 @@ export function TodayView({
             {consumed.calories} / {effectiveTargets.calories} kcal
           </div>
         </button>
+      </section>
+
+      {/* Standalone Stoic Emotional Weather (How We Feel inspired) */}
+      <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-3.5 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-colors ${
+              latestMoodReflection?.affectiveWeather === 'radiant'
+                ? 'bg-amber-400/10 border-amber-400/30 text-amber-400'
+                : latestMoodReflection?.affectiveWeather === 'clear'
+                ? 'bg-emerald-400/10 border-emerald-400/30 text-emerald-400'
+                : latestMoodReflection?.affectiveWeather === 'turbulent'
+                ? 'bg-rose-400/10 border-rose-400/30 text-rose-400'
+                : latestMoodReflection?.affectiveWeather === 'overcast'
+                ? 'bg-sky-400/10 border-sky-400/30 text-sky-400'
+                : 'bg-[var(--color-surface-raised)] border-[var(--color-border)] text-[var(--color-text-muted)]'
+            }`}
+          >
+            <Compass className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-[10px] uppercase font-bold tracking-wider text-[var(--color-text-subtle)]">
+              {lang === 'pt-BR' ? 'Clima Afetivo Estóico' : 'Stoic Emotional Weather'}
+            </div>
+            <div className="text-xs font-bold text-[var(--color-text)] capitalize">
+              {latestMoodReflection?.specificEmotion
+                ? `${latestMoodReflection.specificEmotion} • ${latestMoodReflection.affectiveWeather}`
+                : lang === 'pt-BR'
+                ? 'Como você está se sentindo?'
+                : 'How are you feeling right now?'}
+            </div>
+          </div>
+        </div>
+
+        {onOpenMoodCheckIn && (
+          <button
+            onClick={onOpenMoodCheckIn}
+            className="px-3 py-1.5 rounded-xl bg-[var(--color-surface-raised)] hover:bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-xs font-semibold text-[var(--color-accent)] active:scale-95 transition-all shadow-xs"
+          >
+            {latestMoodReflection?.date === todayStr
+              ? lang === 'pt-BR'
+                ? 'Atualizar'
+                : 'Update'
+              : lang === 'pt-BR'
+              ? 'Check-in'
+              : 'Check In'}
+          </button>
+        )}
       </section>
 
       {/* Natural Language Quick-Log Bar */}

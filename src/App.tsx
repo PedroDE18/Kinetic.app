@@ -18,6 +18,7 @@ import { ProfileModal } from './components/profile/ProfileModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { SleepModal } from './components/recovery/SleepModal';
 import { ReflectionModal } from './components/mind/ReflectionModal';
+import { MoodCheckInModal } from './components/mind/MoodCheckInModal';
 import { FrictionFeedbackModal } from './components/feedback/FrictionFeedbackModal';
 import { checkUrlForHealthSync } from './services/healthSync';
 import { saveUserFitnessState, loadUserFitnessState } from './services/firebase';
@@ -43,6 +44,7 @@ function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSleepModal, setShowSleepModal] = useState(false);
   const [showReflectionModal, setShowReflectionModal] = useState(false);
+  const [showMoodCheckInModal, setShowMoodCheckInModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [healthSyncToast, setHealthSyncToast] = useState<string | null>(null);
 
@@ -194,6 +196,7 @@ function AppContent() {
             onNavigateTab={(tab) => setActiveTab(tab)}
             onOpenSleepModal={() => setShowSleepModal(true)}
             onOpenReflectionModal={() => setShowReflectionModal(true)}
+            onOpenMoodCheckIn={() => setShowMoodCheckInModal(true)}
           />
         )}
 
@@ -314,6 +317,10 @@ function AppContent() {
 
       {showReflectionModal && (
         <ReflectionModal initialType="morning" onClose={() => setShowReflectionModal(false)} />
+      )}
+
+      {showMoodCheckInModal && (
+        <MoodCheckInModal onClose={() => setShowMoodCheckInModal(false)} />
       )}
 
       {showHealthSyncModal && (
