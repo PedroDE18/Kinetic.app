@@ -52,7 +52,8 @@
     "description": "Users need an accessible, frictionless way directly in the PWA to log bugs or feature ideas that sync to the backlog.",
     "suggestedSolution": "Add a 'Share Feedback' sheet in SettingsModal with dual sync to Firestore friction_reports and local backlog.",
     "reporter": "human_user",
-    "status": "open"
+    "status": "resolved",
+    "resolutionCommit": "feat(feedback): add accessible in-app recommendation and friction submission modal"
   },
   {
     "id": "fric-006",
@@ -75,7 +76,8 @@
     "description": "Built-in food options are limited. Need a continuous expansion drive and a dedicated in-app modal or button to suggest new foods to be added to default verified atlas.",
     "suggestedSolution": "Add food suggestion affordance in AddFoodModal and expand default foods database.",
     "reporter": "human_user",
-    "status": "open"
+    "status": "resolved",
+    "resolutionCommit": "feat(food): expand verified food atlas with 26 staple items and add custom food suggestion flow"
   },
   {
     "id": "fric-008",
@@ -86,7 +88,8 @@
     "description": "The cardio progress page merges all cardio activities (running, cycling, swimming, rowing) into a single progression curve, obscuring modality-specific pace and endurance gains.",
     "suggestedSolution": "Segment cardio progress by modality (Run vs Cycle vs Swim vs Row) with independent pace, distance, and HR graphs.",
     "reporter": "human_user",
-    "status": "open"
+    "status": "resolved",
+    "resolutionCommit": "feat(progress): add segmented cardio progress tracking with modality filter and modality-specific PRs"
   },
   {
     "id": "fric-009",
@@ -109,7 +112,8 @@
     "description": "Mood logging is buried inside the evening reflection rather than being a fast, standalone 4-quadrant check-in inspired by HowWeFeel adapted to the Stoic emotional regulation paradigm.",
     "suggestedSolution": "Decouple mood logging into a standalone quick-log check-in widget on TodayView.",
     "reporter": "human_user",
-    "status": "open"
+    "status": "resolved",
+    "resolutionCommit": "feat(mind): decouple stoic mood check-in with standalone HowWeFeel 4-quadrant modal and today card"
   },
   {
     "id": "fric-011",
@@ -120,6 +124,7 @@
     "description": "While Dark Mode is polished, Clear/White theme suffers from low contrast text, unreadable badge chips, and mismatched border tokens.",
     "suggestedSolution": "Audit index.css light theme variables and fix hardcoded dark classes across components.",
     "reporter": "human_user",
-    "status": "open"
+    "status": "resolved",
+    "resolutionCommit": "fix(theme): overhaul light/clear mode tokens with crisp white surfaces, high-contrast text and clean inputs"
   }
 ]
