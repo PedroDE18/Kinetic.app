@@ -1009,7 +1009,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
               <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-rose-500" />
+                    <Heart className="w-4 h-4 text-[var(--color-accent)]" />
                     <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
                       Resting Heart Rate (RHR)
                     </span>
@@ -1038,7 +1038,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
               <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-emerald-500" />
+                    <Activity className="w-4 h-4 text-[var(--color-accent)]" />
                     <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
                       Heart Rate Variability (HRV)
                     </span>
@@ -1067,7 +1067,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
               <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Flame className="w-4 h-4 text-amber-500" />
+                    <Flame className="w-4 h-4 text-[var(--color-accent)]" />
                     <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
                       Daily Step Volume & NEAT
                     </span>
@@ -1096,7 +1096,7 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
               <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Moon className="w-4 h-4 text-indigo-400" />
+                    <Moon className="w-4 h-4 text-[var(--color-accent)]" />
                     <span className="text-xs uppercase font-bold tracking-wider text-[var(--color-text-muted)]">
                       Sleep Duration & Restorative Recovery
                     </span>

@@ -9,6 +9,15 @@ function feedbackApiPlugin(): Plugin {
     name: 'feedback-api-plugin',
     configureServer(server) {
       server.middlewares.use('/api/feedback', (req, res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Allow-Private-Network', 'true');
+        if (req.method === 'OPTIONS') {
+          res.statusCode = 204;
+          res.end();
+          return;
+        }
         if (req.method === 'POST') {
           let body = '';
           req.on('data', (chunk) => {

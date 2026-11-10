@@ -20,13 +20,14 @@ import {
   ChevronUp,
   ExternalLink,
   Clock,
+  Globe,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { FoodItem, LoggedFood, MealType, ParsedAiFoodItem } from '../../types';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
 import { triggerHapticFeedback } from '../../utils/audioHaptics';
 import { estimateMealWithAi, estimateMealOffline } from '../../services/aiFoodEstimation';
-import { lookupBarcodeOpenFoodFacts, BarcodeFoodItem } from '../../services/barcodeService';
+import { lookupBarcodeOpenFoodFacts, searchFoodsOpenFoodFacts, BarcodeFoodItem } from '../../services/barcodeService';
 
 interface AddFoodModalProps {
   initialMealType?: MealType;
@@ -81,20 +82,48 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
   const [customName, setCustomName] = useState('');
   const [customServingSize, setCustomServingSize] = useState('100');
   const [customServingUnit, setCustomServingUnit] = useState('g');
-  const [customCalories, setCustomCalories] = useState('200');
-  const [customProtein, setCustomProtein] = useState('20');
-  const [customCarbs, setCustomCarbs] = useState('15');
-  const [customFat, setCustomFat] = useState('5');
+  const [customCalories, setCustomCalories] = useState('');
+  const [customProtein, setCustomProtein] = useState('');
+  const [customCarbs, setCustomCarbs] = useState('');
+  const [customFat, setCustomFat] = useState('');
   const [quickAddedMsg, setQuickAddedMsg] = useState<string | null>(null);
   const [isEstimatingCustom, setIsEstimatingCustom] = useState(false);
   const [customEstimateMsg, setCustomEstimateMsg] = useState<string | null>(null);
 
-  const handleAutoEstimateCustomMacros = async () => {
-    if (!customName.trim()) return;
+  // Live OpenFoodFacts Global Search State
+  const [openFoodFactsResults, setOpenFoodFactsResults] = useState<BarcodeFoodItem[]>([]);
+  const [isSearchingOff, setIsSearchingOff] = useState(false);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 3 || activeTab !== 'database') {
+      setOpenFoodFactsResults([]);
+      setIsSearchingOff(false);
+      return;
+    }
+
+    setIsSearchingOff(true);
+    const timer = setTimeout(async () => {
+      try {
+        const results = await searchFoodsOpenFoodFacts(q, 4);
+        setOpenFoodFactsResults(results);
+      } catch {
+        setOpenFoodFactsResults([]);
+      } finally {
+        setIsSearchingOff(false);
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, activeTab]);
+
+  const handleAutoEstimateCustomMacros = async (overrideName?: string) => {
+    const targetName = (overrideName || customName).trim();
+    if (!targetName) return;
     setIsEstimatingCustom(true);
     setCustomEstimateMsg('Researching nutrition values...');
     try {
-      const res = await estimateMealWithAi(customName.trim(), state.profile.geminiApiKey);
+      const res = await estimateMealWithAi(targetName, state.profile.geminiApiKey);
       if (res.items && res.items.length > 0) {
         const item = res.items[0];
         setCustomCalories(String(item.calories));
@@ -103,7 +132,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
         setCustomFat(String(item.fat));
         setCustomServingSize(String(item.servingSize || 100));
         setCustomServingUnit(item.servingUnit || 'g');
-        setCustomEstimateMsg(`Auto-estimated from database (${res.source === 'model' ? 'Gemini AI' : 'USDA/TACO Offline'})`);
+        setCustomEstimateMsg(`Auto-estimated from database (${res.source === 'model' ? 'Gemini AI' : 'Verified Atlas & TACO'})`);
       } else {
         setCustomEstimateMsg('No match found. Please input macros manually.');
       }
@@ -165,22 +194,34 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
     setTimeout(() => setQuickAddedMsg(null), 2200);
   };
 
-  // Filtered foods
+  const normalizeStr = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+
+  // Filtered foods with accent-insensitive and multi-token fuzzy matching
   const filteredFoods = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
+    const q = normalizeStr(searchQuery);
+    const tokens = q.split(/\s+/).filter(Boolean);
+
     return state.foodLibrary.filter((item) => {
-      const matchesSearch =
-        !q ||
-        item.name.toLowerCase().includes(q) ||
-        (item.brand && item.brand.toLowerCase().includes(q)) ||
-        (item.aliases && item.aliases.some((alias) => alias.toLowerCase().includes(q)));
+      let matchesSearch = true;
+      if (tokens.length > 0) {
+        const itemText = normalizeStr(
+          `${item.name} ${item.brand || ''} ${(item.aliases || []).join(' ')}`
+        );
+        matchesSearch = tokens.every((token) => itemText.includes(token));
+      }
+
       const matchesCategory =
         selectedCategory === 'All'
           ? true
           : selectedCategory === 'Favorites'
           ? item.isFavorite
           : selectedCategory.includes('Brasil') || selectedCategory.includes('Brazilian')
-          ? item.id.startsWith('f-br-') || (item.source && item.source.includes('TACO')) || (item.brand && item.brand.includes('Brasil'))
+          ? item.id.startsWith('f-br-') || item.id.startsWith('f-exp-') || (item.source && item.source.includes('TACO')) || (item.brand && item.brand.includes('Brasil'))
           : item.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
@@ -188,6 +229,10 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
 
   const handleConfirmAddSelectedFood = () => {
     if (!selectedFood) return;
+    // If food is from OpenFoodFacts search, persist to local library so it's cached offline
+    if (selectedFood.id.startsWith('off-') && !state.foodLibrary.some((f) => f.id === selectedFood.id)) {
+      addFoodToLibrary(selectedFood);
+    }
     const count = Math.max(0.1, servingMultiplier);
     const newEntry: LoggedFood = {
       id: `food-log-${Date.now()}`,
@@ -788,17 +833,24 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                         </>
                       ) : (
                         <div className="space-y-3 py-2">
-                          <p>No foods found matching "{searchQuery}".</p>
+                          <p>No foods found matching "{searchQuery}" in local atlas.</p>
+                          {isSearchingOff && (
+                            <div className="py-2.5 px-3 bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl flex items-center justify-center gap-2 text-xs text-[var(--color-text-muted)] animate-pulse">
+                              <Globe className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+                              <span>Searching Global Open Food Database...</span>
+                            </div>
+                          )}
                           <button
                             type="button"
                             onClick={() => {
                               setCustomName(searchQuery);
                               setActiveTab('custom');
+                              handleAutoEstimateCustomMacros(searchQuery);
                             }}
                             className="px-4 py-2 rounded-xl bg-[var(--color-accent)] text-[var(--color-on-accent)] text-xs font-bold inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
                           >
                             <Plus className="w-3.5 h-3.5" />
-                            <span>Suggest & Add "{searchQuery}" to Atlas</span>
+                            <span>Auto-Estimate & Add "{searchQuery}" to Atlas</span>
                           </button>
                         </div>
                       )}
@@ -852,6 +904,72 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                     </div>
                   )}
 
+                  {/* Global OpenFoodFacts Live Database Results */}
+                  {openFoodFactsResults.length > 0 && (
+                    <div className="pt-3 mt-3 border-t border-[var(--color-border)] space-y-2">
+                      <div className="flex items-center justify-between text-[11px] text-[var(--color-text-muted)] font-semibold px-1">
+                        <span className="flex items-center gap-1.5 text-[var(--color-accent)]">
+                          <Globe className="w-3.5 h-3.5" />
+                          Global Open Database Results
+                        </span>
+                        <span className="text-[10px] text-[var(--color-text-subtle)]">OpenFoodFacts (Free)</span>
+                      </div>
+                      <div className="divide-y divide-[var(--color-border)]">
+                        {openFoodFactsResults.map((offItem, idx) => {
+                          const asFoodItem: FoodItem = {
+                            id: `off-${offItem.barcode || idx}`,
+                            name: offItem.name,
+                            brand: offItem.brand,
+                            category: 'Carbohydrates',
+                            servingSize: offItem.servingSize || 100,
+                            servingUnit: offItem.servingUnit || 'g',
+                            calories: offItem.calories,
+                            protein: offItem.protein,
+                            carbs: offItem.carbs,
+                            fat: offItem.fat,
+                            fiber: offItem.fiber,
+                            source: 'OpenFoodFacts Global Database',
+                          };
+                          return (
+                            <div
+                              key={asFoodItem.id}
+                              className="flex items-stretch py-2.5 px-2 -mx-0.5 rounded-xl hover:bg-[var(--color-surface-raised)]/40 transition-colors group"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedFood(asFoodItem);
+                                  setServingMultiplier(1);
+                                }}
+                                className="flex-1 min-w-0 min-h-[48px] flex items-center justify-between gap-2 text-left"
+                              >
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-xs font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] truncate">
+                                      {asFoodItem.name}
+                                    </span>
+                                    {asFoodItem.brand && (
+                                      <span className="text-[10px] text-[var(--color-text-subtle)] truncate">
+                                        • {asFoodItem.brand}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
+                                    {asFoodItem.servingSize} {asFoodItem.servingUnit} • {asFoodItem.calories} kcal • P:{' '}
+                                    {asFoodItem.protein}g C: {asFoodItem.carbs}g F: {asFoodItem.fat}g
+                                  </div>
+                                </div>
+                                <div className="w-7 h-7 rounded-lg bg-[var(--color-surface-raised)] text-[var(--color-accent)] flex items-center justify-center shrink-0 group-hover:bg-[var(--color-accent)] group-hover:text-[var(--color-on-accent)] transition-colors">
+                                  <Plus className="w-4 h-4" />
+                                </div>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Suggest / Add Custom Food Prompt */}
                   <div className="pt-3 pb-1 text-center border-t border-[var(--color-border)] mt-2">
                     <button
@@ -859,6 +977,9 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                       onClick={() => {
                         setCustomName(searchQuery || '');
                         setActiveTab('custom');
+                        if (searchQuery) {
+                          handleAutoEstimateCustomMacros(searchQuery);
+                        }
                       }}
                       className="text-xs font-semibold text-[var(--color-accent)] hover:underline inline-flex items-center gap-1"
                     >
@@ -1330,7 +1451,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                   <button
                     type="button"
                     disabled={!customName.trim() || isEstimatingCustom}
-                    onClick={handleAutoEstimateCustomMacros}
+                    onClick={() => handleAutoEstimateCustomMacros()}
                     className="text-[11px] px-2.5 py-1 rounded-lg bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-accent)] font-semibold flex items-center gap-1 active:scale-95 transition-all disabled:opacity-40"
                     title="Automatically estimate calories and macros from nutrition database"
                   >
@@ -1379,6 +1500,7 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                   <label className="text-[10px] text-[var(--color-text-muted)] block">Calories</label>
                   <input
                     type="number"
+                    placeholder="0"
                     value={customCalories}
                     onChange={(e) => setCustomCalories(e.target.value)}
                     className="min-h-[40px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl py-2 text-center text-xs font-bold text-[var(--color-text)] focus:outline-none"
@@ -1388,27 +1510,30 @@ export function AddFoodModal({ initialMealType = 'breakfast', targetDate, onClos
                   <label className="text-[10px] text-[var(--color-text-muted)] block">Protein (g)</label>
                   <input
                     type="number"
+                    placeholder="0"
                     value={customProtein}
                     onChange={(e) => setCustomProtein(e.target.value)}
-                    className="min-h-[40px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl py-2 text-center text-xs font-bold text-[var(--color-success)] focus:outline-none"
+                    className="min-h-[40px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl py-2 text-center text-xs font-bold text-[var(--color-text)] focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="text-[10px] text-[var(--color-text-muted)] block">Carbs (g)</label>
                   <input
                     type="number"
+                    placeholder="0"
                     value={customCarbs}
                     onChange={(e) => setCustomCarbs(e.target.value)}
-                    className="min-h-[40px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl py-2 text-center text-xs font-bold text-[var(--color-warning)] focus:outline-none"
+                    className="min-h-[40px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl py-2 text-center text-xs font-bold text-[var(--color-text)] focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="text-[10px] text-[var(--color-text-muted)] block">Fat (g)</label>
                   <input
                     type="number"
+                    placeholder="0"
                     value={customFat}
                     onChange={(e) => setCustomFat(e.target.value)}
-                    className="min-h-[40px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl py-2 text-center text-xs font-bold text-[var(--color-danger)] focus:outline-none"
+                    className="min-h-[40px] w-full bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-xl py-2 text-center text-xs font-bold text-[var(--color-text)] focus:outline-none"
                   />
                 </div>
               </div>

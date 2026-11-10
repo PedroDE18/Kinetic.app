@@ -177,3 +177,59 @@ export async function lookupBarcodeOpenFoodFacts(
     };
   }
 }
+
+/**
+ * Searches OpenFoodFacts public REST API by free-text keywords.
+ * Zero API keys or subscriptions required ($0 cost guarantee).
+ */
+export async function searchFoodsOpenFoodFacts(
+  query: string,
+  limit: number = 8,
+  fetchFn: typeof fetch = fetch
+): Promise<BarcodeFoodItem[]> {
+  const cleanQuery = query.trim();
+  if (!cleanQuery || cleanQuery.length < 2) {
+    return [];
+  }
+
+  const url = `https://world.openfoodfacts.net/cgi/search.pl?search_terms=${encodeURIComponent(
+    cleanQuery
+  )}&search_simple=1&action=process&json=1&page_size=${Math.min(limit, 20)}`;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+
+    const response = await fetchFn(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'EunoiaFitnessApp/3.0 (athletic-grade open source fitness)',
+      },
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    if (!data || !Array.isArray(data.products)) {
+      return [];
+    }
+
+    const items: BarcodeFoodItem[] = [];
+    for (const p of data.products) {
+      const code = p.code || p._id || `off-${Math.random().toString(36).substring(2, 9)}`;
+      const parsed = parseOpenFoodFactsProduct({ status: 1, product: p }, code);
+      if (parsed.found && parsed.food && parsed.food.name && (parsed.food.calories > 0 || parsed.food.protein > 0)) {
+        items.push(parsed.food);
+      }
+      if (items.length >= limit) break;
+    }
+
+    return items;
+  } catch {
+    return [];
+  }
+}

@@ -23,15 +23,15 @@
     --color-accent-hover: #E4E4E7;
     --color-accent-soft: rgba(255, 255, 255, 0.08);
     --color-on-accent: #151619;
-    --color-secondary-accent: #9A9DA5;
-    --color-secondary-accent-soft: rgba(154, 157, 165, 0.12);
-    --color-success: #68B388;
-    --color-success-soft: rgba(104, 179, 136, 0.12);
-    --color-warning: #D9A05B;
-    --color-warning-soft: rgba(217, 160, 91, 0.12);
+    --color-secondary-accent: #A1A1AA;
+    --color-secondary-accent-soft: rgba(161, 161, 170, 0.12);
+    --color-success: #E4E4E7;
+    --color-success-soft: rgba(255, 255, 255, 0.10);
+    --color-warning: #A1A1AA;
+    --color-warning-soft: rgba(161, 161, 170, 0.12);
     --color-danger: #D96565;
     --color-danger-soft: rgba(217, 101, 101, 0.12);
-    --color-info: #6E94B8;
+    --color-info: #E4E4E7;
 
     /* --- Typography --- */
     --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Geist", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -95,37 +95,37 @@
     --safe-bottom: env(safe-area-inset-bottom, 16px);
   }
 
-  /* Light theme overrides (Stoic Warm Paper & Terracotta Ember) */
+  /* Light theme overrides (Stoic. Monochromatic Ink Black & Warm Paper) */
   .theme-light {
-    --color-bg: #F4F2EC;
-    --color-bg-elevated: #FAF8F4;
-    --color-surface: #FAF8F4;
-    --color-surface-raised: #FFFFFF;
-    --color-surface-sunken: #ECE8E0;
-    --color-border: #DED8CE;
-    --color-border-subtle: #E8E3DA;
-    --color-text: #1C1A18;
-    --color-text-muted: #5C564E;
-    --color-text-subtle: #8A8276;
-    --color-accent: #C85A32;
-    --color-accent-hover: #B44E28;
-    --color-accent-soft: rgba(200, 90, 50, 0.10);
+    --color-bg: #F5F5F3;
+    --color-bg-elevated: #FFFFFF;
+    --color-surface: #FFFFFF;
+    --color-surface-raised: #F0EFEA;
+    --color-surface-sunken: #EAE9E4;
+    --color-border: #E2E0D8;
+    --color-border-subtle: #EBE9E2;
+    --color-text: #141413;
+    --color-text-muted: #575653;
+    --color-text-subtle: #8A8884;
+    --color-accent: #141413;
+    --color-accent-hover: #2C2C2A;
+    --color-accent-soft: rgba(20, 20, 19, 0.07);
     --color-on-accent: #FFFFFF;
-    --color-secondary-accent: #5C564E;
-    --color-secondary-accent-soft: rgba(92, 86, 78, 0.08);
-    --color-success: #2E7D4E;
-    --color-success-soft: rgba(46, 125, 78, 0.10);
-    --color-warning: #B45309;
-    --color-warning-soft: rgba(180, 83, 9, 0.10);
-    --color-danger: #B91C1C;
-    --color-danger-soft: rgba(185, 28, 28, 0.10);
-    --color-info: #2563EB;
+    --color-secondary-accent: #575653;
+    --color-secondary-accent-soft: rgba(87, 86, 83, 0.08);
+    --color-success: #141413;
+    --color-success-soft: rgba(20, 20, 19, 0.08);
+    --color-warning: #575653;
+    --color-warning-soft: rgba(87, 86, 83, 0.10);
+    --color-danger: #991B1B;
+    --color-danger-soft: rgba(153, 27, 27, 0.08);
+    --color-info: #141413;
 
-    --shadow-xs: 0 1px 2px rgba(28, 26, 24, 0.05);
-    --shadow-sm: 0 1px 3px rgba(28, 26, 24, 0.07), 0 1px 2px rgba(28, 26, 24, 0.04);
-    --shadow-md: 0 4px 6px -1px rgba(28, 26, 24, 0.07), 0 2px 4px -1px rgba(28, 26, 24, 0.04);
-    --shadow-lg: 0 10px 15px -3px rgba(28, 26, 24, 0.07), 0 4px 6px -2px rgba(28, 26, 24, 0.04);
-    --shadow-glass: 0 8px 30px rgba(28, 26, 24, 0.06);
+    --shadow-xs: 0 1px 2px rgba(20, 20, 19, 0.05);
+    --shadow-sm: 0 1px 3px rgba(20, 20, 19, 0.07), 0 1px 2px rgba(20, 20, 19, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(20, 20, 19, 0.07), 0 2px 4px -1px rgba(20, 20, 19, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(20, 20, 19, 0.07), 0 4px 6px -2px rgba(20, 20, 19, 0.04);
+    --shadow-glass: 0 8px 30px rgba(20, 20, 19, 0.06);
   }
 
   .theme-light input,

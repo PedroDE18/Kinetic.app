@@ -1,6 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseOpenFoodFactsProduct, lookupBarcodeOpenFoodFacts } from './barcodeService';
+import {
+  parseOpenFoodFactsProduct,
+  lookupBarcodeOpenFoodFacts,
+  searchFoodsOpenFoodFacts,
+} from './barcodeService';
 
 describe('barcodeService - OpenFoodFacts Parsing & Lookup', () => {
   it('correctly handles not-found status', () => {
@@ -112,5 +116,36 @@ describe('barcodeService - OpenFoodFacts Parsing & Lookup', () => {
     assert.equal(res.food?.servingSize, 30);
     assert.equal(res.food?.calories, 110);
     assert.equal(res.food?.protein, 25);
+  });
+
+  it('searchFoodsOpenFoodFacts queries and normalizes product search results', async () => {
+    const mockSearchFetch = async () =>
+      ({
+        ok: true,
+        json: async () => ({
+          count: 1,
+          products: [
+            {
+              code: '1234567890',
+              product_name: 'Greek Yogurt Zero',
+              brands: 'Fage',
+              serving_size: '100 g',
+              nutriments: {
+                'energy-kcal_100g': 54,
+                proteins_100g: 10.3,
+                carbohydrates_100g: 3.0,
+                fat_100g: 0.0,
+              },
+            },
+          ],
+        }),
+      } as any);
+
+    const results = await searchFoodsOpenFoodFacts('fage yogurt', 5, mockSearchFetch);
+    assert.equal(results.length, 1);
+    assert.equal(results[0].name, 'Greek Yogurt Zero');
+    assert.equal(results[0].brand, 'Fage');
+    assert.equal(results[0].calories, 54);
+    assert.equal(results[0].protein, 10.3);
   });
 });

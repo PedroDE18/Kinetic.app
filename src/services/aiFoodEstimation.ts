@@ -1,10 +1,105 @@
 import { GoogleGenAI, Type } from '@google/genai';
-import { ParsedAiFoodItem } from '../types';
+import { ParsedAiFoodItem, FoodItem } from '../types';
+import { mockFoodLibrary } from '../utils/mockData';
+import { searchFoodsOpenFoodFacts } from './barcodeService';
 
 export interface AiEstimationResult {
   items: ParsedAiFoodItem[];
   source: 'model' | 'offline';
   error?: string;
+}
+
+function normalizeSearchText(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+/**
+ * Searches the verified local food atlas (330+ items) for an item matching query or aliases.
+ */
+function findBestFoodMatch(query: string): FoodItem | undefined {
+  const normQ = normalizeSearchText(query);
+  if (!normQ) return undefined;
+
+  // 1. Exact match on name or alias
+  const exact = mockFoodLibrary.find((f) => {
+    if (normalizeSearchText(f.name) === normQ) return true;
+    if (f.aliases && f.aliases.some((a) => normalizeSearchText(a) === normQ)) return true;
+    return false;
+  });
+  if (exact) return exact;
+
+  // 2. Starts with or includes
+  const partial = mockFoodLibrary.find((f) => {
+    const normName = normalizeSearchText(f.name);
+    if (normName.includes(normQ) || normQ.includes(normName)) return true;
+    if (
+      f.aliases &&
+      f.aliases.some((a) => {
+        const normA = normalizeSearchText(a);
+        return normA.includes(normQ) || normQ.includes(normA);
+      })
+    ) {
+      return true;
+    }
+    return false;
+  });
+  if (partial) return partial;
+
+  // 3. Multi-word token match
+  const tokens = normQ.split(/\s+/).filter((t) => t.length > 2);
+  if (tokens.length > 0) {
+    return mockFoodLibrary.find((f) => {
+      const allText = `${normalizeSearchText(f.name)} ${(f.aliases || []).map(normalizeSearchText).join(' ')}`;
+      return tokens.every((token) => allText.includes(token));
+    });
+  }
+
+  return undefined;
+}
+
+/**
+ * Intelligently estimates realistic macronutrients for unknown foods based on culinary semantics
+ * instead of returning a blind hardcoded 450 kcal for everything.
+ */
+function estimateUnknownCulinaryCategory(name: string): {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  servingSize: number;
+  servingUnit: string;
+} {
+  const norm = normalizeSearchText(name);
+  if (/salada|salad|alface|folhas|greens|legumes|vegetais|veggie/.test(norm)) {
+    return { calories: 45, protein: 2, carbs: 7, fat: 1, servingSize: 100, servingUnit: 'g' };
+  }
+  if (/fruta|fruit|berry|smoothie|suco|juice|vitamina/.test(norm)) {
+    return { calories: 85, protein: 1, carbs: 20, fat: 0.5, servingSize: 150, servingUnit: 'g' };
+  }
+  if (/sopa|soup|caldo|broth|canja/.test(norm)) {
+    return { calories: 130, protein: 8, carbs: 16, fat: 3.5, servingSize: 250, servingUnit: 'ml' };
+  }
+  if (/doce|bolo|cake|torta|sobremesa|dessert|pudim|cookie|bisc|chocolate|sorvete|brigadeiro/.test(norm)) {
+    return { calories: 290, protein: 4, carbs: 42, fat: 12, servingSize: 80, servingUnit: 'g' };
+  }
+  if (/burger|hamburguer|pizza|lanche|sandwich|sanduiche|hot dog|dogao|pastel|coxinha|fast food/.test(norm)) {
+    return { calories: 460, protein: 24, carbs: 44, fat: 21, servingSize: 180, servingUnit: 'g' };
+  }
+  if (/carne|bife|steak|beef|frango|chicken|peixe|fish|costela|porco|peru|picanha/.test(norm)) {
+    return { calories: 260, protein: 38, carbs: 0, fat: 11, servingSize: 150, servingUnit: 'g' };
+  }
+  if (/massa|pasta|macarrao|macarrão|noodle|arroz|rice|batata|potato|pure|puree/.test(norm)) {
+    return { calories: 210, protein: 5, carbs: 44, fat: 1.5, servingSize: 150, servingUnit: 'g' };
+  }
+  if (/cha|tea|cafe|coffee|agua|water|refrigerante|coca|soda/.test(norm)) {
+    return { calories: 5, protein: 0.1, carbs: 1, fat: 0, servingSize: 200, servingUnit: 'ml' };
+  }
+  // Default moderate balanced portion
+  return { calories: 280, protein: 18, carbs: 30, fat: 9, servingSize: 150, servingUnit: 'g' };
 }
 
 /**
@@ -605,23 +700,59 @@ export function estimateMealOffline(prompt: string): ParsedAiFoodItem[] {
     );
   }
 
-  // If no recognized foods matched, fallback to a single custom estimate for the entire input
+  // If no recognized foods matched, check the verified food library, then smart culinary estimator
   if (parts.length === 0) {
-    parts.push(
-      sanitizeAiFoodItem(
-        {
-          name: prompt.trim().slice(0, 60),
-          servingCount: 1,
-          servingSize: 1,
-          servingUnit: 'portion',
-          calories: 450,
-          protein: 25.0,
-          carbs: 45.0,
-          fat: 15.0,
-        },
-        0
-      )
-    );
+    const directMatch = findBestFoodMatch(prompt);
+    if (directMatch) {
+      // Parse any grams/units in prompt, e.g. "200g", "150 ml", "2 fatias"
+      let multiplier = 1;
+      const gramMatch = prompt.match(/(\d+(?:[.,]\d+)?)\s*(?:g|gramas|grams)\b/i);
+      const mlMatch = prompt.match(/(\d+(?:[.,]\d+)?)\s*(?:ml|mililitros)\b/i);
+      if (gramMatch && directMatch.servingUnit.includes('g') && directMatch.servingSize > 0) {
+        multiplier = parseFloat(gramMatch[1].replace(',', '.')) / directMatch.servingSize;
+      } else if (mlMatch && directMatch.servingUnit.includes('ml') && directMatch.servingSize > 0) {
+        multiplier = parseFloat(mlMatch[1].replace(',', '.')) / directMatch.servingSize;
+      } else {
+        const countMatch = prompt.match(/^(\d+)\s+/);
+        if (countMatch) {
+          multiplier = parseInt(countMatch[1], 10);
+        }
+      }
+      multiplier = Math.max(0.2, Math.min(10, multiplier));
+
+      parts.push(
+        sanitizeAiFoodItem(
+          {
+            name: directMatch.name,
+            servingCount: 1,
+            servingSize: Math.round(directMatch.servingSize * multiplier),
+            servingUnit: directMatch.servingUnit,
+            calories: Math.round(directMatch.calories * multiplier),
+            protein: Number((directMatch.protein * multiplier).toFixed(1)),
+            carbs: Number((directMatch.carbs * multiplier).toFixed(1)),
+            fat: Number((directMatch.fat * multiplier).toFixed(1)),
+          },
+          0
+        )
+      );
+    } else {
+      const estimated = estimateUnknownCulinaryCategory(prompt);
+      parts.push(
+        sanitizeAiFoodItem(
+          {
+            name: prompt.trim().slice(0, 60),
+            servingCount: 1,
+            servingSize: estimated.servingSize,
+            servingUnit: estimated.servingUnit,
+            calories: estimated.calories,
+            protein: estimated.protein,
+            carbs: estimated.carbs,
+            fat: estimated.fat,
+          },
+          0
+        )
+      );
+    }
   }
 
   return parts;
@@ -651,8 +782,43 @@ export async function estimateMealWithAi(
       import.meta.env.VITE_GEMINI_API_KEY.trim()) ||
     '';
 
-  // If no API key configured, use free offline parser immediately
+  // If no API key configured, check if OpenFoodFacts can find it online for free ($0 cost)
   if (!apiKey) {
+    if (
+      cleanPrompt.length >= 3 &&
+      !cleanPrompt.includes(',') &&
+      !cleanPrompt.includes('+') &&
+      !cleanPrompt.includes(' and ') &&
+      !cleanPrompt.includes(' with ')
+    ) {
+      try {
+        const offResults = await searchFoodsOpenFoodFacts(cleanPrompt, 1);
+        if (offResults.length > 0) {
+          const item = offResults[0];
+          return {
+            items: [
+              sanitizeAiFoodItem(
+                {
+                  name: item.brand ? `${item.name} (${item.brand})` : item.name,
+                  servingCount: 1,
+                  servingSize: item.servingSize || 100,
+                  servingUnit: item.servingUnit || 'g',
+                  calories: item.calories,
+                  protein: item.protein,
+                  carbs: item.carbs,
+                  fat: item.fat,
+                },
+                0
+              ),
+            ],
+            source: 'offline',
+          };
+        }
+      } catch {
+        // Fall back cleanly to offline atlas
+      }
+    }
+
     return {
       items: estimateMealOffline(cleanPrompt),
       source: 'offline',

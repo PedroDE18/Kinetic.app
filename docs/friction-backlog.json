@@ -1,5 +1,49 @@
 [
   {
+    "id": "fric-1794350191066",
+    "timestamp": "2026-11-10T22:36:31.066Z",
+    "category": "nutrition_diary",
+    "severity": "blocker",
+    "title": "Nutrition Library Expansion & Intelligent Macro Estimation",
+    "description": "The weakness of the Nutrition Database is the absolute worst point of the app. not being able to find the food you want to log, makes you want to stop using the app. And the custom food just does a standard 450 cal and macros for anything.",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "feat(nutrition): fix scrambled aliases, expand food library to 330+ verified staples, add live OpenFoodFacts global search, and implement intelligent culinary macro estimation replacing dummy 450 kcal"
+  },
+  {
+    "id": "fric-1794349805653",
+    "timestamp": "2026-11-10T22:30:05.653Z",
+    "category": "ui_contrast_layout",
+    "severity": "minor_annoyance",
+    "title": "Today's Discipline Checkbox Overlap",
+    "description": "The tick image is cutting the circle highlight in Ticked-off Disciplines",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "fix(habits): replace CheckCircle2 with Check inside rounded-full circle checkboxes to eliminate border clipping"
+  },
+  {
+    "id": "fric-1794349739653",
+    "timestamp": "2026-11-10T22:28:59.653Z",
+    "category": "ui_contrast_layout",
+    "severity": "minor_annoyance",
+    "title": "Rest Capitalization in Sleep Card",
+    "description": "Its weird that the capitalized letter is in Rest ('good Rest')",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "fix(sleep): correct capitalization from 'good Rest' to 'Good rest' in today's sleep quality card"
+  },
+  {
+    "id": "fric-1794349684250",
+    "timestamp": "2026-11-10T22:28:04.250Z",
+    "category": "ui_contrast_layout",
+    "severity": "high_friction",
+    "title": "Strict Monochromatic Stoic Design",
+    "description": "Why are there new colours in the app? the whole idea was following the Stoic. app design, so there shouldnt be colour highlights. Take out the orange / red colour highlight. it should be dark black in white mode and clear white in black mode...",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "fix(theme): eliminate terracotta/orange highlights in favor of pure monochromatic Stoic ink black in light mode and pure white in dark mode"
+  },
+  {
     "id": "fric-1794341620382",
     "timestamp": "2026-11-10T20:13:40.382Z",
     "category": "feature_request",

@@ -58,7 +58,7 @@ export const LEGACY_STORAGE_KEYS = [
  * - Preserves any user modifications to existing items.
  * - Appends any newly introduced system default items that the user doesn't already have.
  */
-export function mergeLibraries<T extends { id: string; name: string }>(
+export function mergeLibraries<T extends { id: string; name: string; aliases?: string[] }>(
   userItems: T[] | undefined,
   defaultItems: T[]
 ): T[] {
@@ -66,14 +66,27 @@ export function mergeLibraries<T extends { id: string; name: string }>(
     return [...defaultItems];
   }
 
+  const defaultMap = new Map(defaultItems.map((item) => [item.id, item]));
   const existingIds = new Set(userItems.map((item) => item.id));
   const existingNames = new Set(userItems.map((item) => item.name.trim().toLowerCase()));
+
+  // For existing items that match a system default, sync system aliases so corrections propagate
+  const syncedUserItems = userItems.map((userItem) => {
+    const sysDefault = defaultMap.get(userItem.id);
+    if (sysDefault && sysDefault.aliases && sysDefault.aliases.length > 0) {
+      return {
+        ...userItem,
+        aliases: sysDefault.aliases,
+      };
+    }
+    return userItem;
+  });
 
   const newDefaultsToAdd = defaultItems.filter(
     (item) => !existingIds.has(item.id) && !existingNames.has(item.name.trim().toLowerCase())
   );
 
-  return [...userItems, ...newDefaultsToAdd];
+  return [...syncedUserItems, ...newDefaultsToAdd];
 }
 
 export interface FitnessState {

@@ -24,6 +24,7 @@ import {
   Repeat,
   CheckSquare,
   Moon,
+  Check,
 } from 'lucide-react';
 import { useFitness } from '../../context/FitnessContext';
 import { calculateWeightTrend, formatWeight, getLocalDateString, getRecentDateStrings, calculateConsecutiveStreak } from '../../utils/engine';
@@ -304,7 +305,9 @@ export function TodayView({
           </div>
           <div>
             <div className="text-xs sm:text-sm font-bold text-[var(--color-text)]">
-              {recentSleep ? `${recentSleep.restfulness} Rest` : 'Log Last Night'}
+              {recentSleep
+                ? `${recentSleep.restfulness.charAt(0).toUpperCase() + recentSleep.restfulness.slice(1)} rest`
+                : 'Log last night'}
             </div>
             <div className="text-[10px] text-[var(--color-text-subtle)] mt-0.5">
               {recentSleep ? `${recentSleep.durationMinutes} mins restorative` : 'Track sleep recovery'}
@@ -371,17 +374,7 @@ export function TodayView({
       <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
           <div
-            className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-colors ${
-              latestMoodReflection?.affectiveWeather === 'radiant'
-                ? 'bg-amber-400/10 border-amber-400/30 text-amber-400'
-                : latestMoodReflection?.affectiveWeather === 'clear'
-                ? 'bg-emerald-400/10 border-emerald-400/30 text-emerald-400'
-                : latestMoodReflection?.affectiveWeather === 'turbulent'
-                ? 'bg-rose-400/10 border-rose-400/30 text-rose-400'
-                : latestMoodReflection?.affectiveWeather === 'overcast'
-                ? 'bg-sky-400/10 border-sky-400/30 text-sky-400'
-                : 'bg-[var(--color-surface-raised)] border-[var(--color-border)] text-[var(--color-text-muted)]'
-            }`}
+            className="w-9 h-9 rounded-xl flex items-center justify-center border transition-colors bg-[var(--color-surface-raised)] border-[var(--color-border)] text-[var(--color-accent)]"
           >
             <Compass className="w-4 h-4" />
           </div>
@@ -474,13 +467,13 @@ export function TodayView({
                       className="flex items-center gap-2.5 text-left flex-1 min-w-0"
                     >
                       <div
-                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
+                        className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all ${
                           isCompleted
                             ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
                             : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'
                         }`}
                       >
-                        {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 stroke-[3]" />}
+                        {isCompleted && <Check className="w-3 h-3 stroke-[2.5]" />}
                       </div>
                       <div className="min-w-0">
                         <span className={`font-semibold block truncate ${isCompleted ? 'line-through opacity-50' : 'text-[var(--color-text)]'}`}>
@@ -516,9 +509,13 @@ export function TodayView({
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
                     <button
                       onClick={() => toggleTaskCompleted(t.id)}
-                      className="w-4 h-4 rounded-md border-2 border-[var(--color-border)] hover:border-[var(--color-accent)] flex items-center justify-center shrink-0 transition-colors"
+                      className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                        t.isCompleted
+                          ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
+                          : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'
+                      }`}
                     >
-                      {t.isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-accent)]" />}
+                      {t.isCompleted && <Check className="w-3 h-3 stroke-[2.5]" />}
                     </button>
                     <span className="font-semibold text-[var(--color-text)] truncate">{t.title}</span>
                   </div>

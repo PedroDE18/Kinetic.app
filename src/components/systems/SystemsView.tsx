@@ -8,6 +8,7 @@ import {
   Edit2,
   Sparkles,
   CheckCircle2,
+  Check,
   Clock,
   Zap,
 } from 'lucide-react';
@@ -261,13 +262,13 @@ export function SystemsView() {
                         className="flex items-start gap-3 text-left flex-1"
                       >
                         <div
-                          className={`mt-0.5 w-6 h-6 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                          className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all ${
                             isCompletedToday
                               ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
                               : 'border-2 border-[var(--color-border)] hover:border-[var(--color-accent)]'
                           }`}
                         >
-                          {isCompletedToday && <CheckCircle2 className="w-4 h-4 stroke-[3]" />}
+                          {isCompletedToday && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
                         </div>
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
@@ -601,9 +602,13 @@ export function SystemsView() {
                     <div className="flex items-center gap-3 flex-1">
                       <button
                         onClick={() => toggleTaskCompleted(task.id)}
-                        className="w-5 h-5 rounded-lg border-2 border-[var(--color-border)] hover:border-[var(--color-accent)] flex items-center justify-center shrink-0 transition-all"
+                        className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all ${
+                          task.isCompleted
+                            ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)]'
+                            : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'
+                        }`}
                       >
-                        {task.isCompleted && <CheckCircle2 className="w-4 h-4 text-[var(--color-accent)]" />}
+                        {task.isCompleted && <Check className="w-3 h-3 stroke-[2.5]" />}
                       </button>
 
                       <div className="space-y-0.5">
@@ -612,7 +617,7 @@ export function SystemsView() {
                           <span
                             className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${
                               task.priority === 'high'
-                                ? 'bg-rose-500/10 text-rose-500'
+                                ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)]'
                                 : 'bg-[var(--color-surface-raised)] text-[var(--color-text-muted)]'
                             }`}
                           >

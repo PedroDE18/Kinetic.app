@@ -3,9 +3,29 @@ import { X, Sparkles, AlertCircle, Lightbulb, CheckCircle2, Send, Tag, Layers, L
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
 import { useFitness } from '../../context/FitnessContext';
 import { FeedbackCategory, FrictionSeverity, FrictionReport } from '../../types';
+import { submitFeedbackIssue, fetchFeedbackIssues } from '../../services/firebase';
+import bundledBacklog from '../../../docs/friction-backlog.json';
 
 interface FrictionFeedbackModalProps {
   onClose: () => void;
+}
+
+const FEEDBACK_ENDPOINTS = ['/api/feedback', 'http://localhost:3000/api/feedback', 'http://127.0.0.1:3000/api/feedback'];
+
+async function tryFetchFeedbackJson(init?: RequestInit): Promise<{ ok: boolean; data?: any }> {
+  for (const endpoint of FEEDBACK_ENDPOINTS) {
+    try {
+      const res = await fetch(endpoint, init);
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
+        const data = await res.json();
+        return { ok: true, data };
+      }
+    } catch {
+      // Try next endpoint
+    }
+  }
+  return { ok: false };
 }
 
 export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
@@ -21,62 +41,100 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
   const [suggestedSolution, setSuggestedSolution] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [savedReports, setSavedReports] = useState<FrictionReport[]>([]);
-  const [backlogItems, setBacklogItems] = useState<FrictionReport[]>([]);
+  const [backlogItems, setBacklogItems] = useState<FrictionReport[]>(
+    () => (Array.isArray(bundledBacklog) ? (bundledBacklog as FrictionReport[]) : [])
+  );
   const [copied, setCopied] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
   const [isDiskConnected, setIsDiskConnected] = useState<boolean | null>(null);
 
-  const loadBacklog = async () => {
+  const reconcileWithBacklog = (items: FrictionReport[]) => {
     try {
-      const res = await fetch('/api/feedback');
-      if (res.ok) {
-        setIsDiskConnected(true);
-        const items: FrictionReport[] = await res.json();
-        setBacklogItems(items);
+      const local = JSON.parse(localStorage.getItem('eunoia_friction_v1') || '[]');
+      let localChanged = false;
+      const updatedLocal = local.map((loc: FrictionReport) => {
+        const match = items.find(
+          (srv: any) =>
+            srv.id === loc.id ||
+            (srv.title && loc.title && srv.title.trim().toLowerCase() === loc.title.trim().toLowerCase())
+        );
+        if (match && (match.status !== loc.status || match.resolutionCommit !== loc.resolutionCommit)) {
+          localChanged = true;
+          return { ...loc, status: match.status, resolutionCommit: match.resolutionCommit };
+        }
+        return loc;
+      });
 
-        // Auto-sync any unsynced local reports
-        const local = JSON.parse(localStorage.getItem('eunoia_friction_v1') || '[]');
-        let localChanged = false;
-        const updatedLocal = local.map((loc: FrictionReport) => {
-          const match = items.find(
+      if (localChanged) {
+        localStorage.setItem('eunoia_friction_v1', JSON.stringify(updatedLocal));
+        setSavedReports(updatedLocal);
+      }
+      return updatedLocal;
+    } catch {
+      return [];
+    }
+  };
+
+  const loadBacklog = async () => {
+    const initialBundled = Array.isArray(bundledBacklog) ? (bundledBacklog as FrictionReport[]) : [];
+    reconcileWithBacklog(initialBundled);
+
+    const apiRes = await tryFetchFeedbackJson();
+    if (apiRes.ok && Array.isArray(apiRes.data)) {
+      setIsDiskConnected(true);
+      const items: FrictionReport[] = apiRes.data;
+      setBacklogItems(items);
+      const local = reconcileWithBacklog(items);
+
+      const missing = local.filter(
+        (loc: FrictionReport) =>
+          !items.some(
             (srv: any) =>
               srv.id === loc.id ||
-              (srv.title && loc.title && srv.title.trim().toLowerCase() === loc.title.trim().toLowerCase())
-          );
-          if (match && (match.status !== loc.status || match.resolutionCommit !== loc.resolutionCommit)) {
-            localChanged = true;
-            return { ...loc, status: match.status, resolutionCommit: match.resolutionCommit };
-          }
-          return loc;
+              (srv.title === loc.title && srv.timestamp === loc.timestamp)
+          )
+      );
+      if (missing.length > 0) {
+        await tryFetchFeedbackJson({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(missing),
         });
-
-        if (localChanged) {
-          localStorage.setItem('eunoia_friction_v1', JSON.stringify(updatedLocal));
-          setSavedReports(updatedLocal);
-        }
-
-        const missing = local.filter(
-          (loc: FrictionReport) =>
-            !items.some(
-              (srv: any) =>
-                srv.id === loc.id ||
-                (srv.title === loc.title && srv.timestamp === loc.timestamp)
-            )
-        );
-        if (missing.length > 0) {
-          await fetch('/api/feedback', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(missing),
-          });
-          setSyncStatus(`Auto-synced ${missing.length} recommendation(s) to repository disk`);
-          setTimeout(() => setSyncStatus(null), 3500);
-        }
-      } else {
-        setIsDiskConnected(false);
+        setSyncStatus(`Auto-synced ${missing.length} recommendation(s) to repository disk`);
+        setTimeout(() => setSyncStatus(null), 3500);
       }
+      return;
+    }
+
+    // Fallback: Running on Firebase Hosting / Static Build — merge bundled backlog + Cloud Firestore issues
+    setIsDiskConnected(false);
+    try {
+      const cloudIssues = await fetchFeedbackIssues();
+      const merged = [...initialBundled];
+      for (const ci of cloudIssues) {
+        if (!merged.some((m) => m.id === ci.id || (ci.title && m.title?.toLowerCase() === ci.title.toLowerCase()))) {
+          merged.unshift({
+            id: ci.id,
+            timestamp: ci.createdAt,
+            category: 'feature_request',
+            severity: ci.severity === 'high' ? 'high_friction' : 'enhancement',
+            title: ci.title || 'User Feedback',
+            description: ci.description,
+            deviceContext: {
+              viewport: 'cloud',
+              userAgent: ci.deviceInfo || '',
+              isStandalonePwa: false,
+              theme: state.profile.theme,
+            },
+            reporter: 'human_user',
+            status: ci.status === 'resolved' ? 'resolved' : 'open',
+          });
+        }
+      }
+      setBacklogItems(merged);
+      reconcileWithBacklog(merged);
     } catch {
-      setIsDiskConnected(false);
+      setBacklogItems(initialBundled);
     }
   };
 
@@ -114,20 +172,31 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
   ];
 
   const handleSyncToDisk = async (reportsToSync: FrictionReport[]) => {
-    setSyncStatus('Syncing to disk...');
-    try {
-      const res = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reportsToSync),
-      });
-      if (res.ok) {
-        setSyncStatus('Synced to docs/friction-backlog.json!');
-      } else {
-        setSyncStatus('Sync error: server response not ok');
+    setSyncStatus('Syncing recommendations...');
+    const apiRes = await tryFetchFeedbackJson({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reportsToSync),
+    });
+
+    if (apiRes.ok) {
+      setIsDiskConnected(true);
+      setSyncStatus('Synced directly to docs/friction-backlog.json!');
+    } else {
+      // Also sync to Cloud Firestore when on hosted deployment
+      try {
+        for (const r of reportsToSync.slice(0, 10)) {
+          await submitFeedbackIssue({
+            type: r.severity === 'enhancement' ? 'suggestion' : 'bug',
+            title: r.title,
+            description: r.description,
+            severity: r.severity === 'blocker' || r.severity === 'high_friction' ? 'high' : 'medium',
+          });
+        }
+        setSyncStatus('Synced to Cloud Firestore & Local Storage!');
+      } catch {
+        setSyncStatus('Saved in Local Storage (Use Copy JSON to share)');
       }
-    } catch (e) {
-      setSyncStatus('Local disk sync active in dev mode');
     }
     setTimeout(() => setSyncStatus(null), 3000);
   };
@@ -164,13 +233,22 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
       // Ignore localStorage quotas
     }
 
-    // 2. Dispatch event and sync to dev server if available
+    // 2. Dispatch event and sync to dev server + Cloud Firestore
     window.dispatchEvent(new CustomEvent('eunoia:feedback-submitted', { detail: report }));
+    await tryFetchFeedbackJson({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(report),
+    });
+
     try {
-      await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(report),
+      await submitFeedbackIssue({
+        type: feedbackType === 'recommendation' ? 'suggestion' : 'bug',
+        title: report.title,
+        description: report.suggestedSolution
+          ? `${report.description} | Suggested: ${report.suggestedSolution}`
+          : report.description,
+        severity: report.severity === 'blocker' || report.severity === 'high_friction' ? 'high' : 'medium',
       });
     } catch {
       // Offline fallback
@@ -203,14 +281,14 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
             </h3>
             <div className="flex items-center gap-1.5 mt-1">
               {isDiskConnected === true ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--color-success)]/15 border border-[var(--color-success)]/30 text-[var(--color-success)]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] animate-pulse" />
-                  <span>Disk Sync Connected</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-text)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-text)] animate-pulse" />
+                  <span>Live Disk & Cloud Sync Connected</span>
                 </span>
               ) : isDiskConnected === false ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--color-warning)]/15 border border-[var(--color-warning)]/30 text-[var(--color-warning)]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-warning)]" />
-                  <span>Local Storage Mode (Dev server offline)</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-text-muted)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-text)]" />
+                  <span>Cloud & Local Roadmap Active ({backlogItems.filter((b) => b.status === 'resolved').length} Resolved)</span>
                 </span>
               ) : (
                 <span className="text-[10px] text-[var(--color-text-subtle)]">Checking sync status...</span>

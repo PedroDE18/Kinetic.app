@@ -43,6 +43,30 @@ test('Food Library Aliases & Search Matching', () => {
       (f.aliases && f.aliases.some((a) => a.toLowerCase().includes(queryCasein)))
   );
   assert.ok(matchedCasein.length > 0, 'Searching "caseina" should find casein items');
+
+  // Test unscrambled aliases: Greek Yogurt vs Salmon vs Banana
+  const yogurt = mockFoodLibrary.find((f) => f.id === 'f-7');
+  assert.ok(yogurt);
+  assert.ok(yogurt.aliases?.some((a) => a.includes('iogurte')), 'f-7 Greek yogurt must have yogurt aliases');
+  assert.ok(!yogurt.aliases?.some((a) => a.includes('salmao')), 'f-7 Greek yogurt must NOT have salmon alias');
+
+  const salmon = mockFoodLibrary.find((f) => f.id === 'f-11');
+  assert.ok(salmon);
+  assert.ok(salmon.aliases?.some((a) => a.includes('salmao')), 'f-11 Salmon must have salmon aliases');
+
+  const banana = mockFoodLibrary.find((f) => f.id === 'f-9');
+  assert.ok(banana);
+  assert.ok(banana.aliases?.some((a) => a.includes('banana')), 'f-9 Banana must have banana aliases');
+  assert.ok(!banana.aliases?.some((a) => a.includes('carne')), 'f-9 Banana must NOT have meat alias');
+
+  // Test massive library expansion: at least 250 items
+  assert.ok(mockFoodLibrary.length >= 250, `Expected at least 250 food items, got ${mockFoodLibrary.length}`);
+
+  // Test newly expanded staples: contrafilé and pizza
+  const matchedContrafile = mockFoodLibrary.filter((f) =>
+    (f.aliases || []).some((a) => a.includes('contrafile') || a.includes('contrafilé'))
+  );
+  assert.ok(matchedContrafile.length > 0, 'Should find contrafilé in atlas');
 });
 
 test('Exercise Atlas: Machine and Cable Exercises Coverage', () => {
