@@ -1,12 +1,65 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import fs from 'fs';
+import {defineConfig, Plugin} from 'vite';
+
+function feedbackApiPlugin(): Plugin {
+  return {
+    name: 'feedback-api-plugin',
+    configureServer(server) {
+      server.middlewares.use('/api/feedback', (req, res) => {
+        if (req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk) => {
+            body += chunk;
+          });
+          req.on('end', () => {
+            try {
+              const data = JSON.parse(body);
+              const reports = Array.isArray(data) ? data : [data];
+              const filePath = path.resolve(process.cwd(), 'docs/friction-backlog.json');
+              let existing: any[] = [];
+              if (fs.existsSync(filePath)) {
+                existing = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+              }
+              for (const report of reports) {
+                if (
+                  !existing.some(
+                    (r) =>
+                      r.id === report.id ||
+                      (r.title === report.title && r.timestamp === report.timestamp)
+                  )
+                ) {
+                  existing.unshift(report);
+                }
+              }
+              fs.writeFileSync(filePath, JSON.stringify(existing, null, 2), 'utf-8');
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: true, count: reports.length }));
+            } catch (err) {
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: String(err) }));
+            }
+          });
+        } else if (req.method === 'GET') {
+          const filePath = path.resolve(process.cwd(), 'docs/friction-backlog.json');
+          if (fs.existsSync(filePath)) {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(fs.readFileSync(filePath, 'utf-8'));
+          } else {
+            res.end('[]');
+          }
+        }
+      });
+    },
+  };
+}
 
 export default defineConfig(() => {
   return {
     base: './',
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), feedbackApiPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, '.'),

@@ -8,7 +8,8 @@
     "description": "When logging an active workout set, the input row is empty. Users must remember or navigate away to history to check their previous weight and reps for progressive overload.",
     "suggestedSolution": "Render subtle ghosted placeholder text showing 'Last: X kg × Y reps' in the weight and reps inputs.",
     "reporter": "human_user",
-    "status": "open"
+    "status": "resolved",
+    "resolutionCommit": "feat(train): render previous performance ghost placeholders in active workout sets"
   },
   {
     "id": "fric-002",
@@ -19,7 +20,8 @@
     "description": "Entering heavy weights requires mental collar math between intense sets.",
     "suggestedSolution": "Add a quick-tap plate visualization chip (e.g. 20kg + 15kg + 2.5kg per side) in set rows.",
     "reporter": "human_user",
-    "status": "open"
+    "status": "resolved",
+    "resolutionCommit": "feat(train): add barbell plate calculator with quick tap disc modal in set rows"
   },
   {
     "id": "fric-003",
@@ -30,7 +32,8 @@
     "description": "Athletes logging multi-ingredient meals (e.g., protein oats, daily smoothies) must enter ingredients individually every single day.",
     "suggestedSolution": "Implement a composite recipe builder with serving yield calculations.",
     "reporter": "human_user",
-    "status": "open"
+    "status": "resolved",
+    "resolutionCommit": "feat(food): implement composite recipe builder modal with serving yield calculations"
   },
   {
     "id": "fric-004",
@@ -41,7 +44,8 @@
     "description": "Athletes resting with eyes closed or phone locked miss the countdown completion.",
     "suggestedSolution": "Trigger navigator.vibrate([100, 50, 100]) and a soft Web Audio synthesizer chime when remaining rest reaches zero.",
     "reporter": "human_user",
-    "status": "open"
+    "status": "resolved",
+    "resolutionCommit": "feat(train): trigger 528Hz singing bowl tone and device vibration when rest timer reaches zero"
   },
   {
     "id": "fric-005",

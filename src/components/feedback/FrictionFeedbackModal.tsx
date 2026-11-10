@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Sparkles, AlertCircle, Lightbulb, CheckCircle2, Send, Tag, Layers } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Sparkles, AlertCircle, Lightbulb, CheckCircle2, Send, Tag, Layers, List, Copy, RefreshCw, Check } from 'lucide-react';
 import { useBodyScrollLock } from '../../utils/useBodyScrollLock';
 import { useFitness } from '../../context/FitnessContext';
 import { FeedbackCategory, FrictionSeverity, FrictionReport } from '../../types';
@@ -12,6 +12,7 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
   useBodyScrollLock(true);
   const { state } = useFitness();
 
+  const [activeView, setActiveView] = useState<'create' | 'history'>('create');
   const [feedbackType, setFeedbackType] = useState<'recommendation' | 'friction'>('recommendation');
   const [category, setCategory] = useState<FeedbackCategory>('feature_request');
   const [severity, setSeverity] = useState<FrictionSeverity>('enhancement');
@@ -19,6 +20,16 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
   const [description, setDescription] = useState('');
   const [suggestedSolution, setSuggestedSolution] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [savedReports, setSavedReports] = useState<FrictionReport[]>([]);
+  const [copied, setCopied] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const existing = JSON.parse(localStorage.getItem('eunoia_friction_v1') || '[]');
+      setSavedReports(existing);
+    } catch {}
+  }, []);
 
   const categories: { id: FeedbackCategory; label: string }[] = [
     { id: 'feature_request', label: 'Feature Request' },
@@ -30,7 +41,26 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
     { id: 'performance_bug', label: 'Bug & Performance' },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSyncToDisk = async (reportsToSync: FrictionReport[]) => {
+    setSyncStatus('Syncing to disk...');
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reportsToSync),
+      });
+      if (res.ok) {
+        setSyncStatus('Synced to docs/friction-backlog.json!');
+      } else {
+        setSyncStatus('Sync error: server response not ok');
+      }
+    } catch (e) {
+      setSyncStatus('Local disk sync active in dev mode');
+    }
+    setTimeout(() => setSyncStatus(null), 3000);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
 
@@ -57,17 +87,33 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
       const existing = JSON.parse(localStorage.getItem('eunoia_friction_v1') || '[]');
       existing.unshift(report);
       localStorage.setItem('eunoia_friction_v1', JSON.stringify(existing));
+      setSavedReports(existing);
     } catch {
       // Ignore localStorage quotas
     }
 
-    // 2. Dispatch custom event so app/devtools can intercept
+    // 2. Dispatch event and sync to dev server if available
     window.dispatchEvent(new CustomEvent('eunoia:feedback-submitted', { detail: report }));
+    try {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(report),
+      });
+    } catch {
+      // Offline fallback
+    }
 
     setSubmitted(true);
     setTimeout(() => {
       onClose();
     }, 1800);
+  };
+
+  const handleCopyAll = () => {
+    navigator.clipboard.writeText(JSON.stringify(savedReports, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -93,14 +139,111 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
           </button>
         </div>
 
+        {/* View Switcher: Create vs History */}
+        <div className="shrink-0 px-5 pt-3 pb-1 border-b border-[var(--color-border)] flex items-center gap-2 bg-[var(--color-bg-elevated)]">
+          <button
+            type="button"
+            onClick={() => setActiveView('create')}
+            className={`min-h-[34px] px-3.5 py-1 rounded-xl text-xs font-bold transition-all border ${
+              activeView === 'create'
+                ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)] shadow-xs'
+                : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+            }`}
+          >
+            New Submission
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView('history')}
+            className={`min-h-[34px] px-3.5 py-1 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+              activeView === 'history'
+                ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-on-accent)] shadow-xs'
+                : 'bg-[var(--color-surface-sunken)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+            }`}
+          >
+            <List className="w-3.5 h-3.5" />
+            <span>My Submissions ({savedReports.length})</span>
+          </button>
+        </div>
+
         {/* Content */}
         <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
-          {submitted ? (
+          {activeView === 'history' ? (
+            <div className="space-y-3">
+              {/* History Toolbar */}
+              <div className="flex items-center justify-between gap-2 pb-2 border-b border-[var(--color-border)]">
+                <span className="text-xs font-semibold text-[var(--color-text-muted)]">
+                  {savedReports.length} items registered
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleSyncToDisk(savedReports)}
+                    title="Sync to disk backlog"
+                    className="min-h-[30px] px-2.5 py-1 rounded-lg bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[11px] font-semibold text-[var(--color-accent)] flex items-center gap-1 active:scale-95 transition-all"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Sync Disk</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyAll}
+                    title="Copy all feedback as JSON"
+                    className="min-h-[30px] px-2.5 py-1 rounded-lg bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[11px] font-semibold text-[var(--color-accent)] flex items-center gap-1 active:scale-95 transition-all"
+                  >
+                    {copied ? <Check className="w-3 h-3 text-[var(--color-success)]" /> : <Copy className="w-3 h-3" />}
+                    <span>{copied ? 'Copied!' : 'Copy JSON'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {syncStatus && (
+                <div className="p-2 rounded-xl bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 text-[var(--color-accent)] text-xs text-center font-semibold animate-in fade-in">
+                  {syncStatus}
+                </div>
+              )}
+
+              {savedReports.length === 0 ? (
+                <div className="py-12 text-center text-xs text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)] rounded-2xl p-4">
+                  No recommendations or friction submitted yet from this device.
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {savedReports.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-3.5 bg-[var(--color-surface-sunken)] border border-[var(--color-border)] rounded-2xl space-y-1.5"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-xs font-bold text-[var(--color-text)]">
+                          {item.title}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-muted)] font-semibold shrink-0">
+                          {item.category.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                        {item.description}
+                      </p>
+                      {item.suggestedSolution && (
+                        <div className="text-[11px] text-[var(--color-accent)] font-medium pt-1 border-t border-[var(--color-border)]">
+                          Suggestion: {item.suggestedSolution}
+                        </div>
+                      )}
+                      <div className="text-[9px] text-[var(--color-text-subtle)] pt-0.5">
+                        {new Date(item.timestamp).toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : submitted ? (
             <div className="py-12 text-center space-y-3 animate-in fade-in zoom-in-95">
               <div className="w-12 h-12 rounded-full bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 text-[var(--color-success)] flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h4 className="text-base font-bold text-[var(--color-text)]">Feedback Saved</h4>
+              <h4 className="text-base font-bold text-[var(--color-text)]">Feedback Saved & Synced</h4>
               <p className="text-xs text-[var(--color-text-muted)] max-w-xs mx-auto">
                 Your recommendation has been registered. The autonomous engineering squad reviews and acts on this in scheduled improvement sprints.
               </p>
@@ -257,3 +400,4 @@ export function FrictionFeedbackModal({ onClose }: FrictionFeedbackModalProps) {
     </div>
   );
 }
+

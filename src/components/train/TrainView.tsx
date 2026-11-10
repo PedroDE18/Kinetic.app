@@ -633,7 +633,8 @@ export function TrainView() {
                               <input
                                 type="number"
                                 step="0.5"
-                                value={set.actualWeightKg}
+                                value={set.actualWeightKg === 0 ? '' : set.actualWeightKg}
+                                placeholder={lastPerf ? `${lastPerf.weightKg}` : '0'}
                                 aria-label={`Weight for set ${set.setNumber} of ${exercise.exerciseName}, kilograms`}
                                 onChange={(e) =>
                                   handleUpdateSetValue(
@@ -643,7 +644,7 @@ export function TrainView() {
                                     parseFloat(e.target.value) || 0
                                   )
                                 }
-                                className="w-14 tabular-nums bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg py-1.5 text-center text-sm font-semibold text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
+                                className="w-14 tabular-nums bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg py-1.5 text-center text-sm font-semibold text-[var(--color-text)] placeholder:text-[var(--color-text-subtle)]/70 focus:outline-none focus:border-[var(--color-accent)]"
                               />
                               <button
                                 type="button"
@@ -651,7 +652,7 @@ export function TrainView() {
                                   setPlateCalcTarget({
                                     exIdx,
                                     setIdx,
-                                    weight: set.actualWeightKg || 60,
+                                    weight: set.actualWeightKg || (lastPerf ? lastPerf.weightKg : 60),
                                   })
                                 }
                                 title="Open Barbell Plate Calculator"
@@ -665,7 +666,8 @@ export function TrainView() {
                             <div className="col-span-3 flex justify-center">
                               <input
                                 type="number"
-                                value={set.actualReps}
+                                value={set.actualReps === 0 ? '' : set.actualReps}
+                                placeholder={lastPerf ? `${lastPerf.reps}` : '0'}
                                 aria-label={`Reps for set ${set.setNumber} of ${exercise.exerciseName}`}
                                 onChange={(e) =>
                                   handleUpdateSetValue(
@@ -675,7 +677,7 @@ export function TrainView() {
                                     parseInt(e.target.value) || 0
                                   )
                                 }
-                                className="w-12 tabular-nums bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg py-1.5 text-center text-sm font-semibold text-[var(--color-text)] focus:outline-none focus:border-[var(--color-accent)]"
+                                className="w-12 tabular-nums bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg py-1.5 text-center text-sm font-semibold text-[var(--color-text)] placeholder:text-[var(--color-text-subtle)]/70 focus:outline-none focus:border-[var(--color-accent)]"
                               />
                             </div>
 
