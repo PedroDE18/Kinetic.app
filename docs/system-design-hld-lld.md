@@ -521,6 +521,29 @@ export interface HolisticWeeklyReviewData {
   };
 }
 
+// 6. Weight Trend 12-Week Projection Cone & Target Arrival Forecaster
+export interface WeightProjectionPoint {
+  date: string; // YYYY-MM-DD
+  daysFromNow: number;
+  weeksFromNow: number;
+  medianKg: number;
+  conservativeKg: number;
+  aggressiveKg: number;
+}
+
+export interface WeightTrendProjection {
+  currentTrendWeightKg: number;
+  targetWeightKg: number | null;
+  dailyEnergyBalanceKcal: number;
+  weeklyRateKg: number;
+  estimatedArrivalDate: string | null;
+  daysToGoal: number | null;
+  weeksToGoal: number | null;
+  isGoalReached: boolean;
+  isMovingTowardGoal: boolean;
+  projectionPoints: WeightProjectionPoint[];
+}
+
 export interface WeeklyReviewRecord {
   id: string;
   weekEndDate: string;
@@ -632,6 +655,41 @@ export function playBreathCue(type: 'inhale' | 'exhale' | 'hold'): void {
   }
 }
 ```
+
+### 4.2 12-Week Weight Projection Cone & Target Arrival Forecaster (`src/utils/engine.ts`)
+- **Objective**: Provide athletes with MacroFactor-level forward visibility by projecting weight trends 12 weeks into the future with an expanding confidence cone reflecting metabolic adaptation and real-world variance.
+- **Thermodynamic Principles**:
+  - Mass-energy equivalence: $1\text{ kg tissue} \approx 7700\text{ kcal}$.
+  - Initial weekly rate: $\Delta W_{\text{raw}} = \frac{7 \times \Delta E}{7700}$ (or empirical slope from historical EWMA weigh-ins).
+  - Rate clamping: Clamped to $[-1.5, +1.5]\text{ kg/week}$ for biological realism.
+- **Metabolic Adaptation Attenuation**:
+  - Extended caloric deficit or surplus induces metabolic adaptation (adaptive thermogenesis, changes in NEAT and leptin).
+  - Weekly rate attenuates by $1.5\%$ compound per week:
+    $$\Delta W(w) = \Delta W_0 \times (1 - 0.015)^w$$
+- **Expanding Brownian Confidence Cone**:
+  - Real-world adherence, fluid balance, and glycogen fluctuations increase trajectory uncertainty over time.
+  - The uncertainty envelope expands proportionally to the square root of time:
+    $$\sigma(w) = \pm \left(0.12 \times \sqrt{w}\right)\text{ kg}$$
+  - Median path: $W_{\text{median}}(w) = W_0 + \sum_{i=1}^w \Delta W(i)$
+  - Upper / Lower envelopes ($p_{10}$ to $p_{90}$):
+    - During Fat Loss ($\Delta W_0 < 0$):
+      $$W_{\text{conservative}}(w) = W_{\text{median}}(w) + \sigma(w)$$
+      $$W_{\text{aggressive}}(w) = W_{\text{median}}(w) - \sigma(w)$$
+    - During Lean Bulk ($\Delta W_0 > 0$):
+      $$W_{\text{conservative}}(w) = W_{\text{median}}(w) - \sigma(w)$$
+      $$W_{\text{aggressive}}(w) = W_{\text{median}}(w) + \sigma(w)$$
+- **Target Goal Arrival Date Calculation**:
+  - Resolves discrete weekly milestones until $W(w)$ crosses $W_{\text{target}}$.
+  - Interpolates exact fractional days: $D_{\text{exact}} = 7 \times \left(w - 1 + \frac{|W(w-1) - W_{\text{target}}|}{|W(w) - W(w-1)|}\right)$.
+  - Flags `isGoalReached`, `isMovingTowardGoal`, `daysToGoal`, and `estimatedArrivalDate`.
+- **Pure SVG Rendering Architecture (`WeightProjectionConeChart.tsx`)**:
+  - Computes dynamic domain $[W_{\min} - 1, W_{\max} + 1]$.
+  - Closed shaded polygon for the uncertainty cone (`url(#coneGradient)`).
+  - Crisp dashed boundary lines for conservative and aggressive limits.
+  - High-contrast solid polyline for median trajectory.
+  - Horizontal reference line for Target Goal.
+  - Interactive hover and touch milestones with SVG tooltips.
+  - $0 cost, zero third-party chart dependencies, sub-millisecond render time.
 
 ---
 

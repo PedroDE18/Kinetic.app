@@ -46,6 +46,7 @@ import { getTranslations, resolveInitialLanguage } from '../../utils/i18n';
 import { TrendChart } from '../common/TrendChart';
 import { getDailyMetricsHistory } from '../../services/appleHealth/healthStorage';
 import { DailyAggregatedMetrics } from '../../services/appleHealth/types';
+import { WeightProjectionCard } from './WeightProjectionCard';
 
 interface ProgressViewProps {
   onOpenWeeklyReview: () => void;
@@ -671,6 +672,9 @@ export function ProgressView({ onOpenWeeklyReview, onOpenWeighInModal, onOpenHea
                   </button>
                 </div>
               </section>
+
+              {/* 12-Week Weight Projection Cone & Goal Arrival Forecaster */}
+              <WeightProjectionCard />
 
               {/* Daily Calorie Intake vs Target Trajectory */}
               <section className="p-5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl space-y-3 shadow-xs">

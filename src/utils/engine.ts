@@ -1,4 +1,14 @@
-import { WeightRecord, LoggedFood, UnitSystem, CompletedWorkout, CardioSession, CardioActivityType, SetType } from '../types';
+import {
+  WeightRecord,
+  LoggedFood,
+  UnitSystem,
+  CompletedWorkout,
+  CardioSession,
+  CardioActivityType,
+  SetType,
+  WeightProjectionPoint,
+  WeightTrendProjection,
+} from '../types';
 
 export interface SmoothedWeightPoint {
   date: string;
@@ -253,6 +263,143 @@ export function generateWeeklyAdjustmentProposal(
     proposedTarget,
     adjustmentDelta: delta,
     reason,
+  };
+}
+
+/**
+ * 12-Week Forward Weight Projection Cone Engine (MacroFactor parity).
+ *
+ * Models forward body mass trajectory based on thermodynamic energy balance:
+ *   1 kg body mass ≈ 7700 kcal
+ *   Weekly rate = (Daily Energy Balance * 7) / 7700 = Daily Energy Balance / 1100
+ *
+ * Generates median trajectory (p50) plus an expanding uncertainty envelope
+ * (conservative p10 vs aggressive p90) accounting for adherence drift and metabolic adaptation.
+ * Computes projected calendar date of arrival at target goal weight.
+ */
+export function calculateWeightTrendProjection(
+  currentWeightKg: number,
+  targetWeightKg?: number | null,
+  weeklyRateKg?: number,
+  dailyEnergyBalanceKcal?: number,
+  referenceDate: Date | string = new Date(),
+  weeksToProject = 12
+): WeightTrendProjection {
+  // Normalize referenceDate to a safe, valid Date object
+  const refDateObj =
+    typeof referenceDate === 'string'
+      ? new Date(referenceDate.includes('T') ? referenceDate : `${referenceDate}T12:00:00`)
+      : referenceDate instanceof Date && !isNaN(referenceDate.getTime())
+      ? referenceDate
+      : new Date();
+  const baseTime = refDateObj.getTime();
+
+  // Guard and clamp base parameters to biological reality
+  const safeCurrentWeight =
+    isFinite(currentWeightKg) && currentWeightKg > 20 && currentWeightKg < 350
+      ? currentWeightKg
+      : 75.0;
+
+  // Rate resolution: prefer weeklyRateKg if valid non-zero, otherwise derive from energy balance
+  let resolvedWeeklyRate = 0;
+  if (typeof weeklyRateKg === 'number' && isFinite(weeklyRateKg) && Math.abs(weeklyRateKg) > 0.01) {
+    resolvedWeeklyRate = weeklyRateKg;
+  } else if (typeof dailyEnergyBalanceKcal === 'number' && isFinite(dailyEnergyBalanceKcal) && Math.abs(dailyEnergyBalanceKcal) > 10) {
+    resolvedWeeklyRate = (dailyEnergyBalanceKcal * 7) / 7700;
+  }
+  // Clamp weekly rate to safe athletic bounds [-1.5, +1.5] kg/week
+  resolvedWeeklyRate = Math.max(-1.5, Math.min(1.5, resolvedWeeklyRate));
+
+  const resolvedEnergyBalance = typeof dailyEnergyBalanceKcal === 'number' && isFinite(dailyEnergyBalanceKcal)
+    ? dailyEnergyBalanceKcal
+    : Math.round((resolvedWeeklyRate * 7700) / 7);
+
+  // Goal distance and direction
+  const hasValidTarget =
+    typeof targetWeightKg === 'number' &&
+    isFinite(targetWeightKg) &&
+    targetWeightKg > 20 &&
+    targetWeightKg < 350;
+  const deltaToGoal = hasValidTarget ? targetWeightKg - safeCurrentWeight : 0;
+  const isGoalReached = hasValidTarget && Math.abs(deltaToGoal) <= 0.15;
+
+  let isMovingTowardGoal = false;
+  let estimatedArrivalDate: string | undefined = undefined;
+  let daysToGoal: number | undefined = undefined;
+  let weeksToGoal: number | undefined = undefined;
+
+  if (hasValidTarget && !isGoalReached) {
+    if ((deltaToGoal < 0 && resolvedWeeklyRate < -0.01) || (deltaToGoal > 0 && resolvedWeeklyRate > 0.01)) {
+      isMovingTowardGoal = true;
+      const dailyRate = Math.abs(resolvedWeeklyRate) / 7;
+      const rawDays = Math.round(Math.abs(deltaToGoal) / dailyRate);
+      daysToGoal = Math.max(1, Math.min(730, rawDays)); // Clamp to 2 years max
+      weeksToGoal = Number((daysToGoal / 7).toFixed(1));
+
+      const arrivalTimestamp = baseTime + daysToGoal * 86400000;
+      estimatedArrivalDate = getLocalDateString(new Date(arrivalTimestamp));
+    }
+  } else if (isGoalReached) {
+    daysToGoal = 0;
+    weeksToGoal = 0;
+    estimatedArrivalDate = getLocalDateString(refDateObj);
+  }
+
+  // Generate forward projection points
+  const points: WeightProjectionPoint[] = [];
+  const safeWeeks = Math.max(1, Math.min(24, weeksToProject));
+
+  for (let w = 1; w <= safeWeeks; w++) {
+    const daysFromNow = w * 7;
+    const pointTimestamp = baseTime + daysFromNow * 86400000;
+    const dateStr = getLocalDateString(new Date(pointTimestamp));
+
+    // Dynamic adaptation attenuation: as deficit/surplus persists, rate attenuates slightly (~1.5% over 12 weeks)
+    const attenuationFactor = 1 - 0.015 * (w / 12);
+    const cumulativeDelta = resolvedWeeklyRate * w * attenuationFactor;
+    const medianWeight = Number((safeCurrentWeight + cumulativeDelta).toFixed(2));
+
+    // Brownian drift uncertainty cone: expands with sqrt(weeks) + adherence variance
+    const sigma = Math.min(4.0, 0.25 * Math.sqrt(w) + 0.08 * Math.abs(resolvedWeeklyRate) * w);
+
+    let conservativeKg: number;
+    let aggressiveKg: number;
+
+    if (resolvedWeeklyRate < 0) {
+      // Cutting: conservative is slower loss (higher weight), aggressive is faster loss (lower weight)
+      conservativeKg = Number(Math.max(25, medianWeight + sigma).toFixed(2));
+      aggressiveKg = Number(Math.max(25, medianWeight - sigma).toFixed(2));
+    } else if (resolvedWeeklyRate > 0) {
+      // Bulking: conservative is slower gain (lower weight), aggressive is faster gain (higher weight)
+      conservativeKg = Number(Math.max(25, medianWeight - sigma).toFixed(2));
+      aggressiveKg = Number(Math.max(25, medianWeight + sigma).toFixed(2));
+    } else {
+      // Maintenance: symmetrical uncertainty
+      conservativeKg = Number(Math.max(25, medianWeight + sigma).toFixed(2));
+      aggressiveKg = Number(Math.max(25, medianWeight - sigma).toFixed(2));
+    }
+
+    points.push({
+      date: dateStr,
+      daysFromNow,
+      weeksFromNow: w,
+      medianKg: Math.max(25, medianWeight),
+      conservativeKg,
+      aggressiveKg,
+    });
+  }
+
+  return {
+    currentTrendWeightKg: Number(safeCurrentWeight.toFixed(2)),
+    targetWeightKg: hasValidTarget ? Number(targetWeightKg!.toFixed(2)) : undefined,
+    dailyEnergyBalanceKcal: resolvedEnergyBalance,
+    weeklyRateKg: Number(resolvedWeeklyRate.toFixed(2)),
+    estimatedArrivalDate,
+    daysToGoal,
+    weeksToGoal,
+    isGoalReached,
+    isMovingTowardGoal,
+    projectionPoints: points,
   };
 }
 

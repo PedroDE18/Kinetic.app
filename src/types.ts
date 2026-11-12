@@ -119,6 +119,28 @@ export interface WeightRecord {
   notes?: string;
 }
 
+export interface WeightProjectionPoint {
+  date: string; // YYYY-MM-DD
+  daysFromNow: number;
+  weeksFromNow: number;
+  medianKg: number; // p50 expected trajectory
+  conservativeKg: number; // p10 lower/slower bound
+  aggressiveKg: number; // p90 upper/faster bound
+}
+
+export interface WeightTrendProjection {
+  currentTrendWeightKg: number;
+  targetWeightKg?: number;
+  dailyEnergyBalanceKcal: number;
+  weeklyRateKg: number;
+  estimatedArrivalDate?: string; // YYYY-MM-DD
+  daysToGoal?: number;
+  weeksToGoal?: number;
+  isGoalReached: boolean;
+  isMovingTowardGoal: boolean;
+  projectionPoints: WeightProjectionPoint[];
+}
+
 export type SetType = 'normal' | 'warmup' | 'dropset' | 'failure';
 
 export interface ExerciseSet {

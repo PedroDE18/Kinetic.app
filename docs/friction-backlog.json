@@ -1,5 +1,17 @@
 [
   {
+    "id": "fric-014",
+    "timestamp": "2026-11-12T15:00:00.000Z",
+    "category": "progress_tracking",
+    "severity": "enhancement",
+    "title": "Weight Trend 12-Week Projection Cone & Target Arrival Forecaster (MacroFactor Parity)",
+    "description": "Athletes setting weight goals lack forward predictive visibility. Historical EWMA charts only look backward, leaving athletes unable to see projected milestones at 4, 8, and 12 weeks, realistic metabolic adaptation attenuation, expanding confidence intervals, or precise calendar arrival dates.",
+    "suggestedSolution": "Implement a deterministic 12-week forward weight projection engine based on mass balance thermodynamics (7700 kcal/kg), metabolic adaptation attenuation (1.5%/wk), expanding Brownian drift confidence envelope (p10 conservative to p90 aggressive), and an interactive SVG projection cone chart with inline target goal editing.",
+    "reporter": "human_user",
+    "status": "resolved",
+    "resolutionCommit": "feat(progress): implement 12-week weight trend projection cone, target arrival date forecaster, and interactive SVG visualization"
+  },
+  {
     "id": "fric-1794350191066",
     "timestamp": "2026-11-10T22:36:31.066Z",
     "category": "nutrition_diary",

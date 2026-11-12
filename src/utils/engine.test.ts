@@ -13,6 +13,7 @@ import {
   formatSpeed,
   calculateCardioStats,
   calculateConsecutiveStreak,
+  calculateWeightTrendProjection,
 } from './engine';
 import { WeightRecord, LoggedFood, CompletedWorkout, CardioSession } from '../types';
 
@@ -263,4 +264,60 @@ test('calculateConsecutiveStreak accurately computes and resets habit streaks', 
     calculateConsecutiveStreak(['2026-11-08', '2026-11-10', '2026-11-09', '2026-11-10'], refDate),
     3
   );
+});
+
+test('calculateWeightTrendProjection models 12-week forward trajectory and goal arrival date', () => {
+  const refDate = new Date(2026, 9, 1); // Oct 1, 2026
+
+  // 1. Fat Loss Projection (-0.5 kg/week from 80kg to 74kg)
+  const cuttingProj = calculateWeightTrendProjection(80.0, 74.0, -0.5, -550, refDate, 12);
+  assert.equal(cuttingProj.currentTrendWeightKg, 80.0);
+  assert.equal(cuttingProj.targetWeightKg, 74.0);
+  assert.equal(cuttingProj.weeklyRateKg, -0.5);
+  assert.equal(cuttingProj.isGoalReached, false);
+  assert.equal(cuttingProj.isMovingTowardGoal, true);
+  assert.equal(cuttingProj.daysToGoal, 84);
+  assert.equal(cuttingProj.weeksToGoal, 12.0);
+  assert.equal(cuttingProj.estimatedArrivalDate, '2026-12-24');
+  assert.equal(cuttingProj.projectionPoints.length, 12);
+
+  // Check week 1 and week 12 points
+  const w1 = cuttingProj.projectionPoints[0];
+  const w12 = cuttingProj.projectionPoints[11];
+  assert.equal(w1.weeksFromNow, 1);
+  assert.ok(w1.medianKg < 80.0);
+  assert.ok(w1.conservativeKg > w1.medianKg, 'Conservative bound should be higher weight for cutting');
+  assert.ok(w1.aggressiveKg < w1.medianKg, 'Aggressive bound should be lower weight for cutting');
+
+  assert.equal(w12.weeksFromNow, 12);
+  assert.ok(Math.abs(w12.medianKg - 74.1) < 0.3, `Week 12 median should be near 74.1kg, got ${w12.medianKg}`);
+
+  // 2. Muscle Gain Projection (+0.25 kg/week from 70kg to 75kg)
+  const bulkingProj = calculateWeightTrendProjection(70.0, 75.0, 0.25, 275, refDate, 12);
+  assert.equal(bulkingProj.isMovingTowardGoal, true);
+  assert.equal(bulkingProj.daysToGoal, 140); // 5kg / (0.25/7) = 140 days
+  assert.equal(bulkingProj.weeksToGoal, 20.0);
+  const bw1 = bulkingProj.projectionPoints[0];
+  assert.ok(bw1.conservativeKg < bw1.medianKg, 'Conservative bound should be lower weight for bulking');
+  assert.ok(bw1.aggressiveKg > bw1.medianKg, 'Aggressive bound should be higher weight for bulking');
+
+  // 3. Goal already reached
+  const reachedProj = calculateWeightTrendProjection(72.05, 72.0, -0.3, -330, refDate);
+  assert.equal(reachedProj.isGoalReached, true);
+  assert.equal(reachedProj.daysToGoal, 0);
+
+  // 4. Opposing goal direction (eating in surplus while target is below current weight)
+  const opposingProj = calculateWeightTrendProjection(80.0, 70.0, 0.4, 440, refDate);
+  assert.equal(opposingProj.isMovingTowardGoal, false);
+  assert.equal(opposingProj.daysToGoal, undefined);
+
+  // 5. Maintenance (0 rate, 0 deficit)
+  const maintProj = calculateWeightTrendProjection(75.0, undefined, 0, 0, refDate);
+  assert.equal(maintProj.weeklyRateKg, 0);
+  assert.equal(maintProj.projectionPoints[11].medianKg, 75.0);
+
+  // 6. Resilient handling of corrupt/absurd inputs
+  const safeProj = calculateWeightTrendProjection(NaN, -500, -999, 1000000);
+  assert.ok(safeProj.currentTrendWeightKg > 0);
+  assert.ok(Math.abs(safeProj.weeklyRateKg) <= 1.5, 'Weekly rate must clamp to biological bounds');
 });
